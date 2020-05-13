@@ -1,0 +1,21 @@
+{
+  "meta": {
+    "label": "Error analysis",
+    "description": "",
+    "icon": "icon-sitemap"
+  },
+
+  "baseType": "STANDARD",
+  "standardWebAppLibraries": ["d3", "dataiku", "font_awesome"],
+  "hasBackend": "true",
+
+  "roles": [
+    {
+      "type": "SAVED_MODEL",
+      "targetParamsKey": "modelId",
+      "pathParamsKey": "versionId"
+    }
+  ],
+  "params": [
+  ]
+}
