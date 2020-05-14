@@ -102,7 +102,7 @@ app.directive("modalBackground", function($compile) {
     return {
         scope: true,
         restrict: "C",
-        templateUrl: "/plugins/error-analysis/resource/templates/modal.html",
+        templateUrl: "/plugins/model-error-analysis/resource/templates/modal.html",
         link: function(scope, element) {
             if (scope.modal.conditions) {
                 const inputField = element.find("input");
@@ -118,7 +118,7 @@ app.directive("modalBackground", function($compile) {
 app.directive('tooltip', function() {
     return {
         scope: true,
-        templateUrl: "/plugins/error-analysis/resource/templates/tooltip.html",
+        templateUrl: "/plugins/model-error-analysis/resource/templates/tooltip.html",
         link: function($scope, element, attr) {
             if(attr.tooltip == "tree") {
                 const node = $scope.treeData[attr.node];
