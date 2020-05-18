@@ -1,3 +1,5 @@
+from math import isnan
+
 class Node(object):
     """
     A node of a decision tree
@@ -43,8 +45,7 @@ class Node(object):
         raise NotImplementedError
 
     def jsonify(self):
-        jsonified_node = dict(self.__dict__)
-        return jsonified_node
+        return dict(self.__dict__)
 
 
 class CategoricalNode(Node):
@@ -62,6 +63,12 @@ class CategoricalNode(Node):
         if self.others:
             return df[~df[self.feature].isin(self.values)]
         return df[df[self.feature].isin(self.values)]
+
+    def jsonify(self):
+        jsonified_dict = super(CategoricalNode, self).jsonify()
+        if isnan(jsonified_dict["values"][0]):
+            jsonified_dict["values"] = ["No values"]
+        return jsonified_dict
 
 
 class NumericalNode(Node):

@@ -33,10 +33,10 @@ def load():
         rescalers = list(filter(lambda u: isinstance(u, rescaler), model_handler.get_pipeline().steps))
         thresholds = descale_numerical_thresholds(clf.tree_, features, rescalers, False)
 
-        tree_parser = TreeParser(model_handler, thresholds, clf.tree_)
-        ranked_features = rank_features_by_error_correlation(clf, features)
+        tree_parser = TreeParser(model_handler, thresholds, clf.tree_, features)
+        ranked_features = rank_features_by_error_correlation(clf, features, tree_parser)
         tree = tree_parser.build_tree(test_df, ranked_features)
-        tree_parser.build_all_nodes(clf.tree_, tree, thresholds, features)
+        tree_parser.build_all_nodes(clf.tree_, tree, features)
         TREE.append(tree)
         return jsonify(nodes=tree.jsonify_nodes(), target_values=tree.target_values, features=tree.features, rankedFeatures=ranked_features)
     except:
