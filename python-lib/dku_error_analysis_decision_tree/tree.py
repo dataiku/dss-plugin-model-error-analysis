@@ -105,7 +105,6 @@ class InteractiveTree(object):
             else:
                 bins = pd.cut(column.fillna(mean), bin_labels, right=False)
             return self.get_stats_numerical_node(column, target_column, mean, bins)
-        #return self.get_stats_categorical_node(column, target_column, self.df[col].dropna().apply(safe_str))
         return self.get_stats_categorical_node(column, target_column)
 
     def get_stats_numerical_node(self, column, target_column, mean, bins):
