@@ -85,9 +85,9 @@ class NumericalNode(Node):
 
     def apply_filter(self, df, mean):
         if self.beginning is not None:
-            df = df[df[self.feature].ge(self.beginning, fill_value=mean)]
+            df = df[df[self.feature].gt(self.beginning, fill_value=mean)]
         if self.end is not None:
-            df = df[df[self.feature].lt(self.end, fill_value=mean)]
+            df = df[df[self.feature].le(self.end, fill_value=mean)]
         return df
 
     def jsonify(self):
