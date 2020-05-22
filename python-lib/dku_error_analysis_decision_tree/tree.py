@@ -85,7 +85,8 @@ class InteractiveTree(object):
         while node_id > 0:
             node = self.get_node(node_id)
             if node.get_type() == Node.TYPES.NUM:
-                df = node.apply_filter(df, self.features[node.feature]["mean"])
+                #TODO: change with ch49216
+                df = node.apply_filter(df, self.features.get(node.feature, {"mean": None})["mean"])
             else:
                 df = node.apply_filter(df)
             node_id = node.parent_id

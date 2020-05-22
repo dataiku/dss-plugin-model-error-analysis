@@ -32,7 +32,8 @@ class TreeParser(object):
 
     def translate_preprocessed_features(self, feature, parent_id):
         split_preprocessed_feature = feature.split(":")
-        if len(split_preprocessed_feature) == 1:
+        #TODO: safer way to check preprocessing?
+        if len(split_preprocessed_feature) == 1 or split_preprocessed_feature[0] == "unfold" or split_preprocessed_feature[0] == "impact":
             return Node.TYPES.NUM, feature, self.thresholds[parent_id]
         if split_preprocessed_feature[0] == "dummy":
             real_name, value = split_preprocessed_feature[1], split_preprocessed_feature[2]
