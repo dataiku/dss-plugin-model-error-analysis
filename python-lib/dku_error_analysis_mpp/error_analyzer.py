@@ -169,12 +169,12 @@ class ErrorAnalyzer:
             epsilon = mean_diff + std_diff
         elif mode == 'rec':
             n_points = 50
-            epsilon_range = np.linspace(np.min(difference), np.max(difference), num=n_points)
-            cdf_error = np.zeros_like(epsilon_range)
+            epsilon_range = np.linspace(min(difference), max(difference), num=n_points)
+            cdf_error = []
             n_samples = difference.shape[0]
             for i, epsilon in enumerate(epsilon_range):
                 correct = difference <= epsilon
-                cdf_error[i] = float(np.count_nonzero(correct)) / n_samples
+                cdf_error.append(float(np.count_nonzero(correct)) / n_samples)
             kneedle = KneeLocator(epsilon_range, cdf_error, S=1.0, curve='concave', direction='increasing')
             epsilon = kneedle.knee
         return epsilon
@@ -183,8 +183,8 @@ class ErrorAnalyzer:
         """ compute errors of the primary model on the test set """
         assert (self.prediction_type in ["REGRESSION", "BINARY_CLASSIFICATION", "MULTICLASS"])
         if self.prediction_type == "REGRESSION":
-            target = np.array(test_df[self.target])
-            predictions = np.array(test_df[prediction_column])
+            target = test_df[self.target]
+            predictions = test_df[prediction_column]
             difference = np.abs(target - predictions)
 
             epsilon = self._get_epsilon(difference, mode='rec')
