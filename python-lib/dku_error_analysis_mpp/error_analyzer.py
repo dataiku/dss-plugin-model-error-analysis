@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format='Error Analysis Plugin | %(levelname)s - %(message)s')
 
 PREDICTION_COLUMN = 'prediction'
-IS_ERROR_COLUMN = '__dku_is_error__'
+ERROR_COLUMN = '__dku_error__'
 WRONG_PREDICTION = "Wrong prediction"
 CORRECT_PREDICTION = "Correct prediction"
 MAX_DEPTH_GRID = [5, 10, 15, 20, 30, 50]
@@ -80,12 +80,12 @@ class ErrorAnalyzer:
         original_df = self._model_accessor.get_original_test_df()
         self._error_df = self.prepare_data_for_model_performance_predictor(original_df)
 
-        preprocessor = Preprocessor(self._error_df, target=IS_ERROR_COLUMN)
+        preprocessor = Preprocessor(self._error_df, target=ERROR_COLUMN)
         train, test = preprocessor.get_processed_train_test(prop=0.5)
-        error_train_X = train.drop(IS_ERROR_COLUMN, axis=1)
-        error_train_Y = np.array(train[IS_ERROR_COLUMN])
-        self._error_test_X = test.drop(IS_ERROR_COLUMN, axis=1)  # we will use them later when compute metrics
-        self._error_test_Y = np.array(test[IS_ERROR_COLUMN])
+        error_train_X = train.drop(ERROR_COLUMN, axis=1)
+        error_train_Y = np.array(train[ERROR_COLUMN])
+        self._error_test_X = test.drop(ERROR_COLUMN, axis=1)  # we will use them later when compute metrics
+        self._error_test_Y = np.array(test[ERROR_COLUMN])
         self.features_in_model_performance_predictor = error_train_X.columns
 
         logger.info("Fitting the model performance predictor...")
@@ -131,10 +131,10 @@ class ErrorAnalyzer:
         if PREDICTION_COLUMN not in df.columns:
             df[PREDICTION_COLUMN] = self._model_accessor.predict(df)
 
-        df[IS_ERROR_COLUMN] = self._get_errors(df, prediction_column=PREDICTION_COLUMN)
-        df[IS_ERROR_COLUMN] = df[IS_ERROR_COLUMN].replace({True: WRONG_PREDICTION, False: CORRECT_PREDICTION})
+        df[ERROR_COLUMN] = self._get_errors(df, prediction_column=PREDICTION_COLUMN)
+        df[ERROR_COLUMN] = df[ERROR_COLUMN].replace({True: WRONG_PREDICTION, False: CORRECT_PREDICTION})
 
-        selected_features = [IS_ERROR_COLUMN] + self._model_accessor.get_selected_features()
+        selected_features = [ERROR_COLUMN] + self._model_accessor.get_selected_features()
 
         return df.loc[:, selected_features]
 
