@@ -13,8 +13,8 @@ logging.basicConfig(level=logging.INFO, format='Error Analysis Plugin | %(leveln
 
 PREDICTION_COLUMN = 'prediction'
 IS_ERROR_COLUMN = '__dku_is_error__'
-IS_ERROR = "Wrong prediction"
-IS_CORRECT = "Correct prediction"
+WRONG_PREDICTION = "Wrong prediction"
+CORRECT_PREDICTION = "Correct prediction"
 MAX_DEPTH_GRID = [5, 10, 15, 20, 30, 50]
 
 MIN_NUM_ROWS = 500  # heuristic choice
@@ -131,7 +131,7 @@ class ErrorAnalyzer:
             df[PREDICTION_COLUMN] = self._model_accessor.predict(df)
 
         df[IS_ERROR_COLUMN] = self._get_errors(df, prediction_column=PREDICTION_COLUMN)
-        df[IS_ERROR_COLUMN] = df[IS_ERROR_COLUMN].replace({True: IS_ERROR, False: IS_CORRECT})
+        df[IS_ERROR_COLUMN] = df[IS_ERROR_COLUMN].replace({True: WRONG_PREDICTION, False: CORRECT_PREDICTION})
 
         del df[PREDICTION_COLUMN]
 
@@ -151,8 +151,8 @@ class ErrorAnalyzer:
         self.mpp_accuracy_score = accuracy_score(y_true, y_pred)
         logger.info('Model Performance Predictor accuracy: {}'.format(self.mpp_accuracy_score))
 
-        self.primary_model_predicted_accuracy = float(np.count_nonzero(y_pred == IS_CORRECT)) / n_test_samples
-        self.primary_model_true_accuracy = float(np.count_nonzero(y_true == IS_CORRECT)) / n_test_samples
+        self.primary_model_predicted_accuracy = float(np.count_nonzero(y_pred == CORRECT_PREDICTION)) / n_test_samples
+        self.primary_model_true_accuracy = float(np.count_nonzero(y_true == CORRECT_PREDICTION)) / n_test_samples
 
         logger.info('Primary model accuracy: {}'.format(self.primary_model_predicted_accuracy))
         logger.info('MPP predicted accuracy: {}'.format(self.primary_model_true_accuracy))

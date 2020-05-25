@@ -3,7 +3,7 @@ from dku_error_analysis_utils.compatibility import safe_str
 from collections import deque
 import pandas as pd
 
-from dku_error_analysis_mpp.error_analyzer import IS_ERROR
+from dku_error_analysis_mpp.error_analyzer import WRONG_PREDICTION
 
 class InteractiveTree(object):
     """
@@ -42,11 +42,11 @@ class InteractiveTree(object):
         self.bins = {}
 
     def set_node_info(self, node):
-        nr_errors = self.df[self.df[self.target] == IS_ERROR].shape[0]
+        nr_errors = self.df[self.df[self.target] == WRONG_PREDICTION].shape[0]
         filtered_df = self.get_filtered_df(node, self.df)
         probabilities = filtered_df[self.target].value_counts()
-        if IS_ERROR in probabilities:
-            error = probabilities[IS_ERROR] / float(nr_errors)
+        if WRONG_PREDICTION in probabilities:
+            error = probabilities[WRONG_PREDICTION] / float(nr_errors)
         else:
             error = 0
         samples = filtered_df.shape[0]
