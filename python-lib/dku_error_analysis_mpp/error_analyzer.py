@@ -5,7 +5,7 @@ from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import accuracy_score
 from dku_error_analysis_mpp.kneed import KneeLocator
 from dku_error_analysis_mpp.preprocessing import Preprocessor
-from dku_error_analysis_mpp.dataframe_helpers import not_enough_data
+from dku_error_analysis_utils.dataframe_helpers import not_enough_data
 import logging
 
 logger = logging.getLogger(__name__)
