@@ -54,6 +54,9 @@ class ModelAccessor:
     def get_predictor(self):
         return self.model_handler.get_predictor()
 
+    def get_per_feature(self):
+        return self.model_handler.get_per_feature()
+
     def get_selected_features(self):
         selected_features = []
         for feat, feat_info in self.get_per_feature().items():
