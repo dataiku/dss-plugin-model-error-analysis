@@ -11,10 +11,11 @@ logging.basicConfig(level=logging.INFO, format='Error Analysis Plugin | %(leveln
 
 
 def get_error_dt(model_handler):
-    error_analyzer = ErrorAnalyzer()
-    model_accessor = ModelAccessor(model_handler)
 
-    error_analyzer.fit(model_accessor)
+    model_accessor = ModelAccessor(model_handler)
+    error_analyzer = ErrorAnalyzer(model_accessor)
+
+    error_analyzer.fit()
 
     error_clf = error_analyzer.get_model_performance_predictor()
     test_df = error_analyzer.get_model_performance_predictor_test_df()

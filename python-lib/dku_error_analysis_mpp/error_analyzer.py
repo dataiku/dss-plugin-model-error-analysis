@@ -27,19 +27,26 @@ class ErrorAnalyzer:
     """
     ErrorAnalyzer analyzes the errors of a prediction models on a test set.
     It uses model predictions and ground truth target to compute the model errors on the test set.
-    It then train a Decision Tree on the same test set by using the model error as target.
+    It then trains a Decision Tree on the same test set by using the model error as target.
     The nodes of the decision tree are different segments of errors to be studied individually.
     """
-    def __init__(self, prediction_type=None, min_num_row=MIN_NUM_ROWS):
-        self.prediction_type = prediction_type
-        self.min_num_row = min_num_row
+
+    def __init__(self, model_accessor):
+
+        if model_accessor is not None:
+            self._model_accessor = model_accessor
+            self.target = self._model_accessor.get_target_variable()
+            self.prediction_type = self._model_accessor.get_prediction_type()
+        else:
+            raise NotImplementedError('You need to precise a model accessor.')
+
+        self._model_accessor = model_accessor
         self.error_clf = None
-        self._error_df = None
         self._error_test_X = None
         self._error_test_Y = None
-        self._model_accessor = None
-        self.target = None
+
         self.features_in_model_performance_predictor = None
+
         self.mpp_accuracy_score = None
         self.primary_model_predicted_accuracy = None
         self.primary_model_true_accuracy = None
@@ -49,9 +56,6 @@ class ErrorAnalyzer:
 
     def get_model_performance_predictor_features(self):
         return self.features_in_model_performance_predictor
-
-    def get_model_performance_predictor_test_df(self):
-        return self._error_df
 
     def get_model_performance_predictor(self):
         return self.error_clf
@@ -65,23 +69,17 @@ class ErrorAnalyzer:
     def get_primary_model_true_accuracy(self):
         return self.primary_model_true_accuracy
 
-    def fit(self, model_accessor=None):
+    def fit(self):
         """
         Trains a Decision Tree to discriminate between samples that are correctly predicted or wrongly predicted
         (errors) by a primary model.
         """
         logger.info("Preparing the model performance predictor...")
 
-        if model_accessor is not None:
-            self._model_accessor = model_accessor
-            self.target = self._model_accessor.get_target_variable()
-            self.prediction_type = self._model_accessor.get_prediction_type()
-            original_df = self._model_accessor.get_original_test_df()
-            self._error_df = self.prepare_data_for_model_performance_predictor(original_df)
-        else:
-            raise NotImplementedError('You need to precise a model accessor.')
+        original_df = self._model_accessor.get_original_test_df()
+        error_df = self.prepare_data_for_model_performance_predictor(original_df)
 
-        preprocessor = Preprocessor(self._error_df, target=IS_ERROR_COLUMN)
+        preprocessor = Preprocessor(error_df, target=IS_ERROR_COLUMN)
         train, test = preprocessor.get_processed_train_test(prop=0.5)
         error_train_X = train.drop(IS_ERROR_COLUMN, axis=1)
         error_train_Y = np.array(train[IS_ERROR_COLUMN])
@@ -117,7 +115,7 @@ class ErrorAnalyzer:
         if self.target not in original_df:
             raise ValueError('The original dataset does not contain target "{}".'.format(self.target))
 
-        if not_enough_data(original_df, min_len=self.min_num_row):
+        if not_enough_data(original_df, min_len=MIN_NUM_ROWS):
             raise ValueError(
                 'The original dataset is too small ({} rows) to have stable result, it needs to have at least {} rows'.format(
                     len(original_df), self.min_num_row))
