@@ -134,8 +134,6 @@ class ErrorAnalyzer:
         df[IS_ERROR_COLUMN] = self._get_errors(df, prediction_column=PREDICTION_COLUMN)
         df[IS_ERROR_COLUMN] = df[IS_ERROR_COLUMN].replace({True: WRONG_PREDICTION, False: CORRECT_PREDICTION})
 
-        del df[PREDICTION_COLUMN]
-
         selected_features = [IS_ERROR_COLUMN] + self._model_accessor.get_selected_features()
 
         return df.loc[:, selected_features]
