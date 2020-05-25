@@ -11,7 +11,7 @@ import logging
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format='Error Analysis Plugin | %(levelname)s - %(message)s')
 
-PREDICTION_COLUMN = '__dku_prediction__'
+PREDICTION_COLUMN = 'prediction'
 IS_ERROR_COLUMN = '__dku_is_error__'
 IS_ERROR = "Wrong prediction"
 IS_CORRECT = "Correct prediction"
