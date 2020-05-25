@@ -41,6 +41,7 @@ class ErrorAnalyzer:
             raise NotImplementedError('You need to precise a model accessor.')
 
         self._model_accessor = model_accessor
+        self._error_df = None
         self.error_clf = None
         self._error_test_X = None
         self._error_test_Y = None
@@ -51,8 +52,8 @@ class ErrorAnalyzer:
         self.primary_model_predicted_accuracy = None
         self.primary_model_true_accuracy = None
 
-    def get_prediction_type(self):
-        return self.prediction_type
+    def get_model_performance_predictor_test_df(self):
+        return self._error_df
 
     def get_model_performance_predictor_features(self):
         return self.features_in_model_performance_predictor
@@ -77,9 +78,9 @@ class ErrorAnalyzer:
         logger.info("Preparing the model performance predictor...")
 
         original_df = self._model_accessor.get_original_test_df()
-        error_df = self.prepare_data_for_model_performance_predictor(original_df)
+        self._error_df = self.prepare_data_for_model_performance_predictor(original_df)
 
-        preprocessor = Preprocessor(error_df, target=IS_ERROR_COLUMN)
+        preprocessor = Preprocessor(self._error_df, target=IS_ERROR_COLUMN)
         train, test = preprocessor.get_processed_train_test(prop=0.5)
         error_train_X = train.drop(IS_ERROR_COLUMN, axis=1)
         error_train_Y = np.array(train[IS_ERROR_COLUMN])
