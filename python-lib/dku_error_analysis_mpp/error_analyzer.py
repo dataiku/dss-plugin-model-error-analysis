@@ -170,11 +170,11 @@ class ErrorAnalyzer:
         elif mode == 'rec':
             n_points = 50
             epsilon_range = np.linspace(min(difference), max(difference), num=n_points)
-            cdf_error = []
+            cdf_error = np.zeros_like(epsilon_range)
             n_samples = difference.shape[0]
             for i, epsilon in enumerate(epsilon_range):
                 correct = difference <= epsilon
-                cdf_error.append(float(np.count_nonzero(correct)) / n_samples)
+                cdf_error[i] = float(np.count_nonzero(correct)) / n_samples
             kneedle = KneeLocator(epsilon_range, cdf_error, S=1.0, curve='concave', direction='increasing')
             epsilon = kneedle.knee
         return epsilon

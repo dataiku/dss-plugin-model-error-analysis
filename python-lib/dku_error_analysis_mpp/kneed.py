@@ -32,8 +32,8 @@ class KneeLocator(object):
         :param online: Will correct old knee points if True, will return first knee if False
         """
         # Step 0: Raw Input
-        self.x = np.array(x)
-        self.y = np.array(y)
+        self.x = x
+        self.y = y
         self.curve = curve
         self.direction = direction
         self.N = len(self.x)
