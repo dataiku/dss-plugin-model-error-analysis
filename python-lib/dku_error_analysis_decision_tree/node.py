@@ -67,8 +67,11 @@ class CategoricalNode(Node):
     def jsonify(self):
         jsonified_dict = super(CategoricalNode, self).jsonify()
         first_value = jsonified_dict["values"][0]
-        if type(first_value) == "float" and isnan(first_value):
-            jsonified_dict["values"] = ["No values"]
+        try:
+            if isnan(first_value):
+                jsonified_dict["values"] = ["No values"]
+        except:
+            pass
         return jsonified_dict
 
 
