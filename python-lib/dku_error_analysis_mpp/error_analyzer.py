@@ -119,7 +119,7 @@ class ErrorAnalyzer:
         if not_enough_data(original_df, min_len=MIN_NUM_ROWS):
             raise ValueError(
                 'The original dataset is too small ({} rows) to have stable result, it needs to have at least {} rows'.format(
-                    len(original_df), self.min_num_row))
+                    len(original_df), MIN_NUM_ROWS))
 
         logger.info("Rebalancing data:")
         number_of_rows = min(original_df.shape[0], MAX_NUM_ROW)
