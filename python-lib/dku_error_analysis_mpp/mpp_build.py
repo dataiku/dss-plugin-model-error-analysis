@@ -124,12 +124,7 @@ def get_error_dt(model_handler):
     test_df['error'] = error
     test_df['error'] = test_df['error'].replace({True: "Wrong prediction", False: "Correct prediction"})
 
-    for feature_index, feature_name in enumerate(feature_names):
-        if feature_index >= 0:
-            splitted_feature_name = feature_name.split(":")
-            if splitted_feature_name[0] == "unfold" or splitted_feature_name[0] == "impact":
-                test_df[feature_name] = transformed_df[:, feature_index]
-    return mpp_clf, test_df, feature_names
+    return mpp_clf, test_df, transformed_df, feature_names
 
 
 # rank features according to their correlation with the model performance

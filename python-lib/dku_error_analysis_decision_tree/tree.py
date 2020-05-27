@@ -80,6 +80,25 @@ class InteractiveTree(object):
     def get_node(self, i):
         return self.nodes.get(i)
 
+    def add_split_no_siblings(self, node_type, parent_id, feature, value, left_node_id, right_child_id):
+        parent_node = self.get_node(parent_id)
+        if node_type == Node.TYPES.NUM:
+            self.add_numerical_split_no_siblings(parent_node, feature, value, left_node_id, right_child_id)
+        else:
+            self.add_categorical_split_no_siblings(parent_node, feature, value, left_node_id, right_child_id)
+
+    def add_numerical_split_no_siblings(self, parent_node, feature, value, left_node_id, right_child_id):
+        new_node_left = NumericalNode(left_node_id, parent_node.id, feature, end=value)
+        new_node_right = NumericalNode(right_child_id, parent_node.id, feature, beginning=value)
+        self.add_node(new_node_left)
+        self.add_node(new_node_right)
+
+    def add_categorical_split_no_siblings(self, parent_node, feature, values, left_node_id, right_child_id):
+        left = CategoricalNode(left_node_id, parent_node.id, feature, values)
+        right = CategoricalNode(right_child_id, parent_node.id, feature, list(values), others=True)
+        self.add_node(left)
+        self.add_node(right)
+
     def get_filtered_df(self, node, df):
         node_id = node.id
         while node_id > 0:

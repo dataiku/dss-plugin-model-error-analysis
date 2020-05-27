@@ -1,58 +1,73 @@
 import numpy as np
-from dataiku import Model
-from collections import deque, defaultdict
+from collections import deque
 from dku_error_analysis_utils.sm_metadata import get_model_handler
 from dku_error_analysis_decision_tree.node import Node, NumericalNode, CategoricalNode
 from dku_error_analysis_decision_tree.tree import InteractiveTree
-from dataiku.doctor.preprocessing.dataframe_preprocessing import RescalingProcessor2 as rescaler, QuantileBinSeries as biner
+from dataiku.doctor.preprocessing.dataframe_preprocessing import RescalingProcessor2, QuantileBinSeries, UnfoldVectorProcessor, BinarizeSeries, \
+FastSparseDummifyProcessor, ImpactCodingStep, FlagMissingValue2
 from dku_error_tree_parsing.depreprocessor import descale_numerical_thresholds
 
 class TreeParser(object):
-    def __init__(self, model_handler, error_tree, columns):
+    class Preprocessing:
+        DUMMY="dummy"
+        DUMMY_OTHERS="dummy_others"
+        FLAG="flag"
+        IMPACT="impact"
+        QUANTIZE="quantize"
+        UNFOLD="unfold"
+        BINARIZE="binarize"
+
+    def __init__(self, model_handler, error_tree):
         self.model_handler = model_handler
         self.error_tree = error_tree
-        self.dummy_feature_map = defaultdict(list)
-        self.find_others_dummy(columns)
-        rescalers, self.bounds = [], {}
-        for step in model_handler.get_pipeline().steps:
-            if isinstance(step, rescaler):
-                rescalers.append(step)
-            if isinstance(step, biner):
-                for feature, bounds in step.resource.items():
-                    self.bounds[feature] = bounds["bounds"]
-        self.thresholds = descale_numerical_thresholds(error_tree, columns, rescalers, False)
+        self.preprocessed_feature_mapping = {}
+        self.rescalers = []
 
-    def find_others_dummy(self, columns):
-        for feature in columns:
-            split_preprocessed_feature = feature.split(":")
-            if split_preprocessed_feature[0] == "dummy":
-                real_name, value = split_preprocessed_feature[1], split_preprocessed_feature[2]
-                if value != "__Others__" and value != "N/A":
-                    self.dummy_feature_map[real_name].append(value)
+    def create_preprocessed_feature_mapping(self):
+        for step in self.model_handler.get_pipeline().steps:
+            if isinstance(step, RescalingProcessor2):
+                self.rescalers.append(step)
+            elif isinstance(step, FlagMissingValue2):
+                self.preprocessed_feature_mapping[step._output_name()] = (Node.TYPES.CAT, step.feature, [np.nan], TreeParser.Preprocessing.FLAG)
+            elif isinstance(step, QuantileBinSeries):
+                bounds = step.r["bounds"]
+                split_value_func = lambda threshold: float(bounds[int(threshold) + 1])
+                preprocessed_name = "num_quantized:{0}:quantile:{1}".format(step.in_col, step.nb_bins)
+                self.preprocessed_feature_mapping[preprocessed_name] = (Node.TYPES.NUM, step.in_col, split_value_func, TreeParser.Preprocessing.QUANTIZE)
+            elif isinstance(step, FastSparseDummifyProcessor):
+                for value in step.values:
+                    preprocessed_name = "dummy:{}:{}".format(step.input_column_name, value)
+                    self.preprocessed_feature_mapping[preprocessed_name] = (Node.TYPES.CAT, step.input_column_name, [value], TreeParser.Preprocessing.DUMMY)
+                self.preprocessed_feature_mapping["dummy:{}:N/A".format(step.input_column_name)] = (Node.TYPES.CAT, step.input_column_name, [np.nan], TreeParser.Preprocessing.DUMMY)
+                if not step.should_drop:
+                    self.preprocessed_feature_mapping["dummy:{}:__Others__".format(step.input_column_name)] = (Node.TYPES.CAT, step.input_column_name, step.values, TreeParser.Preprocessing.DUMMY_OTHERS)
+            elif isinstance(step, BinarizeSeries):
+                self.preprocessed_feature_mapping["num_binarized:" + step._output_name()] = (Node.TYPES.NUM, step.in_col, step.threshold, TreeParser.Preprocessing.BINARIZE)
+            elif isinstance(step, UnfoldVectorProcessor):
+                for i in xrange(step.vector_length):
+                    preprocessed_name = "unfold:{}:{}".format(step.input_column_name, i)
+                    display_name = "{} [element #{}]".format(step.input_column_name, i)
+                    self.preprocessed_feature_mapping[preprocessed_name] = (Node.TYPES.NUM, display_name, lambda threshold: threshold, TreeParser.Preprocessing.UNFOLD)
+            elif isinstance(step, ImpactCodingStep):
+                for value in step.impact_coder._impact_map.columns.values:
+                    preprocessed_name = "impact:{}:{}".format(step.column_name, value)
+                    display_name = "{} [{}]".format(step.column_name, value)
+                    self.preprocessed_feature_mapping[preprocessed_name] = (Node.TYPES.NUM, display_name, lambda threshold: threshold, TreeParser.Preprocessing.IMPACT) 
 
-    def translate_preprocessed_features(self, feature, parent_id):
-        split_preprocessed_feature = feature.split(":")
-        #TODO: safer way to check preprocessing?
-        if len(split_preprocessed_feature) == 1 or split_preprocessed_feature[0] == "unfold" or split_preprocessed_feature[0] == "impact":
-            return Node.TYPES.NUM, feature, self.thresholds[parent_id]
-        if split_preprocessed_feature[0] == "dummy":
-            real_name, value = split_preprocessed_feature[1], split_preprocessed_feature[2]
-            if value == "__Others__":
-                return Node.TYPES.CAT, real_name, self.dummy_feature_map[real_name]
-            if value == "N/A":
-                return Node.TYPES.CAT, real_name, [np.nan]
-            return Node.TYPES.CAT, real_name, [value]
-        if "binarized" in split_preprocessed_feature[0]:
-            return Node.TYPES.NUM, split_preprocessed_feature[1], float(split_preprocessed_feature[3])
-        if "quantized" in split_preprocessed_feature[0]:
-            real_name = split_preprocessed_feature[1]
-            bound_index = int(self.thresholds[parent_id]) + 1
-            return Node.TYPES.NUM, real_name, float(self.bounds[real_name][bound_index])
-        if "flag" in split_preprocessed_feature[0]:
-            return Node.TYPES.CAT, split_preprocessed_feature[1], [np.nan]
-        raise ValueError("Feature uses unknown preprocessing")
+    @staticmethod
+    def split_value_is_threshold_dependant(method):
+        return method == TreeParser.Preprocessing.IMPACT or method == TreeParser.Preprocessing.UNFOLD or method == TreeParser.Preprocessing.QUANTIZE
 
-    def build_all_nodes(self, tree, feature_list):
+    @staticmethod
+    def split_uses_preprocessed_feature(method):
+        return method == TreeParser.Preprocessing.IMPACT or method == TreeParser.Preprocessing.UNFOLD
+
+    @staticmethod
+    def force_others_on_the_right(method):
+        return method == TreeParser.Preprocessing.DUMMY
+
+    def build_all_nodes(self, tree, feature_list, transformed_df):
+        thresholds = descale_numerical_thresholds(self.error_tree, feature_list, self.rescalers, False)
         children_left, children_right, features = self.error_tree.children_left, self.error_tree.children_right, self.error_tree.feature
         root_node = Node(0, -1)
         ids = deque()
@@ -61,16 +76,18 @@ class TreeParser(object):
         ids.append(0)
         while ids:
             parent_id = ids.popleft()
-            node_type, feature, split_value = self.translate_preprocessed_features(feature_list[features[parent_id]], parent_id)
-            left_child_id, right_child_id = children_left[parent_id], children_right[parent_id]
-            if node_type == Node.TYPES.NUM:
-                left_child = NumericalNode(left_child_id, parent_id, feature, end=split_value)
-                right_child = NumericalNode(right_child_id, parent_id, feature, beginning=split_value)
+            feature_idx, threshold = features[parent_id], thresholds[parent_id]
+            preprocessed_feature = feature_list[feature_idx]
+            node_type, feature, split_value, method = self.preprocessed_feature_mapping.get(preprocessed_feature, (Node.TYPES.NUM, preprocessed_feature, threshold, None))
+            if TreeParser.split_uses_preprocessed_feature(method):
+                tree.df[feature] = transformed_df[:, feature_idx]
+            if TreeParser.split_value_is_threshold_dependant(method):
+                split_value = split_value(threshold)
+            if TreeParser.force_others_on_the_right(method):
+                left_child_id, right_child_id = children_right[parent_id], children_left[parent_id]
             else:
-                left_child = CategoricalNode(left_child_id, parent_id, feature, values=split_value, others=True)
-                right_child = CategoricalNode(right_child_id, parent_id, feature, values=split_value)
-            tree.add_node(left_child)
-            tree.add_node(right_child)
+                left_child_id, right_child_id = children_left[parent_id], children_right[parent_id]
+            tree.add_split_no_siblings(node_type, parent_id, feature, split_value, left_child_id, right_child_id)
             if children_left[left_child_id] > 0:
                 ids.append(left_child_id)
             if children_left[right_child_id] > 0:
