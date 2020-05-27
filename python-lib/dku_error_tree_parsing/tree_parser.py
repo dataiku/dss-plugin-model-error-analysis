@@ -66,6 +66,9 @@ class TreeParser(object):
     def force_others_on_the_right(method):
         return method == TreeParser.Preprocessing.DUMMY
 
+    def get_preprocessed_feature_details(self, preprocessed_name, threshold=None):
+        return self.preprocessed_feature_mapping.get(preprocessed_name, (Node.TYPES.NUM, preprocessed_name, threshold, None))
+
     def build_all_nodes(self, tree, feature_list, transformed_df):
         thresholds = descale_numerical_thresholds(self.error_tree, feature_list, self.rescalers, False)
         children_left, children_right, features = self.error_tree.children_left, self.error_tree.children_right, self.error_tree.feature
@@ -78,7 +81,8 @@ class TreeParser(object):
             parent_id = ids.popleft()
             feature_idx, threshold = features[parent_id], thresholds[parent_id]
             preprocessed_feature = feature_list[feature_idx]
-            node_type, feature, split_value, method = self.preprocessed_feature_mapping.get(preprocessed_feature, (Node.TYPES.NUM, preprocessed_feature, threshold, None))
+            node_type, feature, split_value, method = self.get_preprocessed_feature_details(preprocessed_feature, threshold)
+
             if TreeParser.split_uses_preprocessed_feature(method):
                 tree.df[feature] = transformed_df[:, feature_idx]
             if TreeParser.split_value_is_threshold_dependant(method):
@@ -88,6 +92,7 @@ class TreeParser(object):
             else:
                 left_child_id, right_child_id = children_left[parent_id], children_right[parent_id]
             tree.add_split_no_siblings(node_type, parent_id, feature, split_value, left_child_id, right_child_id)
+
             if children_left[left_child_id] > 0:
                 ids.append(left_child_id)
             if children_left[right_child_id] > 0:

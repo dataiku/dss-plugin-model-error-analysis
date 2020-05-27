@@ -128,16 +128,12 @@ def get_error_dt(model_handler):
 
 
 # rank features according to their correlation with the model performance
-def rank_features_by_error_correlation(clf, feature_names, max_number_histograms=3):
+def rank_features_by_error_correlation(clf, feature_names, tree_parser, max_number_histograms=3):
     feature_idx_by_importance = np.argsort(-clf.feature_importances_)
     ranked_features = []
     for feature_idx in feature_idx_by_importance:
-        feature = feature_names[feature_idx].split(":")
-        #TODO AGU: double check this always works
-        if len(feature) == 1:
-            feature = feature[0]
-        else:
-            feature = feature[1]
+        preprocessed_name = feature_names[feature_idx]
+        feature = tree_parser.get_preprocessed_feature_details(preprocessed_name)[1]
         if feature not in ranked_features:
             ranked_features.append(feature)
             if len(ranked_features) == max_number_histograms:

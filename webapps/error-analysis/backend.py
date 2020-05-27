@@ -30,7 +30,7 @@ def load():
         clf, test_df, transformed_df, features = get_error_dt(model_handler)
         tree_parser = TreeParser(model_handler, clf.tree_)
         tree_parser.create_preprocessed_feature_mapping()
-        ranked_features = rank_features_by_error_correlation(clf, features)
+        ranked_features = rank_features_by_error_correlation(clf, features, tree_parser)
         tree = tree_parser.build_tree(test_df, ranked_features)
         tree_parser.build_all_nodes(tree, features, transformed_df)
         TREE.append(tree)
