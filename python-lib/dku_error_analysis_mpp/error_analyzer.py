@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 import numpy as np
 from sklearn import tree
-from sklearn.model_selection import GridSearchCV
+from sklearn.model_selection import GridSearchCV, train_test_split
 from sklearn.metrics import accuracy_score
 from dku_error_analysis_mpp.kneed import KneeLocator
-from dku_error_analysis_mpp.preprocessing import Preprocessor
 from dku_error_analysis_utils.dataframe_helpers import not_enough_data
 import logging
 
@@ -78,15 +77,25 @@ class ErrorAnalyzer:
         logger.info("Preparing the model performance predictor...")
 
         original_df = self._model_accessor.get_original_test_df()
+
+        predictor = self._model_accessor.get_predictor()
+        preprocessed_x, _, _, _, _ = predictor.preprocessing.preprocess(
+            original_df,
+            with_target=True,
+            with_sample_weights=True)
+
         self._error_df = self.prepare_data_for_model_performance_predictor(original_df)
 
-        preprocessor = Preprocessor(self._error_df, target=ERROR_COLUMN)
-        train, test = preprocessor.get_processed_train_test(prop=0.5)
-        error_train_X = train.drop(ERROR_COLUMN, axis=1)
-        error_train_Y = np.array(train[ERROR_COLUMN])
-        self._error_test_X = test.drop(ERROR_COLUMN, axis=1)  # we will use them later when compute metrics
-        self._error_test_Y = np.array(test[ERROR_COLUMN])
-        self.features_in_model_performance_predictor = error_train_X.columns
+        error_y = np.array(self._error_df[ERROR_COLUMN])
+        error_train_X, error_test_X, error_train_Y, error_test_Y = train_test_split(
+            preprocessed_x,
+            error_y,
+            test_size=0.2
+        )
+
+        self._error_test_X = error_test_X  # we will use them later when compute metrics
+        self._error_test_Y = error_test_Y
+        self.features_in_model_performance_predictor = predictor.get_features()
 
         logger.info("Fitting the model performance predictor...")
 
@@ -194,3 +203,4 @@ class ErrorAnalyzer:
 
         error = (test_df[self.target] != test_df[prediction_column])
         return np.array(error)
+
