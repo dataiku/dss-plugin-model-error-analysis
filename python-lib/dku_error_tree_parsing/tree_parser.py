@@ -1,7 +1,7 @@
 import numpy as np
 from dataiku import Model
 from collections import deque
-from dku_error_analysis_utils.sm_metadata import get_model_handler
+from dku_error_analysis_mpp.model_metadata import get_model_handler
 from dku_error_analysis_decision_tree.node import Node, NumericalNode, CategoricalNode
 from dku_error_analysis_decision_tree.tree import InteractiveTree
 from dku_error_analysis_mpp.error_analyzer import ERROR_COLUMN

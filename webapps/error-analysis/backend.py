@@ -11,7 +11,7 @@ from dataiku.doctor.preprocessing.dataframe_preprocessing import RescalingProces
 from dku_error_tree_parsing.tree_parser import TreeParser
 from dku_error_analysis_utils.compatibility import safe_str
 from dku_error_analysis_mpp.mpp_build import get_error_dt, rank_features_by_error_correlation
-from dku_error_analysis_utils.sm_metadata import get_model_handler
+from dku_error_analysis_mpp.model_metadata import get_model_handler
 from dku_error_tree_parsing.depreprocessor import descale_numerical_thresholds
 
 app.json_encoder = DKUJSONEncoder
