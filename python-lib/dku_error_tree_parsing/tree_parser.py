@@ -4,7 +4,8 @@ from dku_error_analysis_utils.sm_metadata import get_model_handler
 from dku_error_analysis_decision_tree.node import Node, NumericalNode, CategoricalNode
 from dku_error_analysis_decision_tree.tree import InteractiveTree
 from dataiku.doctor.preprocessing.dataframe_preprocessing import RescalingProcessor2, QuantileBinSeries, UnfoldVectorProcessor, BinarizeSeries, \
-FastSparseDummifyProcessor, ImpactCodingStep, FlagMissingValue2
+    FastSparseDummifyProcessor, ImpactCodingStep, FlagMissingValue2, TextCountVectorizerProcessor, TextHashingVectorizerWithSVDProcessor, \
+    TextHashingVectorizerProcessor, TextTFIDFVectorizerProcessor
 from dku_error_tree_parsing.depreprocessor import descale_numerical_thresholds
 
 class TreeParser(object):
@@ -16,6 +17,7 @@ class TreeParser(object):
         QUANTIZE="quantize"
         UNFOLD="unfold"
         BINARIZE="binarize"
+        TEXT_PREPROC="text_preproc"
 
     def __init__(self, model_handler, error_tree):
         self.model_handler = model_handler
@@ -52,15 +54,36 @@ class TreeParser(object):
                 for value in step.impact_coder._impact_map.columns.values:
                     preprocessed_name = "impact:{}:{}".format(step.column_name, value)
                     display_name = "{} [{}]".format(step.column_name, value)
-                    self.preprocessed_feature_mapping[preprocessed_name] = (Node.TYPES.NUM, display_name, lambda threshold: threshold, TreeParser.Preprocessing.IMPACT) 
+                    self.preprocessed_feature_mapping[preprocessed_name] = (Node.TYPES.NUM, display_name, lambda threshold: threshold, TreeParser.Preprocessing.IMPACT)
+            elif isinstance(step, TextCountVectorizerProcessor):
+                for word in step.resource["vectorizer"].get_feature_names():
+                    preprocessed_name = "{}:{}:{}".format(step.prefix, step.column_name, word)
+                    display_name = "{}: occurrences of {}".format(step.column_name, word)
+                    self.preprocessed_feature_mapping[preprocessed_name] = (Node.TYPES.NUM, display_name, lambda threshold: int(threshold), TreeParser.Preprocessing.TEXT_PREPROC)
+            elif isinstance(step, TextHashingVectorizerWithSVDProcessor):
+                for i in range(step.n_features):
+                    preprocessed_name = "thsvd:{}:{}".format(step.column_name, i)
+                    display_name = "{} [text #{}]".format(step.column_name, i)
+                    self.preprocessed_feature_mapping[preprocessed_name] = (Node.TYPES.NUM, display_name, lambda threshold: threshold, TreeParser.Preprocessing.TEXT_PREPROC)
+            elif isinstance(step, TextHashingVectorizerProcessor):
+                for i in range(step.n_features):
+                    preprocessed_name = "hashvect:{}:{}".format(step.column_name, i)
+                    display_name = "{} [text #{}]".format(step.column_name, i)
+                    self.preprocessed_feature_mapping[preprocessed_name] = (Node.TYPES.NUM, display_name, lambda threshold: threshold, TreeParser.Preprocessing.TEXT_PREPROC)
+            elif isinstance(step, TextTFIDFVectorizerProcessor):
+                vec = step.resource["vectorizer"]
+                for word, idf in zip(vec.get_feature_names(), vec.idf_):
+                    preprocessed_name = "tfidfvec:{}:{:.3f}:{}".format(step.column_name, idf, word)
+                    display_name = "{}: tfidf of {}".format(step.column_name, word)
+                    self.preprocessed_feature_mapping[preprocessed_name] = (Node.TYPES.NUM, display_name, lambda threshold: threshold, TreeParser.Preprocessing.TEXT_PREPROC)
 
     @staticmethod
     def split_value_is_threshold_dependant(method):
-        return method == TreeParser.Preprocessing.IMPACT or method == TreeParser.Preprocessing.UNFOLD or method == TreeParser.Preprocessing.QUANTIZE
+        return method == TreeParser.Preprocessing.IMPACT or method == TreeParser.Preprocessing.UNFOLD or method == TreeParser.Preprocessing.QUANTIZE or method == TreeParser.Preprocessing.TEXT_PREPROC
 
     @staticmethod
     def split_uses_preprocessed_feature(method):
-        return method == TreeParser.Preprocessing.IMPACT or method == TreeParser.Preprocessing.UNFOLD
+        return method == TreeParser.Preprocessing.IMPACT or method == TreeParser.Preprocessing.UNFOLD or TreeParser.Preprocessing.TEXT_PREPROC
 
     @staticmethod
     def force_others_on_the_right(method):
