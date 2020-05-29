@@ -129,13 +129,14 @@ def get_error_dt(model_handler):
 
 # rank features according to their correlation with the model performance
 def rank_features_by_error_correlation(clf, feature_names, tree_parser, max_number_histograms=3):
-    feature_idx_by_importance = np.argsort(-clf.feature_importances_)
+    sorted_features = sorted(-clf.feature_importances_)
     ranked_features = []
-    for feature_idx in feature_idx_by_importance:
-        preprocessed_name = feature_names[feature_idx]
-        feature = tree_parser.get_preprocessed_feature_details(preprocessed_name)[1]
-        if feature not in ranked_features:
-            ranked_features.append(feature)
-            if len(ranked_features) == max_number_histograms:
-                return ranked_features
+    for feature_idx, feature_importance in enumerate(sorted_features):
+        if feature_importance != 0:
+            preprocessed_name = feature_names[feature_idx]
+            feature = tree_parser.get_preprocessed_feature_details(preprocessed_name)[1]
+            if feature not in ranked_features:
+                ranked_features.append(feature)
+                if len(ranked_features) == max_number_histograms:
+                    return ranked_features
     return ranked_features
