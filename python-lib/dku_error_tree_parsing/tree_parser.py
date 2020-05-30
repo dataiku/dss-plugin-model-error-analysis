@@ -25,57 +25,74 @@ class TreeParser(object):
         self.preprocessed_feature_mapping = {}
         self.rescalers = []
 
+    def add_flag_missing_value_mapping(self, step):
+        self.preprocessed_feature_mapping[step._output_name()] = (Node.TYPES.CAT, step.feature, [np.nan], TreeParser.Preprocessing.FLAG)
+
+    def add_dummy_mapping(self, step):
+        for value in step.values:
+            preprocessed_name = "dummy:{}:{}".format(step.input_column_name, value)
+            self.preprocessed_feature_mapping[preprocessed_name] = (Node.TYPES.CAT, step.input_column_name, [value], TreeParser.Preprocessing.DUMMY)
+        self.preprocessed_feature_mapping["dummy:{}:N/A".format(step.input_column_name)] = (Node.TYPES.CAT, step.input_column_name, [np.nan], TreeParser.Preprocessing.DUMMY)
+        if not step.should_drop:
+            self.preprocessed_feature_mapping["dummy:{}:__Others__".format(step.input_column_name)] = (Node.TYPES.CAT, step.input_column_name, step.values, TreeParser.Preprocessing.DUMMY_OTHERS)
+
+    def add_impact_mapping(self, step):
+        for value in step.impact_coder._impact_map.columns.values:
+            preprocessed_name = "impact:{}:{}".format(step.column_name, value)
+            display_name = "{} [{}]".format(step.column_name, value)
+            self.preprocessed_feature_mapping[preprocessed_name] = (Node.TYPES.NUM, display_name, lambda threshold: threshold, TreeParser.Preprocessing.IMPACT)
+
+    def add_binarize_mapping(self, step):
+        self.preprocessed_feature_mapping["num_binarized:" + step._output_name()] = (Node.TYPES.NUM, step.in_col, step.threshold, TreeParser.Preprocessing.BINARIZE)
+
+    def add_quantize_mapping(self, step):
+        bounds = step.r["bounds"]
+        split_value_func = lambda threshold: float(bounds[int(threshold) + 1])
+        preprocessed_name = "num_quantized:{0}:quantile:{1}".format(step.in_col, step.nb_bins)
+        self.preprocessed_feature_mapping[preprocessed_name] = (Node.TYPES.NUM, step.in_col, split_value_func, TreeParser.Preprocessing.QUANTIZE)
+
+    def add_unfold_mapping(self, step):
+        for i in xrange(step.vector_length):
+            preprocessed_name = "unfold:{}:{}".format(step.input_column_name, i)
+            display_name = "{} [element #{}]".format(step.input_column_name, i)
+            self.preprocessed_feature_mapping[preprocessed_name] = (Node.TYPES.NUM, display_name, lambda threshold: threshold, TreeParser.Preprocessing.UNFOLD)
+
+    def add_hashing_vect_mapping(self, step, with_svd=False):
+        prefix = "thsvd" if with_svd else "hashvect"
+        for i in range(step.n_features):
+            preprocessed_name = "{}:{}:{}".format(prefix, step.column_name, i)
+            display_name = "{} [text #{}]".format(step.column_name, i)
+            self.preprocessed_feature_mapping[preprocessed_name] = (Node.TYPES.NUM, display_name, lambda threshold: threshold, TreeParser.Preprocessing.TEXT_PREPROC)
+
+    def add_text_count_vect_mapping(self, step):
+        for word in step.resource["vectorizer"].get_feature_names():
+            preprocessed_name = "{}:{}:{}".format(step.prefix, step.column_name, word)
+            display_name = "{}: occurrences of {}".format(step.column_name, word)
+            self.preprocessed_feature_mapping[preprocessed_name] = (Node.TYPES.NUM, display_name, lambda threshold: int(threshold), TreeParser.Preprocessing.TEXT_PREPROC)
+
+    def add_tfidf_vect_mapping(self, step):
+        vec = step.resource["vectorizer"]
+        for word, idf in zip(vec.get_feature_names(), vec.idf_):
+            preprocessed_name = "tfidfvec:{}:{:.3f}:{}".format(step.column_name, idf, word)
+            display_name = "{}: tfidf of {}".format(step.column_name, word)
+            self.preprocessed_feature_mapping[preprocessed_name] = (Node.TYPES.NUM, display_name, lambda threshold: threshold, TreeParser.Preprocessing.TEXT_PREPROC)
+
     def create_preprocessed_feature_mapping(self):
         for step in self.model_handler.get_pipeline().steps:
             if isinstance(step, RescalingProcessor2):
                 self.rescalers.append(step)
-            elif isinstance(step, FlagMissingValue2):
-                self.preprocessed_feature_mapping[step._output_name()] = (Node.TYPES.CAT, step.feature, [np.nan], TreeParser.Preprocessing.FLAG)
-            elif isinstance(step, QuantileBinSeries):
-                bounds = step.r["bounds"]
-                split_value_func = lambda threshold: float(bounds[int(threshold) + 1])
-                preprocessed_name = "num_quantized:{0}:quantile:{1}".format(step.in_col, step.nb_bins)
-                self.preprocessed_feature_mapping[preprocessed_name] = (Node.TYPES.NUM, step.in_col, split_value_func, TreeParser.Preprocessing.QUANTIZE)
-            elif isinstance(step, FastSparseDummifyProcessor):
-                for value in step.values:
-                    preprocessed_name = "dummy:{}:{}".format(step.input_column_name, value)
-                    self.preprocessed_feature_mapping[preprocessed_name] = (Node.TYPES.CAT, step.input_column_name, [value], TreeParser.Preprocessing.DUMMY)
-                self.preprocessed_feature_mapping["dummy:{}:N/A".format(step.input_column_name)] = (Node.TYPES.CAT, step.input_column_name, [np.nan], TreeParser.Preprocessing.DUMMY)
-                if not step.should_drop:
-                    self.preprocessed_feature_mapping["dummy:{}:__Others__".format(step.input_column_name)] = (Node.TYPES.CAT, step.input_column_name, step.values, TreeParser.Preprocessing.DUMMY_OTHERS)
-            elif isinstance(step, BinarizeSeries):
-                self.preprocessed_feature_mapping["num_binarized:" + step._output_name()] = (Node.TYPES.NUM, step.in_col, step.threshold, TreeParser.Preprocessing.BINARIZE)
-            elif isinstance(step, UnfoldVectorProcessor):
-                for i in xrange(step.vector_length):
-                    preprocessed_name = "unfold:{}:{}".format(step.input_column_name, i)
-                    display_name = "{} [element #{}]".format(step.input_column_name, i)
-                    self.preprocessed_feature_mapping[preprocessed_name] = (Node.TYPES.NUM, display_name, lambda threshold: threshold, TreeParser.Preprocessing.UNFOLD)
-            elif isinstance(step, ImpactCodingStep):
-                for value in step.impact_coder._impact_map.columns.values:
-                    preprocessed_name = "impact:{}:{}".format(step.column_name, value)
-                    display_name = "{} [{}]".format(step.column_name, value)
-                    self.preprocessed_feature_mapping[preprocessed_name] = (Node.TYPES.NUM, display_name, lambda threshold: threshold, TreeParser.Preprocessing.IMPACT)
-            elif isinstance(step, TextCountVectorizerProcessor):
-                for word in step.resource["vectorizer"].get_feature_names():
-                    preprocessed_name = "{}:{}:{}".format(step.prefix, step.column_name, word)
-                    display_name = "{}: occurrences of {}".format(step.column_name, word)
-                    self.preprocessed_feature_mapping[preprocessed_name] = (Node.TYPES.NUM, display_name, lambda threshold: int(threshold), TreeParser.Preprocessing.TEXT_PREPROC)
-            elif isinstance(step, TextHashingVectorizerWithSVDProcessor):
-                for i in range(step.n_features):
-                    preprocessed_name = "thsvd:{}:{}".format(step.column_name, i)
-                    display_name = "{} [text #{}]".format(step.column_name, i)
-                    self.preprocessed_feature_mapping[preprocessed_name] = (Node.TYPES.NUM, display_name, lambda threshold: threshold, TreeParser.Preprocessing.TEXT_PREPROC)
-            elif isinstance(step, TextHashingVectorizerProcessor):
-                for i in range(step.n_features):
-                    preprocessed_name = "hashvect:{}:{}".format(step.column_name, i)
-                    display_name = "{} [text #{}]".format(step.column_name, i)
-                    self.preprocessed_feature_mapping[preprocessed_name] = (Node.TYPES.NUM, display_name, lambda threshold: threshold, TreeParser.Preprocessing.TEXT_PREPROC)
-            elif isinstance(step, TextTFIDFVectorizerProcessor):
-                vec = step.resource["vectorizer"]
-                for word, idf in zip(vec.get_feature_names(), vec.idf_):
-                    preprocessed_name = "tfidfvec:{}:{:.3f}:{}".format(step.column_name, idf, word)
-                    display_name = "{}: tfidf of {}".format(step.column_name, word)
-                    self.preprocessed_feature_mapping[preprocessed_name] = (Node.TYPES.NUM, display_name, lambda threshold: threshold, TreeParser.Preprocessing.TEXT_PREPROC)
+            {
+                FlagMissingValue2: self.add_flag_missing_value_mapping,
+                QuantileBinSeries: self.add_quantize_mapping,
+                FastSparseDummifyProcessor: self.add_dummy_mapping,
+                BinarizeSeries: self.add_binarize_mapping,
+                UnfoldVectorProcessor: self.add_unfold_mapping,
+                ImpactCodingStep: self.add_impact_mapping,
+                TextCountVectorizerProcessor: self.add_text_count_vect_mapping,
+                TextHashingVectorizerWithSVDProcessor: lambda step: self.add_hashing_vect_mapping(step, with_svd=True),
+                TextHashingVectorizerProcessor: lambda step: self.add_hashing_vect_mapping(step),
+                TextTFIDFVectorizerProcessor: self.add_tfidf_vect_mapping
+            }.get(step.__class__, lambda step: None)(step)
 
     @staticmethod
     def split_value_is_threshold_dependant(method):
@@ -83,7 +100,7 @@ class TreeParser(object):
 
     @staticmethod
     def split_uses_preprocessed_feature(method):
-        return method == TreeParser.Preprocessing.IMPACT or method == TreeParser.Preprocessing.UNFOLD or TreeParser.Preprocessing.TEXT_PREPROC
+        return method == TreeParser.Preprocessing.IMPACT or method == TreeParser.Preprocessing.UNFOLD or method == TreeParser.Preprocessing.TEXT_PREPROC
 
     @staticmethod
     def force_others_on_the_right(method):
