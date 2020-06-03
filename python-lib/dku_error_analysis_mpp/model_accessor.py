@@ -16,8 +16,11 @@ SURROGATE_TARGET = "_dku_predicted_label_"
 
 class ModelAccessor:
 
-    def __init__(self, model_handler=None):
+    def __init__(self, model_handler):
         self.model_handler = model_handler
+        # check missing model_handler
+        if self.model_handler is None:
+            raise ValueError('model_handler object is not specified')
 
     def get_prediction_type(self):
         """
@@ -29,13 +32,6 @@ class ModelAccessor:
             return 'REGRESSION'
         else:
             return 'CLUSTERING'
-
-    def check(self):
-        """
-        Check missing model_handler
-        """
-        if self.model_handler is None:
-            raise ValueError('model_handler object is not specified')
 
     def get_target_variable(self):
         """
