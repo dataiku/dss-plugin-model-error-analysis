@@ -1,17 +1,11 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-import pandas as pd
-from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier, ExtraTreesClassifier
-from sklearn.tree import DecisionTreeClassifier
 import logging
 
 logger = logging.getLogger(__name__)
 
-ALGORITHMS_WITH_VARIABLE_IMPORTANCE = [RandomForestClassifier, GradientBoostingClassifier, ExtraTreesClassifier,
-                                       DecisionTreeClassifier]
 MAX_NUM_ROW = 100000
-SURROGATE_TARGET = "_dku_predicted_label_"
 
 
 class ModelAccessor:
