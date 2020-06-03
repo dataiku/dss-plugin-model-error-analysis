@@ -35,9 +35,9 @@ class ErrorAnalyzer:
         if model_accessor is not None:
             self._model_accessor = model_accessor
             self.target = self._model_accessor.get_target_variable()
-            self.prediction_type = self._model_accessor.get_prediction_type()
+            self.is_regression = self._model_accessor.is_regression()
         else:
-            raise NotImplementedError('You need to precise a model accessor.')
+            raise NotImplementedError('You need to define a model accessor.')
 
         self._model_accessor = model_accessor
         self._error_df = None
@@ -190,8 +190,7 @@ class ErrorAnalyzer:
 
     def _get_errors(self, test_df, prediction_column):
         """ compute errors of the primary model on the test set """
-        assert (self.prediction_type in ["REGRESSION", "BINARY_CLASSIFICATION", "MULTICLASS"])
-        if self.prediction_type == "REGRESSION":
+        if self.is_regression:
             target = test_df[self.target]
             predictions = test_df[prediction_column]
             difference = np.abs(target - predictions)

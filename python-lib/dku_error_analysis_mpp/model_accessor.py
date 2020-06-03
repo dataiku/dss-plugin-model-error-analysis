@@ -16,16 +16,13 @@ class ModelAccessor:
         if self.model_handler is None:
             raise ValueError('model_handler object is not specified')
 
-    def get_prediction_type(self):
+    def is_regression(self):
         """
-        Wrap the prediction type accessor of the model
+        Return whether the prediciton is a regression or not (i.e. a classification)
         """
-        if 'CLASSIFICATION' in self.model_handler.get_prediction_type():
-            return 'CLASSIFICATION'
-        elif 'REGRESSION' in self.model_handler.get_prediction_type():
-            return 'REGRESSION'
-        else:
-            return 'CLUSTERING'
+        if 'REGRESSION' in self.model_handler.get_prediction_type():
+            return True
+        return False
 
     def get_target_variable(self):
         """
@@ -55,4 +52,4 @@ class ModelAccessor:
         return selected_features
 
     def predict(self, df):
-        return self.get_predictor().predict(df)
+        return self.get_predictor().predict(df, with_probas=False)
