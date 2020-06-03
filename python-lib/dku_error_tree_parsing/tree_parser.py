@@ -1,9 +1,7 @@
-import numpy as np
-from dataiku import Model
 from collections import deque
-from dku_error_analysis_utils.sm_metadata import get_model_handler
 from dku_error_analysis_decision_tree.node import Node, NumericalNode, CategoricalNode
 from dku_error_analysis_decision_tree.tree import InteractiveTree
+from dku_error_analysis_mpp.error_analyzer import ERROR_COLUMN
 
 class TreeParser(object):
     def __init__(self, model_handler, thresholds, error_tree):
@@ -45,7 +43,7 @@ class TreeParser(object):
                 ids.append(right_child_id)
 
 
-    def build_tree(self, df, ranked_features, target="error"):
+    def build_tree(self, df, ranked_features, target=ERROR_COLUMN):
         features = {}
         for name, settings in self.model_handler.get_preproc_handler().collector_data.get('per_feature').iteritems():
             avg = settings.get('stats').get('average')
