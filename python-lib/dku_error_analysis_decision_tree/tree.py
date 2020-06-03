@@ -1,6 +1,5 @@
-from dku_error_analysis_decision_tree.node import Node, CategoricalNode, NumericalNode
+from dku_error_analysis_decision_tree.node import Node
 from dku_error_analysis_utils.compatibility import safe_str
-from collections import deque
 import pandas as pd
 
 from dku_error_analysis_mpp.error_analyzer import WRONG_PREDICTION
