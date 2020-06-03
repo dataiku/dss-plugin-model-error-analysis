@@ -184,7 +184,7 @@ class ErrorAnalyzer:
             for i, epsilon in enumerate(epsilon_range):
                 correct = difference <= epsilon
                 cdf_error[i] = float(np.count_nonzero(correct)) / n_samples
-            kneedle = KneeLocator(epsilon_range, cdf_error, S=1.0, curve='concave', direction='increasing')
+            kneedle = KneeLocator(epsilon_range, cdf_error)
             epsilon = kneedle.knee
         return epsilon
 
