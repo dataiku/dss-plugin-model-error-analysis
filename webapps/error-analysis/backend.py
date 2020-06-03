@@ -17,7 +17,7 @@ from dku_error_tree_parsing.depreprocessor import descale_numerical_thresholds
 app.json_encoder = DKUJSONEncoder
 
 LOGGER = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO, format="MEA %(levelname)s - %(message)s")
+logging.basicConfig(level=logging.INFO, format="Error Analysis Plugin %(levelname)s - %(message)s")
 
 # initialization of the backend
 MODEL_ID = get_webapp_config()["modelId"]

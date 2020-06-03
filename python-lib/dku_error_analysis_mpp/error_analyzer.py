@@ -162,8 +162,8 @@ class ErrorAnalyzer:
         self.primary_model_predicted_accuracy = float(np.count_nonzero(y_pred == CORRECT_PREDICTION)) / n_test_samples
         self.primary_model_true_accuracy = float(np.count_nonzero(y_true == CORRECT_PREDICTION)) / n_test_samples
 
-        logger.info('Primary model accuracy: {}'.format(self.primary_model_predicted_accuracy))
-        logger.info('MPP predicted accuracy: {}'.format(self.primary_model_true_accuracy))
+        logger.info('Primary model accuracy: {}'.format(self.primary_model_true_accuracy))
+        logger.info('MPP predicted accuracy: {}'.format(self.primary_model_predicted_accuracy))
 
         difference_true_pred_accuracy = np.abs(self.primary_model_true_accuracy - self.primary_model_predicted_accuracy)
         if difference_true_pred_accuracy > MPP_ACCURACY_TOLERANCE:  # TODO: add message in UI?
