@@ -4,7 +4,7 @@ from sklearn import tree
 from sklearn.model_selection import GridSearchCV, train_test_split
 from sklearn.metrics import accuracy_score
 from dku_error_analysis_mpp.kneed import KneeLocator
-from dku_error_analysis_utils.dataframe_helpers import not_enough_data
+from dku_error_analysis_utils import not_enough_data
 import logging
 
 logger = logging.getLogger(__name__)

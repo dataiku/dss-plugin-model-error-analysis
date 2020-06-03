@@ -1,5 +1,5 @@
 from dku_error_analysis_decision_tree.node import Node
-from dku_error_analysis_utils.compatibility import safe_str
+from dku_error_analysis_utils import safe_str
 import pandas as pd
 
 from dku_error_analysis_mpp.error_analyzer import WRONG_PREDICTION

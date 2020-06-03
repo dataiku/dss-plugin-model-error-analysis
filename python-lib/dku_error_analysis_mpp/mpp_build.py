@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import numpy as np
-from dku_error_tree_parsing.tree_parser import TreeParser
+from dku_error_analysis_tree_parsing.tree_parser import TreeParser
 from dku_error_analysis_mpp.error_analyzer import ErrorAnalyzer
 from dku_error_analysis_mpp.model_accessor import ModelAccessor
 
