@@ -9,8 +9,10 @@ from dataiku.core.dkujson import DKUJSONEncoder
 
 from dku_error_analysis_tree_parsing.tree_parser import TreeParser
 from dku_error_analysis_utils import safe_str
-from dku_error_analysis_mpp.mpp_build import get_error_dt, rank_features_by_error_correlation
 from dku_error_analysis_mpp.model_metadata import get_model_handler
+from dku_error_analysis_mpp.error_analyzer import ErrorAnalyzer
+from dku_error_analysis_mpp.model_accessor import ModelAccessor
+
 
 app.json_encoder = DKUJSONEncoder
 
@@ -23,18 +25,27 @@ VERSION_ID = get_webapp_config()["versionId"]
 
 TREE = []
 
+def get_error_dt(model_handler):
+    model_accessor = ModelAccessor(model_handler)
+    error_analyzer = ErrorAnalyzer(model_accessor)
+
+    error_analyzer.fit()
+    error_clf = error_analyzer.get_model_performance_predictor()
+    test_df = error_analyzer.get_model_performance_predictor_test_df()
+    feature_names = error_analyzer.get_model_performance_predictor_features()
+    preprocessed_x = error_analyzer.get_preprocessed_array()
+
+    return error_clf, test_df, preprocessed_x, feature_names
+
 @app.route("/load", methods=["GET"])
 def load():
     try:
         model_handler = get_model_handler(dataiku.Model(MODEL_ID), VERSION_ID)
-        clf, test_df, transformed_df, features = get_error_dt(model_handler)
-        tree_parser = TreeParser(model_handler, clf.tree_)
-        tree_parser.create_preprocessed_feature_mapping()
-        ranked_features = rank_features_by_error_correlation(clf, features, tree_parser)
-        tree = tree_parser.build_tree(test_df, ranked_features)
-        tree_parser.build_all_nodes(tree, features, transformed_df)
+        clf, test_df, preprocessed_x, features = get_error_dt(model_handler)
+        tree_parser = TreeParser(model_handler, clf)
+        tree = tree_parser.build_tree(test_df, features, preprocessed_x)
         TREE.append(tree)
-        return jsonify(nodes=tree.jsonify_nodes(), target_values=tree.target_values, features=tree.features, rankedFeatures=ranked_features)
+        return jsonify(nodes=tree.jsonify_nodes(), target_values=tree.target_values, features=tree.features, rankedFeatures=tree.ranked_features)
     except:
         LOGGER.error(traceback.format_exc())
         return traceback.format_exc(), 500

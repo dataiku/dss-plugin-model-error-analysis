@@ -8,6 +8,8 @@ from dataiku.doctor.preprocessing.dataframe_preprocessing import RescalingProces
 from dku_error_analysis_tree_parsing.depreprocessor import descale_numerical_thresholds
 from dku_error_analysis_mpp.error_analyzer import ERROR_COLUMN
 
+MAX_MOST_IMPORTANT_FEATURES = 3
+
 class TreeParser(object):
     class Preprocessing:
         DUMMY="dummy"
@@ -19,11 +21,12 @@ class TreeParser(object):
         BINARIZE="binarize"
         TEXT_PREPROC="text_preproc"
 
-    def __init__(self, model_handler, error_tree):
+    def __init__(self, model_handler, error_model):
         self.model_handler = model_handler
-        self.error_tree = error_tree
+        self.error_model = error_model
         self.preprocessed_feature_mapping = {}
         self.rescalers = []
+        self._create_preprocessed_feature_mapping()
 
     def add_flag_missing_value_mapping(self, step):
         self.preprocessed_feature_mapping[step._output_name()] = (Node.TYPES.CAT, step.feature, [np.nan], TreeParser.Preprocessing.FLAG)
@@ -77,7 +80,7 @@ class TreeParser(object):
             display_name = "{}: tfidf of {}".format(step.column_name, word)
             self.preprocessed_feature_mapping[preprocessed_name] = (Node.TYPES.NUM, display_name, lambda threshold: threshold, TreeParser.Preprocessing.TEXT_PREPROC)
 
-    def create_preprocessed_feature_mapping(self):
+    def _create_preprocessed_feature_mapping(self):
         for step in self.model_handler.get_pipeline().steps:
             if isinstance(step, RescalingProcessor2):
                 self.rescalers.append(step)
@@ -109,9 +112,10 @@ class TreeParser(object):
     def get_preprocessed_feature_details(self, preprocessed_name, threshold=None):
         return self.preprocessed_feature_mapping.get(preprocessed_name, (Node.TYPES.NUM, preprocessed_name, threshold, None))
 
-    def build_all_nodes(self, tree, feature_list, transformed_df):
-        thresholds = descale_numerical_thresholds(self.error_tree, feature_list, self.rescalers, False)
-        children_left, children_right, features = self.error_tree.children_left, self.error_tree.children_right, self.error_tree.feature
+    def build_all_nodes(self, tree, feature_list, preprocessed_x):
+        error_model_tree = self.error_model.tree_
+        thresholds = descale_numerical_thresholds(error_model_tree, feature_list, self.rescalers, False)
+        children_left, children_right, features = error_model_tree.children_left, error_model_tree.children_right, error_model_tree.feature
         root_node = Node(0, -1)
         ids = deque()
         tree.add_node(root_node)
@@ -124,7 +128,7 @@ class TreeParser(object):
             node_type, feature, split_value, method = self.get_preprocessed_feature_details(preprocessed_feature, threshold)
 
             if TreeParser.split_uses_preprocessed_feature(method):
-                tree.df[feature] = transformed_df[:, feature_idx]
+                tree.df[feature] = preprocessed_x[:, feature_idx]
             if TreeParser.split_value_is_threshold_dependant(method):
                 split_value = split_value(threshold)
             if TreeParser.force_others_on_the_right(method):
@@ -139,7 +143,7 @@ class TreeParser(object):
                 ids.append(right_child_id)
 
 
-    def build_tree(self, df, ranked_features, target=ERROR_COLUMN):
+    def build_tree(self, df, feature_list, preprocessed_x, target=ERROR_COLUMN):
         features = {}
         for name, settings in self.model_handler.get_preproc_handler().collector_data.get('per_feature').iteritems():
             avg = settings.get('stats').get('average')
@@ -147,4 +151,21 @@ class TreeParser(object):
                 features[name] = {
                     'mean':  avg
                 }
-        return InteractiveTree(df, target, ranked_features, features)
+        ranked_features = self._rank_features_by_error_correlation(feature_list)
+        tree = InteractiveTree(df, target, ranked_features, features)
+        self.build_all_nodes(tree, feature_list, preprocessed_x)
+        return tree
+
+    # Rank features according to their correlation with the model performance
+    def _rank_features_by_error_correlation(self, feature_list, max_number_features=MAX_MOST_IMPORTANT_FEATURES):
+        sorted_features = sorted(-self.error_model.feature_importances_)
+        ranked_features = []
+        for feature_idx, feature_importance in enumerate(sorted_features):
+            if feature_importance != 0:
+                preprocessed_name = feature_list[feature_idx]
+                feature = self.get_preprocessed_feature_details(preprocessed_name)[1]
+                if feature not in ranked_features:
+                    ranked_features.append(feature)
+                    if len(ranked_features) == max_number_features:
+                        return ranked_features
+        return ranked_features
