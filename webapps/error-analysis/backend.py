@@ -7,15 +7,15 @@ import dataiku
 from dataiku.customwebapp import get_webapp_config
 from dataiku.core.dkujson import DKUJSONEncoder
 
-from dku_error_tree_parsing.tree_parser import TreeParser
-from dku_error_analysis_utils.compatibility import safe_str
+from dku_error_analysis_tree_parsing.tree_parser import TreeParser
+from dku_error_analysis_utils import safe_str
 from dku_error_analysis_mpp.mpp_build import get_error_dt, rank_features_by_error_correlation
-from dku_error_analysis_utils.sm_metadata import get_model_handler
+from dku_error_analysis_mpp.model_metadata import get_model_handler
 
 app.json_encoder = DKUJSONEncoder
 
 LOGGER = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO, format="MEA %(levelname)s - %(message)s")
+logging.basicConfig(level=logging.INFO, format="Error Analysis Plugin %(levelname)s - %(message)s")
 
 # initialization of the backend
 MODEL_ID = get_webapp_config()["modelId"]

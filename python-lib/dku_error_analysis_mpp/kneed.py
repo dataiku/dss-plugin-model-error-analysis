@@ -5,7 +5,7 @@ from scipy import interpolate
 from scipy.signal import argrelextrema
 from sklearn.preprocessing import PolynomialFeatures
 from sklearn.linear_model import LinearRegression
-import warnings
+from warnings import warn
 
 
 class KneeLocator(object):
@@ -14,7 +14,6 @@ class KneeLocator(object):
         x,
         y,
         S = 1.0,
-        curve = "concave",
         direction = "increasing",
         interp_method = "interp1d",
         online = False,
@@ -25,18 +24,14 @@ class KneeLocator(object):
         :param x: x values.
         :param y: y values.
         :param S: Sensitivity, original paper suggests default of 1.0
-        :param curve: If 'concave', algorithm will detect knees. If 'convex', it
-            will detect elbows.
         :param direction: one of {"increasing", "decreasing"}
         :param interp_method: one of {"interp1d", "polynomial"}
         :param online: Will correct old knee points if True, will return first knee if False
         """
         # Step 0: Raw Input
-        self.x = np.array(x)
-        self.y = np.array(y)
-        self.curve = curve
+        self.x = x
+        self.y = y
         self.direction = direction
-        self.N = len(self.x)
         self.S = S
         self.all_knees = set()
         self.all_norm_knees = set()
@@ -57,7 +52,7 @@ class KneeLocator(object):
                 pn_model.fit_transform(self.x.reshape(-1, 1))
             )
         else:
-            warnings.warn(
+            warn(
                 "{} is an invalid interp_method parameter, use either 'interp1d' or 'polynomial'".format(
                     interp_method
                 )
@@ -70,7 +65,7 @@ class KneeLocator(object):
 
         # Step 3: Calculate the Difference curve
         self.x_normalized, self.y_normalized = self.transform_xy(
-            self.x_normalized, self.y_normalized, self.direction, self.curve
+            self.x_normalized, self.y_normalized, self.direction
         )
         # normalized difference curve
         self.y_difference = self.y_normalized - self.x_normalized
@@ -110,27 +105,19 @@ class KneeLocator(object):
 
     @staticmethod
     def transform_xy(
-        x, y, direction, curve
+        x, y, direction
     ):
         """transform x and y to concave, increasing based on given direction and curve"""
-        # convert elbows to knees
-        if curve == "convex":
-            x = x.max() - x
-            y = y.max() - y
         # flip decreasing functions to increasing
         if direction == "decreasing":
             y = np.flip(y, axis=0)
 
-        if curve == "convex":
-            x = np.flip(x, axis=0)
-            y = np.flip(y, axis=0)
-
         return x, y
 
-    def find_knee(self,):
+    def find_knee(self):
         """This function finds and sets the knee value and the normalized knee value. """
         if not self.maxima_indices.size:
-            warnings.warn(
+            warn(
                 "No local maxima found in the difference curve\n"
                 "The line is probably not polynomial, try plotting\n"
                 "the difference curve with plt.plot(knee.x_difference, knee.y_difference)\n"
@@ -165,21 +152,12 @@ class KneeLocator(object):
                 minima_threshold_index += 1
 
             if self.y_difference[j] < threshold:
-                if self.curve == "convex":
-                    if self.direction == "decreasing":
-                        knee = self.x[threshold_index]
-                        norm_knee = self.x_normalized[threshold_index]
-                    else:
-                        knee = self.x[-(threshold_index + 1)]
-                        norm_knee = self.x_normalized[-(threshold_index + 1)]
-
-                elif self.curve == "concave":
-                    if self.direction == "decreasing":
-                        knee = self.x[-(threshold_index + 1)]
-                        norm_knee = self.x_normalized[-(threshold_index + 1)]
-                    else:
-                        knee = self.x[threshold_index]
-                        norm_knee = self.x_normalized[threshold_index]
+                if self.direction == "decreasing":
+                    knee = self.x[-(threshold_index + 1)]
+                    norm_knee = self.x_normalized[-(threshold_index + 1)]
+                else:
+                    knee = self.x[threshold_index]
+                    norm_knee = self.x_normalized[threshold_index]
 
                 # add the y value at the knee
                 y_at_knee = self.y[self.x == knee][0]
@@ -197,91 +175,7 @@ class KneeLocator(object):
                     return knee, norm_knee
 
         if self.all_knees == set():
-            warnings.warn("No knee/elbow found")
+            warn("No knee/elbow found")
             return None, None
 
         return knee, norm_knee
-
-    def plot_knee_normalized(self, figsize):
-        """Plot the normalized curve, the difference curve (x_difference, y_normalized) and the knee, if it exists.
-        :param figsize: Optional[Tuple[int, int]
-        The figure size of the plot. Example (12, 8)
-        :return: NoReturn
-        """
-        import matplotlib.pyplot as plt
-
-        if figsize is None:
-            figsize = (6, 6)
-
-        plt.figure(figsize=figsize)
-        plt.title("Normalized Knee Point")
-        plt.plot(self.x_normalized, self.y_normalized, "b", label="normalized curve")
-        plt.plot(self.x_difference, self.y_difference, "r", label="difference curve")
-        plt.xticks(
-            np.arange(self.x_normalized.min(), self.x_normalized.max() + 0.1, 0.1)
-        )
-        plt.yticks(
-            np.arange(self.y_difference.min(), self.y_normalized.max() + 0.1, 0.1)
-        )
-
-        plt.vlines(
-            self.norm_knee,
-            plt.ylim()[0],
-            plt.ylim()[1],
-            linestyles="--",
-            label="knee/elbow",
-        )
-        plt.legend(loc="best")
-
-    def plot_knee(self, figsize = None):
-        """
-        Plot the curve and the knee, if it exists
-        :param figsize: Optional[Tuple[int, int]
-            The figure size of the plot. Example (12, 8)
-        :return: NoReturn
-        """
-        import matplotlib.pyplot as plt
-
-        if figsize is None:
-            figsize = (6, 6)
-
-        plt.figure(figsize=figsize)
-        plt.title("Knee Point")
-        plt.plot(self.x, self.y, "b", label="data")
-        plt.vlines(
-            self.knee, plt.ylim()[0], plt.ylim()[1], linestyles="--", label="knee/elbow"
-        )
-        plt.legend(loc="best")
-
-    # Niceties for users working with elbows rather than knees
-    @property
-    def elbow(self):
-        return self.knee
-
-    @property
-    def norm_elbow(self):
-        return self.norm_knee
-
-    @property
-    def elbow_y(self):
-        return self.knee_y
-
-    @property
-    def norm_elbow_y(self):
-        return self.norm_knee_y
-
-    @property
-    def all_elbows(self):
-        return self.all_knees
-
-    @property
-    def all_norm_elbows(self):
-        return self.all_norm_knees
-
-    @property
-    def all_elbows_y(self):
-        return self.all_knees_y
-
-    @property
-    def all_norm_elbows_y(self):
-        return self.all_norm_knees_y

@@ -1,12 +1,12 @@
 import numpy as np
 from collections import deque
-from dku_error_analysis_utils.sm_metadata import get_model_handler
-from dku_error_analysis_decision_tree.node import Node, NumericalNode, CategoricalNode
+from dku_error_analysis_decision_tree.node import Node
 from dku_error_analysis_decision_tree.tree import InteractiveTree
 from dataiku.doctor.preprocessing.dataframe_preprocessing import RescalingProcessor2, QuantileBinSeries, UnfoldVectorProcessor, BinarizeSeries, \
     FastSparseDummifyProcessor, ImpactCodingStep, FlagMissingValue2, TextCountVectorizerProcessor, TextHashingVectorizerWithSVDProcessor, \
     TextHashingVectorizerProcessor, TextTFIDFVectorizerProcessor
-from dku_error_tree_parsing.depreprocessor import descale_numerical_thresholds
+from dku_error_analysis_tree_parsing.depreprocessor import descale_numerical_thresholds
+from dku_error_analysis_mpp.error_analyzer import ERROR_COLUMN
 
 class TreeParser(object):
     class Preprocessing:
@@ -138,7 +138,8 @@ class TreeParser(object):
             if children_left[right_child_id] > 0:
                 ids.append(right_child_id)
 
-    def build_tree(self, df, ranked_features, target="error"):
+
+    def build_tree(self, df, ranked_features, target=ERROR_COLUMN):
         features = {}
         for name, settings in self.model_handler.get_preproc_handler().collector_data.get('per_feature').iteritems():
             avg = settings.get('stats').get('average')
