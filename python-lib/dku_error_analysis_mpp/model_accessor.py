@@ -2,11 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import logging
-
 logger = logging.getLogger(__name__)
-
-MAX_NUM_ROW = 100000
-
 
 class ModelAccessor:
 
@@ -30,7 +26,7 @@ class ModelAccessor:
         """
         return self.model_handler.get_target_variable()
 
-    def get_original_test_df(self, limit=MAX_NUM_ROW):
+    def get_original_test_df(self, limit):
         try:
             return self.model_handler.get_test_df()[0][:limit]
         except Exception as e:
