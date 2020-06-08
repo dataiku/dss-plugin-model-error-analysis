@@ -158,9 +158,10 @@ class TreeParser(object):
 
     # Rank features according to their correlation with the model performance
     def _rank_features_by_error_correlation(self, feature_list, max_number_features=MAX_MOST_IMPORTANT_FEATURES):
-        sorted_features = sorted(-self.error_model.feature_importances_)
+        sorted_feature_indices = np.argsort(- self.error_model.feature_importances_)
         ranked_features = []
-        for feature_idx, feature_importance in enumerate(sorted_features):
+        for feature_idx in sorted_feature_indices:
+            feature_importance = - self.error_model.feature_importances_[feature_idx]
             if feature_importance != 0:
                 preprocessed_name = feature_list[feature_idx]
                 feature = self.get_preprocessed_feature_details(preprocessed_name)[1]
