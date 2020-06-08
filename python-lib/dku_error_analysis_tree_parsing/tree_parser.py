@@ -1,11 +1,9 @@
 import numpy as np
-from collections import deque
 from dku_error_analysis_decision_tree.node import Node
 from dku_error_analysis_decision_tree.tree import InteractiveTree
 from dataiku.doctor.preprocessing.dataframe_preprocessing import RescalingProcessor2, QuantileBinSeries, UnfoldVectorProcessor, BinarizeSeries, \
     FastSparseDummifyProcessor, ImpactCodingStep, FlagMissingValue2, TextCountVectorizerProcessor, TextHashingVectorizerWithSVDProcessor, \
     TextHashingVectorizerProcessor, TextTFIDFVectorizerProcessor
-from dku_error_analysis_tree_parsing.depreprocessor import descale_numerical_thresholds
 from dku_error_analysis_mpp.error_analyzer import ERROR_COLUMN
 
 MAX_MOST_IMPORTANT_FEATURES = 3
@@ -116,32 +114,7 @@ class TreeParser(object):
     def get_preprocessed_feature_details(self, preprocessed_name, threshold=None):
         return self.preprocessed_feature_mapping.get(preprocessed_name, NumericalNodeFactory(preprocessed_name, threshold, None))
 
-    def build_all_nodes(self, tree, feature_list, preprocessed_x):
-        error_model_tree = self.error_model.tree_
-        thresholds = descale_numerical_thresholds(error_model_tree, feature_list, self.rescalers, False)
-        children_left, children_right, features = error_model_tree.children_left, error_model_tree.children_right, error_model_tree.feature
-        root_node = Node(0, -1)
-        ids = deque()
-        tree.add_node(root_node)
-
-        ids.append(0)
-        while ids:
-            parent_id = ids.popleft()
-            feature_idx, threshold = features[parent_id], thresholds[parent_id]
-            preprocessed_feature = feature_list[feature_idx]
-            node_factory = self.get_preprocessed_feature_details(preprocessed_feature, threshold)
-
-            if node_factory.split_uses_preprocessed_feature:
-                tree.df[node_factory.feature] = preprocessed_x[:, feature_idx]
-            left_child_id, right_child_id = node_factory.add_to_tree(tree, parent_id, threshold, children_left, children_right)
-
-            if children_left[left_child_id] > 0:
-                ids.append(left_child_id)
-            if children_left[right_child_id] > 0:
-                ids.append(right_child_id)
-
-
-    def build_tree(self, df, feature_list, preprocessed_x, target=ERROR_COLUMN):
+    def build_tree(self, df, feature_list, target=ERROR_COLUMN):
         features = {}
         for name, settings in self.model_handler.get_preproc_handler().collector_data.get('per_feature').iteritems():
             avg = settings.get('stats').get('average')
@@ -151,7 +124,6 @@ class TreeParser(object):
                 }
         ranked_features = self._rank_features_by_error_correlation(feature_list)
         tree = InteractiveTree(df, target, ranked_features, features)
-        self.build_all_nodes(tree, feature_list, preprocessed_x)
         return tree
 
     # Rank features according to their correlation with the model performance

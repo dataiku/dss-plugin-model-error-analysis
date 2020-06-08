@@ -43,7 +43,8 @@ def load():
         model_handler = get_model_handler(dataiku.Model(MODEL_ID), VERSION_ID)
         clf, test_df, preprocessed_x, features = get_error_dt(model_handler)
         tree_parser = TreeParser(model_handler, clf)
-        tree = tree_parser.build_tree(test_df, features, preprocessed_x)
+        tree = tree_parser.build_tree(test_df, features)
+        tree.parse_nodes(tree_parser, features, preprocessed_x)
         TREE.append(tree)
         return jsonify(nodes=tree.jsonify_nodes(), target_values=tree.target_values, features=tree.features, rankedFeatures=tree.ranked_features)
     except:
