@@ -104,7 +104,7 @@ class ErrorAnalyzer:
         # entropy/mutual information is used to split nodes in Microsoft Pandora system
         criterion = CRITERION
 
-        dt_clf = tree.DecisionTreeClassifier(criterion=criterion, min_samples_leaf=1)
+        dt_clf = tree.DecisionTreeClassifier(criterion=criterion, min_samples_leaf=1, random_state=1337)
         parameters = {'max_depth': MAX_DEPTH_GRID}
         gs_clf = GridSearchCV(dt_clf, parameters, cv=5)
         gs_clf.fit(error_train_X, error_train_Y)
