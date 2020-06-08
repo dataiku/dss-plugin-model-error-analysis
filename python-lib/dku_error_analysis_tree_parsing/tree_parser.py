@@ -10,17 +10,33 @@ from dku_error_analysis_mpp.error_analyzer import ERROR_COLUMN
 
 MAX_MOST_IMPORTANT_FEATURES = 3
 
-class TreeParser(object):
-    class Preprocessing:
-        DUMMY="dummy"
-        DUMMY_OTHERS="dummy_others"
-        FLAG="flag"
-        IMPACT="impact"
-        QUANTIZE="quantize"
-        UNFOLD="unfold"
-        BINARIZE="binarize"
-        TEXT_PREPROC="text_preproc"
+class NodeFactory(object):
+    node_type = None
+    def __init__(self, feature, split_value, threshold_dependant_split_value=False, split_uses_preprocessed_feature=False, force_others_on_right=False):
+        self.feature = feature
+        self.split_value = split_value
+        self.threshold_dependant_split_value = threshold_dependant_split_value
+        self.split_uses_preprocessed_feature = split_uses_preprocessed_feature
+        self.force_others_on_right = force_others_on_right
 
+    def add_to_tree(self, tree, parent_id, threshold, children_left, children_right):
+        split_value = self.split_value
+        if self.threshold_dependant_split_value:
+            split_value = split_value(threshold)
+        if self.force_others_on_right:
+            left_child_id, right_child_id = children_right[parent_id], children_left[parent_id]
+        else:
+            left_child_id, right_child_id = children_left[parent_id], children_right[parent_id]
+        tree.add_split_no_siblings(self.__class__.node_type, parent_id, self.feature, split_value, left_child_id, right_child_id)
+        return left_child_id, right_child_id
+
+class CategoricalNodeFactory(NodeFactory):
+    node_type=Node.TYPES.CAT
+
+class NumericalNodeFactory(NodeFactory):
+    node_type=Node.TYPES.NUM
+
+class TreeParser(object):
     def __init__(self, model_handler, error_model):
         self.model_handler = model_handler
         self.error_model = error_model
@@ -29,56 +45,56 @@ class TreeParser(object):
         self._create_preprocessed_feature_mapping()
 
     def add_flag_missing_value_mapping(self, step):
-        self.preprocessed_feature_mapping[step._output_name()] = (Node.TYPES.CAT, step.feature, [np.nan], TreeParser.Preprocessing.FLAG)
+        self.preprocessed_feature_mapping[step._output_name()] = CategoricalNodeFactory(step.feature, [np.nan])
 
     def add_dummy_mapping(self, step):
         for value in step.values:
             preprocessed_name = "dummy:{}:{}".format(step.input_column_name, value)
-            self.preprocessed_feature_mapping[preprocessed_name] = (Node.TYPES.CAT, step.input_column_name, [value], TreeParser.Preprocessing.DUMMY)
-        self.preprocessed_feature_mapping["dummy:{}:N/A".format(step.input_column_name)] = (Node.TYPES.CAT, step.input_column_name, [np.nan], TreeParser.Preprocessing.DUMMY)
+            self.preprocessed_feature_mapping[preprocessed_name] = CategoricalNodeFactory(step.input_column_name,  [value], force_others_on_right=True)
+        self.preprocessed_feature_mapping["dummy:{}:N/A".format(step.input_column_name)] = CategoricalNodeFactory(step.input_column_name, [np.nan], force_others_on_right=True)
         if not step.should_drop:
-            self.preprocessed_feature_mapping["dummy:{}:__Others__".format(step.input_column_name)] = (Node.TYPES.CAT, step.input_column_name, step.values, TreeParser.Preprocessing.DUMMY_OTHERS)
+            self.preprocessed_feature_mapping["dummy:{}:__Others__".format(step.input_column_name)] = CategoricalNodeFactory(step.input_column_name, step.values)
 
     def add_impact_mapping(self, step):
         for value in step.impact_coder._impact_map.columns.values:
             preprocessed_name = "impact:{}:{}".format(step.column_name, value)
             display_name = "{} [{}]".format(step.column_name, value)
-            self.preprocessed_feature_mapping[preprocessed_name] = (Node.TYPES.NUM, display_name, lambda threshold: threshold, TreeParser.Preprocessing.IMPACT)
+            self.preprocessed_feature_mapping[preprocessed_name] = NumericalNodeFactory(display_name, lambda threshold: threshold, threshold_dependant_split_value=True, split_uses_preprocessed_feature=True)
 
     def add_binarize_mapping(self, step):
-        self.preprocessed_feature_mapping["num_binarized:" + step._output_name()] = (Node.TYPES.NUM, step.in_col, step.threshold, TreeParser.Preprocessing.BINARIZE)
+        self.preprocessed_feature_mapping["num_binarized:" + step._output_name()] = NumericalNodeFactory(step.in_col, step.threshold)
 
     def add_quantize_mapping(self, step):
         bounds = step.r["bounds"]
         split_value_func = lambda threshold: float(bounds[int(threshold) + 1])
         preprocessed_name = "num_quantized:{0}:quantile:{1}".format(step.in_col, step.nb_bins)
-        self.preprocessed_feature_mapping[preprocessed_name] = (Node.TYPES.NUM, step.in_col, split_value_func, TreeParser.Preprocessing.QUANTIZE)
+        self.preprocessed_feature_mapping[preprocessed_name] = NumericalNodeFactory(step.in_col, split_value_func, threshold_dependant_split_value=True)
 
     def add_unfold_mapping(self, step):
         for i in xrange(step.vector_length):
             preprocessed_name = "unfold:{}:{}".format(step.input_column_name, i)
             display_name = "{} [element #{}]".format(step.input_column_name, i)
-            self.preprocessed_feature_mapping[preprocessed_name] = (Node.TYPES.NUM, display_name, lambda threshold: threshold, TreeParser.Preprocessing.UNFOLD)
+            self.preprocessed_feature_mapping[preprocessed_name] = NumericalNodeFactory(display_name, lambda threshold: threshold, threshold_dependant_split_value=True, split_uses_preprocessed_feature=True)
 
     def add_hashing_vect_mapping(self, step, with_svd=False):
         prefix = "thsvd" if with_svd else "hashvect"
         for i in range(step.n_features):
             preprocessed_name = "{}:{}:{}".format(prefix, step.column_name, i)
             display_name = "{} [text #{}]".format(step.column_name, i)
-            self.preprocessed_feature_mapping[preprocessed_name] = (Node.TYPES.NUM, display_name, lambda threshold: threshold, TreeParser.Preprocessing.TEXT_PREPROC)
+            self.preprocessed_feature_mapping[preprocessed_name] = NumericalNodeFactory(display_name, lambda threshold: threshold, threshold_dependant_split_value=True, split_uses_preprocessed_feature=True)
 
     def add_text_count_vect_mapping(self, step):
         for word in step.resource["vectorizer"].get_feature_names():
             preprocessed_name = "{}:{}:{}".format(step.prefix, step.column_name, word)
             display_name = "{}: occurrences of {}".format(step.column_name, word)
-            self.preprocessed_feature_mapping[preprocessed_name] = (Node.TYPES.NUM, display_name, lambda threshold: int(threshold), TreeParser.Preprocessing.TEXT_PREPROC)
+            self.preprocessed_feature_mapping[preprocessed_name] = NumericalNodeFactory(display_name, lambda threshold: int(threshold), threshold_dependant_split_value=True, split_uses_preprocessed_feature=True)
 
     def add_tfidf_vect_mapping(self, step):
         vec = step.resource["vectorizer"]
         for word, idf in zip(vec.get_feature_names(), vec.idf_):
             preprocessed_name = "tfidfvec:{}:{:.3f}:{}".format(step.column_name, idf, word)
             display_name = "{}: tfidf of {}".format(step.column_name, word)
-            self.preprocessed_feature_mapping[preprocessed_name] = (Node.TYPES.NUM, display_name, lambda threshold: threshold, TreeParser.Preprocessing.TEXT_PREPROC)
+            self.preprocessed_feature_mapping[preprocessed_name] = NumericalNodeFactory(display_name, lambda threshold: threshold, threshold_dependant_split_value=True, split_uses_preprocessed_feature=True)
 
     def _create_preprocessed_feature_mapping(self):
         for step in self.model_handler.get_pipeline().steps:
@@ -97,20 +113,8 @@ class TreeParser(object):
                 TextTFIDFVectorizerProcessor: self.add_tfidf_vect_mapping
             }.get(step.__class__, lambda step: None)(step)
 
-    @staticmethod
-    def split_value_is_threshold_dependant(method):
-        return method == TreeParser.Preprocessing.IMPACT or method == TreeParser.Preprocessing.UNFOLD or method == TreeParser.Preprocessing.QUANTIZE or method == TreeParser.Preprocessing.TEXT_PREPROC
-
-    @staticmethod
-    def split_uses_preprocessed_feature(method):
-        return method == TreeParser.Preprocessing.IMPACT or method == TreeParser.Preprocessing.UNFOLD or method == TreeParser.Preprocessing.TEXT_PREPROC
-
-    @staticmethod
-    def force_others_on_the_right(method):
-        return method == TreeParser.Preprocessing.DUMMY
-
     def get_preprocessed_feature_details(self, preprocessed_name, threshold=None):
-        return self.preprocessed_feature_mapping.get(preprocessed_name, (Node.TYPES.NUM, preprocessed_name, threshold, None))
+        return self.preprocessed_feature_mapping.get(preprocessed_name, NumericalNodeFactory(preprocessed_name, threshold, None))
 
     def build_all_nodes(self, tree, feature_list, preprocessed_x):
         error_model_tree = self.error_model.tree_
@@ -125,17 +129,11 @@ class TreeParser(object):
             parent_id = ids.popleft()
             feature_idx, threshold = features[parent_id], thresholds[parent_id]
             preprocessed_feature = feature_list[feature_idx]
-            node_type, feature, split_value, method = self.get_preprocessed_feature_details(preprocessed_feature, threshold)
+            node_factory = self.get_preprocessed_feature_details(preprocessed_feature, threshold)
 
-            if TreeParser.split_uses_preprocessed_feature(method):
-                tree.df[feature] = preprocessed_x[:, feature_idx]
-            if TreeParser.split_value_is_threshold_dependant(method):
-                split_value = split_value(threshold)
-            if TreeParser.force_others_on_the_right(method):
-                left_child_id, right_child_id = children_right[parent_id], children_left[parent_id]
-            else:
-                left_child_id, right_child_id = children_left[parent_id], children_right[parent_id]
-            tree.add_split_no_siblings(node_type, parent_id, feature, split_value, left_child_id, right_child_id)
+            if node_factory.split_uses_preprocessed_feature:
+                tree.df[node_factory.feature] = preprocessed_x[:, feature_idx]
+            left_child_id, right_child_id = node_factory.add_to_tree(tree, parent_id, threshold, children_left, children_right)
 
             if children_left[left_child_id] > 0:
                 ids.append(left_child_id)
@@ -164,7 +162,7 @@ class TreeParser(object):
             feature_importance = - self.error_model.feature_importances_[feature_idx]
             if feature_importance != 0:
                 preprocessed_name = feature_list[feature_idx]
-                feature = self.get_preprocessed_feature_details(preprocessed_name)[1]
+                feature = self.get_preprocessed_feature_details(preprocessed_name).feature
                 if feature not in ranked_features:
                     ranked_features.append(feature)
                     if len(ranked_features) == max_number_features:
