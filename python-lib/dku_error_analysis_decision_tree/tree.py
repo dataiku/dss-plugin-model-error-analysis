@@ -55,11 +55,18 @@ class InteractiveTree(object):
             parent_id = ids.popleft()
             feature_idx, threshold = features[parent_id], thresholds[parent_id]
             preprocessed_feature = feature_list[feature_idx]
-            node_factory = tree_parser.get_preprocessed_feature_details(preprocessed_feature, threshold)
+            split_parameters = tree_parser.get_split_parameters(preprocessed_feature, threshold)
 
-            if node_factory.split_uses_preprocessed_feature:
-                self.df[node_factory.feature] = preprocessed_x[:, feature_idx]
-            left_child_id, right_child_id = node_factory.add_to_tree(self, parent_id, threshold, children_left, children_right)
+            if split_parameters.uses_preprocessed_feature:
+                self.df[split_parameters.feature] = preprocessed_x[:, feature_idx]
+            if split_parameters.value is None:
+                split_parameters.value = split_parameters.value_func(threshold)
+            if split_parameters.force_others_on_right:
+                left_child_id, right_child_id = children_right[parent_id], children_left[parent_id]
+            else:
+                left_child_id, right_child_id = children_left[parent_id], children_right[parent_id]
+
+            self.add_split_no_siblings(split_parameters.node_type, parent_id, split_parameters.feature, split_parameters.value, left_child_id, right_child_id)
 
             if children_left[left_child_id] > 0:
                 ids.append(left_child_id)
