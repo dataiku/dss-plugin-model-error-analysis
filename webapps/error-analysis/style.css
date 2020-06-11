@@ -462,12 +462,8 @@ input[name=split-input] {
 
 .header-feature-desc {
     display: flex;
-    width: 80%;
+    width: 100%;
     align-items: baseline;
-}
-
-.header-feature-desc.with-radio {
-    width: 50%;
 }
 
 .header-feature-desc > .numerical {
@@ -787,10 +783,6 @@ div[histogram] {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-}
-
-.long-text {
-    width: 80%;
 }
 
 .small-text {

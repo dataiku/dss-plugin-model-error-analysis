@@ -1,3 +1,5 @@
+from math import isnan
+
 class Node(object):
     """
     A node of a decision tree
@@ -43,8 +45,7 @@ class Node(object):
         raise NotImplementedError
 
     def jsonify(self):
-        jsonified_node = dict(self.__dict__)
-        return jsonified_node
+        return dict(self.__dict__)
 
 
 class CategoricalNode(Node):
@@ -63,6 +64,16 @@ class CategoricalNode(Node):
             return df[~df[self.feature].isin(self.values)]
         return df[df[self.feature].isin(self.values)]
 
+    def jsonify(self):
+        jsonified_dict = super(CategoricalNode, self).jsonify()
+        first_value = jsonified_dict["values"][0]
+        try:
+            if isnan(first_value):
+                jsonified_dict["values"] = ["No values"]
+        except:
+            pass
+        return jsonified_dict
+
 
 class NumericalNode(Node):
     def __init__(self, node_id, parent_id, feature, beginning=None, end=None):
@@ -77,9 +88,9 @@ class NumericalNode(Node):
 
     def apply_filter(self, df, mean):
         if self.beginning is not None:
-            df = df[df[self.feature].ge(self.beginning, fill_value=mean)]
+            df = df[df[self.feature].gt(self.beginning, fill_value=mean)]
         if self.end is not None:
-            df = df[df[self.feature].lt(self.end, fill_value=mean)]
+            df = df[df[self.feature].le(self.end, fill_value=mean)]
         return df
 
     def jsonify(self):

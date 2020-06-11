@@ -1,6 +1,8 @@
-from dku_error_analysis_decision_tree.node import Node
+from dku_error_analysis_decision_tree.node import Node, NumericalNode, CategoricalNode
 from dku_error_analysis_utils import safe_str
 import pandas as pd
+from collections import deque
+from dku_error_analysis_tree_parsing.depreprocessor import descale_numerical_thresholds
 
 from dku_error_analysis_mpp.error_analyzer import WRONG_PREDICTION
 
@@ -39,6 +41,37 @@ class InteractiveTree(object):
         self.ranked_features = ranked_features
         self.df = df
         self.bins = {}
+
+    def parse_nodes(self, tree_parser, feature_list, preprocessed_x):
+        error_model_tree = tree_parser.error_model.tree_
+        thresholds = descale_numerical_thresholds(error_model_tree, feature_list, tree_parser.rescalers, False)
+        children_left, children_right, features = error_model_tree.children_left, error_model_tree.children_right, error_model_tree.feature
+        root_node = Node(0, -1)
+        ids = deque()
+        self.add_node(root_node)
+
+        ids.append(0)
+        while ids:
+            parent_id = ids.popleft()
+            feature_idx, threshold = features[parent_id], thresholds[parent_id]
+            preprocessed_feature = feature_list[feature_idx]
+            split_parameters = tree_parser.get_split_parameters(preprocessed_feature, threshold)
+
+            if split_parameters.uses_preprocessed_feature:
+                self.df[split_parameters.feature] = preprocessed_x[:, feature_idx]
+            if split_parameters.value is None:
+                split_parameters.value = split_parameters.value_func(threshold)
+            if split_parameters.force_others_on_right:
+                left_child_id, right_child_id = children_right[parent_id], children_left[parent_id]
+            else:
+                left_child_id, right_child_id = children_left[parent_id], children_right[parent_id]
+
+            self.add_split_no_siblings(split_parameters.node_type, parent_id, split_parameters.feature, split_parameters.value, left_child_id, right_child_id)
+
+            if children_left[left_child_id] > 0:
+                ids.append(left_child_id)
+            if children_left[right_child_id] > 0:
+                ids.append(right_child_id)
 
     def set_node_info(self, node):
         nr_errors = self.df[self.df[self.target] == WRONG_PREDICTION].shape[0]
@@ -81,12 +114,32 @@ class InteractiveTree(object):
     def get_node(self, i):
         return self.nodes.get(i)
 
+    def add_split_no_siblings(self, node_type, parent_id, feature, value, left_node_id, right_child_id):
+        parent_node = self.get_node(parent_id)
+        if node_type == Node.TYPES.NUM:
+            self.add_numerical_split_no_siblings(parent_node, feature, value, left_node_id, right_child_id)
+        else:
+            self.add_categorical_split_no_siblings(parent_node, feature, value, left_node_id, right_child_id)
+
+    def add_numerical_split_no_siblings(self, parent_node, feature, value, left_node_id, right_child_id):
+        new_node_left = NumericalNode(left_node_id, parent_node.id, feature, end=value)
+        new_node_right = NumericalNode(right_child_id, parent_node.id, feature, beginning=value)
+        self.add_node(new_node_left)
+        self.add_node(new_node_right)
+
+    def add_categorical_split_no_siblings(self, parent_node, feature, values, left_node_id, right_child_id):
+        left = CategoricalNode(left_node_id, parent_node.id, feature, values)
+        right = CategoricalNode(right_child_id, parent_node.id, feature, list(values), others=True)
+        self.add_node(left)
+        self.add_node(right)
+
     def get_filtered_df(self, node, df):
         node_id = node.id
         while node_id > 0:
             node = self.get_node(node_id)
             if node.get_type() == Node.TYPES.NUM:
-                df = node.apply_filter(df, self.features[node.feature]["mean"])
+                #TODO: change with ch49216
+                df = node.apply_filter(df, self.features.get(node.feature, {"mean": None})["mean"])
             else:
                 df = node.apply_filter(df)
             node_id = node.parent_id
@@ -106,7 +159,6 @@ class InteractiveTree(object):
             else:
                 bins = pd.cut(column.fillna(mean), bin_labels, right=False)
             return self.get_stats_numerical_node(column, target_column, mean, bins)
-        #return self.get_stats_categorical_node(column, target_column, self.df[col].dropna().apply(safe_str))
         return self.get_stats_categorical_node(column, target_column)
 
     def get_stats_numerical_node(self, column, target_column, mean, bins):
