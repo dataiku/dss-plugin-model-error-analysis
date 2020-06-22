@@ -4,7 +4,7 @@ from dku_error_analysis_decision_tree.tree import InteractiveTree
 from dataiku.doctor.preprocessing.dataframe_preprocessing import RescalingProcessor2, QuantileBinSeries, UnfoldVectorProcessor, BinarizeSeries, \
     FastSparseDummifyProcessor, ImpactCodingStep, FlagMissingValue2, TextCountVectorizerProcessor, TextHashingVectorizerWithSVDProcessor, \
     TextHashingVectorizerProcessor, TextTFIDFVectorizerProcessor
-from dku_error_analysis_mpp.error_analyzer import ERROR_COLUMN
+from dku_error_analysis_mpp.error_config import ERROR_COLUMN
 
 MAX_MOST_IMPORTANT_FEATURES = 3
 
@@ -110,12 +110,14 @@ class TreeParser(object):
         return tree
 
     # Rank features according to their correlation with the model performance
-    def _rank_features_by_error_correlation(self, feature_list, max_number_features=MAX_MOST_IMPORTANT_FEATURES):
+    def _rank_features_by_error_correlation(self, feature_list,
+                                            max_number_features=MAX_MOST_IMPORTANT_FEATURES,
+                                            include_non_split_features=False):
         sorted_feature_indices = np.argsort(- self.error_model.feature_importances_)
         ranked_features = []
         for feature_idx in sorted_feature_indices:
             feature_importance = - self.error_model.feature_importances_[feature_idx]
-            if feature_importance != 0:
+            if feature_importance != 0 or include_non_split_features:
                 preprocessed_name = feature_list[feature_idx]
                 feature = self.get_split_parameters(preprocessed_name).feature
                 if feature not in ranked_features:

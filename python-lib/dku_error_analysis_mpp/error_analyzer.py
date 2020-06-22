@@ -10,26 +10,13 @@ import graphviz as gv
 import matplotlib
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
-from dataiku.doctor.preprocessing.dataframe_preprocessing import RescalingProcessor2 as rescaler
+from dku_error_analysis_mpp.error_config import *
+from dku_error_analysis_tree_parsing.tree_parser import TreeParser
+from dku_error_analysis_tree_parsing.depreprocessor import _denormalize_feature_value
 import logging
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format='Error Analysis Plugin | %(levelname)s - %(message)s')
-
-PREDICTION_COLUMN = 'prediction'
-ERROR_COLUMN = '__dku_error__'
-WRONG_PREDICTION = "Wrong prediction"
-CORRECT_PREDICTION = "Correct prediction"
-MAX_DEPTH_GRID = [5, 10, 15, 20, 30, 50]
-
-MIN_NUM_ROWS = 500  # heuristic choice
-MAX_NUM_ROW = 100000  # heuristic choice
-
-MPP_ACCURACY_TOLERANCE = 0.1
-CRITERION = 'entropy'
-NUMBER_EPSILON_VALUES = 50
-
-ERROR_TREE_COLORS = {CORRECT_PREDICTION: '#ed6547', WRONG_PREDICTION: '#fdc765'}
 
 
 class ErrorAnalyzer:
@@ -40,7 +27,7 @@ class ErrorAnalyzer:
     The nodes of the decision tree are different segments of errors to be studied individually.
     """
 
-    def __init__(self, model_accessor):
+    def __init__(self, model_accessor, seed=None):
 
         if model_accessor is None:
             raise NotImplementedError('You need to define a model accessor.')
@@ -63,8 +50,12 @@ class ErrorAnalyzer:
 
         self.X_deprocessed = None
         self.feature_names_deprocessed = None
-        self.is_numeric = None
         self.value_mapping = None
+
+        if seed:
+            self.seed = seed
+        else:
+            self.seed = 65537
 
     def get_preprocessed_array(self):
         return self.preprocessed_x
@@ -93,6 +84,8 @@ class ErrorAnalyzer:
         (errors) by a primary model.
         """
         logger.info("Preparing the model performance predictor...")
+
+        np.random.seed(self.seed)
 
         original_df = self._model_accessor.get_original_test_df(MAX_NUM_ROW)
 
@@ -260,71 +253,53 @@ class ErrorAnalyzer:
 
         return gvz_graph
 
-    @staticmethod
-    def read_feature(preprocessed_feature):
-        split_preprocessed_feature = preprocessed_feature.split(":")
-        if len(split_preprocessed_feature) == 1:
-            return preprocessed_feature, None
-        if split_preprocessed_feature[0] == "dummy":
-            return split_preprocessed_feature[1], split_preprocessed_feature[2]
-        raise Exception("Feature uses unknown preprocessing")  # TODO: add other preprocessing handling
-
-    def rank_features_by_error_correlation(self, top_k_features=3):
-        feature_names = self.features_in_model_performance_predictor
-        feature_idx_by_importance = np.argsort(-self.error_clf.feature_importances_)
-        ranked_features = []
-        for feature_idx in feature_idx_by_importance:
-            feature = ErrorAnalyzer.read_feature(feature_names[feature_idx])[0]
-            if feature not in ranked_features:
-                ranked_features.append(feature)
-                if len(ranked_features) == top_k_features:
-                    return ranked_features
-        return ranked_features
-
-    @staticmethod
-    def _denormalize_features(scalings, feature_name, feature):
-        scaler = scalings.get(feature_name)
-        if scaler is not None:
-            inv_scale = scaler.inv_scale if scaler.inv_scale != 0.0 else 1.0
-            return (feature / inv_scale) + scaler.shift
+    def read_feature(self, preprocessed_feature):
+        if preprocessed_feature in self.tree_parser.preprocessed_feature_mapping:
+            split_param = self.tree_parser.preprocessed_feature_mapping[preprocessed_feature]
+            return split_param.feature, split_param.value
         else:
-            return feature
+            return preprocessed_feature, None
 
     def prepare_features_for_plot(self):
-        feature_list = self.features_in_model_performance_predictor
-        rescalers = list(
-            filter(lambda u: isinstance(u, rescaler), self._model_accessor.model_handler.get_pipeline().steps))
+
+        self.tree_parser = TreeParser(self._model_accessor.model_handler, self.error_clf)
+        self.tree = self.tree_parser.build_tree(self._error_df, self.features_in_model_performance_predictor)
+        self.tree.parse_nodes(self.tree_parser, self.features_in_model_performance_predictor, self.preprocessed_x)
+
+        rescalers = self.tree_parser.rescalers
         scalings = {rescaler.in_col: rescaler for rescaler in rescalers}
+
+        feature_list = self.features_in_model_performance_predictor
 
         X = self._error_train_X
 
-        feature_list_undo = [ErrorAnalyzer.read_feature(feature_name)[0] for feature_name in feature_list]
+        feature_list_undo = [self.read_feature(feature_name)[0] for feature_name in feature_list]
         feature_list_undo = list(dict.fromkeys(feature_list_undo))
 
         n_features_undo = len(feature_list_undo)
-        is_numeric = np.zeros((n_features_undo,))
         X_deprocessed = np.zeros((X.shape[0], n_features_undo))
         value_mapping = dict.fromkeys(list(range(n_features_undo)), [])
 
         for f_id, feature_name in enumerate(feature_list):
-            feature_name_undo, feature_value = ErrorAnalyzer.read_feature(feature_name)
+            feature_name_undo, feature_value = self.read_feature(feature_name)
             f_id_undo = feature_list_undo.index(feature_name_undo)
 
             if self._model_accessor.get_per_feature().get(feature_name_undo).get("type") == "NUMERIC":
-                x_deprocessed = ErrorAnalyzer._denormalize_features(scalings, feature_name, X[:, f_id])
+                x_deprocessed = _denormalize_feature_value(scalings, feature_name, X[:, f_id])
                 X_deprocessed[:, f_id_undo] = x_deprocessed
-                is_numeric[f_id_undo] = True
             else:
                 samples_indices = np.where(X[:, f_id] == 1)
                 if samples_indices is not None:
+                    if len(feature_value) > 1:
+                        feature_value = 'Others'
+                    else:
+                        feature_value = feature_value[0]
                     value_mapping[f_id_undo].append(feature_value)
                     samples_indices = samples_indices[0]
                     X_deprocessed[samples_indices, f_id_undo] = len(value_mapping[f_id_undo]) - 1
-                    is_numeric[f_id_undo] = False
 
         self.X_deprocessed = X_deprocessed
         self.feature_names_deprocessed = feature_list_undo
-        self.is_numeric = is_numeric
         self.value_mapping = value_mapping
 
     def plot_error_node_feature_distribution(self, nodes='all', top_k_features=3, compare_to_global=True,
@@ -340,7 +315,10 @@ class ErrorAnalyzer:
         error_class_idx = np.where(self.error_clf.classes_ == WRONG_PREDICTION)[0]
         correct_class_idx = np.where(self.error_clf.classes_ == CORRECT_PREDICTION)[0]
 
-        ranked_features = self.rank_features_by_error_correlation(top_k_features)
+        feature_list = self.features_in_model_performance_predictor
+        ranked_features = self.tree_parser._rank_features_by_error_correlation(feature_list,
+                                                                               max_number_features=top_k_features,
+                                                                               include_non_split_features=True)
 
         feature_names = self.feature_names_deprocessed
 
@@ -375,17 +353,6 @@ class ErrorAnalyzer:
 
         class_colors = [ERROR_TREE_COLORS[CORRECT_PREDICTION], ERROR_TREE_COLORS[WRONG_PREDICTION]]
 
-        feature_bins = dict()
-        for f_id in feature_idx_by_importance:
-            f_values = np.unique(X[:, f_id])
-
-            if self.is_numeric[f_id]:
-                bins = np.linspace(np.min(f_values), np.max(f_values))
-            else:
-                bins = None
-
-            feature_bins[f_id] = bins
-
         for leaf in leaf_nodes:
             values = self.error_clf.tree_.value[leaf, :]
             n_errors = values[0, error_class_idx]
@@ -402,23 +369,25 @@ class ErrorAnalyzer:
                 plt.figure(figsize=figsize)
 
                 f_name = feature_names[f_id]
-                bins = feature_bins[f_id]
 
-                if self.is_numeric[f_id]:
+                print(f_name)
 
-                    f_correct_global = X_correct_global[:, f_id]
-                    f_error_global = X_error_global[:, f_id]
-                    f_correct_node = X_correct_node[:, f_id]
-                    f_error_node = X_error_node[:, f_id]
+                f_correct_global = X_correct_global[:, f_id]
+                f_error_global = X_error_global[:, f_id]
+                f_correct_node = X_correct_node[:, f_id]
+                f_error_node = X_error_node[:, f_id]
 
-                else:  # categorical variables
-
-                    f_correct_global = [self.value_mapping[f_id][int(f_val)] for f_val in X_correct_global[:, f_id]]
-                    f_error_global = [self.value_mapping[f_id][int(f_val)] for f_val in X_error_global[:, f_id]]
-                    f_correct_node = [self.value_mapping[f_id][int(f_val)] for f_val in X_correct_node[:, f_id]]
-                    f_error_node = [self.value_mapping[f_id][int(f_val)] for f_val in X_error_node[:, f_id]]
-
-                    plt.xticks(rotation=45)
+                if self._model_accessor.get_per_feature().get(f_name).get("type") != "NUMERIC":
+                    labels = self.value_mapping[f_id]
+                    n_labels = len(labels)
+                    bins = np.linspace(0, n_labels - 1, n_labels)
+                    ax = plt.gca()
+                    ax.set_xticks(bins)
+                    ax.set_xticklabels(labels)
+                    plt.xticks(rotation=90)
+                else:
+                    f_values = np.unique(X[:, f_id])
+                    bins = np.linspace(np.min(f_values), np.max(f_values))
 
                 if compare_to_global:
                     x = [f_correct_global, f_error_global]
