@@ -349,7 +349,8 @@ class ErrorAnalyzer:
                         n_errors = values[0, error_class_idx]
                         n_corrects = values[0, correct_class_idx]
                         leaf_impurity = float(n_corrects) / (n_errors + n_corrects)
-                        error_leaf_nodes_importance.append(leaf_impurity + 1. / n_errors)
+                        n_difference = n_corrects - n_errors  # always negative
+                        error_leaf_nodes_importance.append(n_difference + leaf_impurity)
                 leaf_nodes = [x for _, x in sorted(zip(error_leaf_nodes_importance, error_leaf_nodes))]
             else:
                 leaf_nodes = set(nodes) & set(leaf_nodes)
