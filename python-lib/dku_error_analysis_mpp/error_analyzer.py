@@ -29,6 +29,8 @@ MPP_ACCURACY_TOLERANCE = 0.1
 CRITERION = 'entropy'
 NUMBER_EPSILON_VALUES = 50
 
+ERROR_TREE_COLORS = {CORRECT_PREDICTION: '#ed6547', WRONG_PREDICTION: '#fdc765'}
+
 
 class ErrorAnalyzer:
     """
@@ -235,6 +237,23 @@ class ErrorAnalyzer:
                                             rounded=True)
 
         pydot_graph = pydotplus.graph_from_dot_data(str(digraph_tree))
+
+        nodes = pydot_graph.get_node_list()
+        for node in nodes:
+            if node.get_label():
+                values = [int(ii) for ii in node.get_label().split('value = [')[1].split(']')[0].split(',')]
+                values = [float(v) / sum(values) for v in values]
+                node_arg_class = np.argmax(values)
+                node_class = self.error_clf.classes_[node_arg_class]
+                # transparency as the entropy value
+                alpha = values[node_arg_class]
+                class_color = ERROR_TREE_COLORS[node_class].strip('#')
+                class_color_rgb = tuple(int(class_color[i:i + 2], 16) for i in (0, 2, 4))
+                # compute the color as alpha against white
+                color_rgb = [int(round(alpha * c + (1 - alpha) * 255, 0)) for c in class_color_rgb]
+                color = '#{:02x}{:02x}{:02x}'.format(color_rgb[0], color_rgb[1], color_rgb[2])
+                node.set_fillcolor(color)
+
         if size is not None:
             pydot_graph.set_size('"%d,%d!"' % (size[0], size[1]))
         gvz_graph = gv.Source(pydot_graph.to_string())
@@ -354,6 +373,8 @@ class ErrorAnalyzer:
         X_error_global = X[Y == WRONG_PREDICTION, :]
         X_correct_global = X[Y == CORRECT_PREDICTION, :]
 
+        class_colors = [ERROR_TREE_COLORS[CORRECT_PREDICTION], ERROR_TREE_COLORS[WRONG_PREDICTION]]
+
         feature_bins = dict()
         for f_id in feature_idx_by_importance:
             f_values = np.unique(X[:, f_id])
@@ -404,13 +425,13 @@ class ErrorAnalyzer:
                     weights = [np.ones_like(f_correct_global, dtype=np.float) / X.shape[0],
                                np.ones_like(f_error_global, dtype=np.float) / X.shape[0]]
                     plt.hist(x, bins, label=['global correct', 'global error'], stacked=True, density=False,
-                             alpha=0.5, color=['r', 'y'], weights=weights)
+                             alpha=0.5, color=class_colors, weights=weights)
 
                 x = [f_correct_node, f_error_node]
                 weights = [np.ones_like(f_correct_node, dtype=np.float) / X_node.shape[0],
                            np.ones_like(f_error_node, dtype=np.float) / X_node.shape[0]]
                 plt.hist(x, bins,
-                         label=['node correct', 'node error'], stacked=True, density=False, color=['r', 'y'],
+                         label=['node correct', 'node error'], stacked=True, density=False, color=class_colors,
                          weights=weights)
 
                 plt.xlabel(f_name)
