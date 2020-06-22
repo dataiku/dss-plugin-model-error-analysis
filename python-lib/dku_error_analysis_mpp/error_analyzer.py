@@ -52,6 +52,9 @@ class ErrorAnalyzer:
         self.feature_names_deprocessed = None
         self.value_mapping = None
 
+        self.error_train_leaf_id = None
+        self.ranked_error_nodes = None
+
         if seed:
             self.seed = seed
         else:
@@ -302,6 +305,34 @@ class ErrorAnalyzer:
         self.feature_names_deprocessed = feature_list_undo
         self.value_mapping = value_mapping
 
+    def get_leaf_ids(self):
+        if self.error_train_leaf_id is None:
+            self.error_train_leaf_id = self.error_clf.apply(self._error_train_X)
+
+        return self.error_train_leaf_id
+
+    def get_ranked_error_nodes(self):
+        if self.ranked_error_nodes is None:
+            error_leaf_nodes = []
+            error_leaf_nodes_importance = []
+            leaf_ids = self.get_leaf_ids()
+            leaf_nodes = np.unique(leaf_ids)
+            error_class_idx = np.where(self.error_clf.classes_ == WRONG_PREDICTION)[0]
+            correct_class_idx = np.where(self.error_clf.classes_ == CORRECT_PREDICTION)[0]
+            for leaf in leaf_nodes:
+                decision = self.error_clf.tree_.value[leaf, :].argmax()
+                if self.error_clf.classes_[decision] == WRONG_PREDICTION:
+                    error_leaf_nodes.append(leaf)
+                    values = self.error_clf.tree_.value[leaf, :]
+                    n_errors = values[0, error_class_idx]
+                    n_corrects = values[0, correct_class_idx]
+                    leaf_impurity = float(n_corrects) / (n_errors + n_corrects)
+                    n_difference = n_corrects - n_errors  # always negative
+                    error_leaf_nodes_importance.append(n_difference + leaf_impurity)
+            self.ranked_error_nodes = [x for _, x in sorted(zip(error_leaf_nodes_importance, error_leaf_nodes))]
+
+        return self.ranked_error_nodes
+
     def plot_hist(self, data, bins, labels, colors, alpha, histtype='bar'):
         n_samples = 0
         for x in data:
@@ -335,23 +366,11 @@ class ErrorAnalyzer:
 
         X, Y = self.X_deprocessed, self._error_train_Y
 
-        leave_id = self.error_clf.apply(self._error_train_X)
-        leaf_nodes = np.unique(leave_id)
+        leaf_ids = self.get_leaf_ids()
+        leaf_nodes = np.unique(leaf_ids)
         if nodes is not 'all':
             if nodes is 'all_errors':
-                error_leaf_nodes = []
-                error_leaf_nodes_importance = []
-                for leaf in leaf_nodes:
-                    decision = self.error_clf.tree_.value[leaf, :].argmax()
-                    if self.error_clf.classes_[decision] == WRONG_PREDICTION:
-                        error_leaf_nodes.append(leaf)
-                        values = self.error_clf.tree_.value[leaf, :]
-                        n_errors = values[0, error_class_idx]
-                        n_corrects = values[0, correct_class_idx]
-                        leaf_impurity = float(n_corrects) / (n_errors + n_corrects)
-                        n_difference = n_corrects - n_errors  # always negative
-                        error_leaf_nodes_importance.append(n_difference + leaf_impurity)
-                leaf_nodes = [x for _, x in sorted(zip(error_leaf_nodes_importance, error_leaf_nodes))]
+                leaf_nodes = self.get_ranked_error_nodes()
             else:
                 leaf_nodes = set(nodes) & set(leaf_nodes)
                 if not bool(leaf_nodes):
@@ -368,7 +387,7 @@ class ErrorAnalyzer:
             n_errors = values[0, error_class_idx]
             n_corrects = values[0, correct_class_idx]
             print('Node %d: (%d correct predictions, %d wrong predictions)' % (leaf, n_corrects, n_errors))
-            node_indices = leave_id == leaf
+            node_indices = leaf_ids == leaf
             Y_node = Y[node_indices]
             X_node = X[node_indices, :]
             X_error_node = X_node[Y_node == WRONG_PREDICTION, :]
@@ -429,8 +448,63 @@ class ErrorAnalyzer:
                 plt.xlabel(f_name)
                 plt.ylabel('Proportion of samples')
                 plt.legend()
-                plt.title('Feature distribution of %s in Node %d: (%d, %d)' % (f_name, leaf, n_corrects, n_errors))
+                plt.title('Distribution of %s in Node %d: (%d, %d)' % (f_name, leaf, n_corrects, n_errors))
                 plt.pause(0.05)
 
         plt.show()
+
+    def error_node_summary(self, nodes='all_errors'):
+        """ return summary information regarding input nodes """
+
+        if not (isinstance(nodes, list) or isinstance(nodes, int)):
+            assert (nodes in ['all', 'all_errors'])
+
+        if isinstance(nodes, int):
+            nodes = [nodes]
+
+        leaf_ids = self.get_leaf_ids()
+        leaf_nodes = np.unique(leaf_ids)
+        if nodes is not 'all':
+            if nodes is 'all_errors':
+                leaf_nodes = self.get_ranked_error_nodes()
+            else:
+                leaf_nodes = set(nodes) & set(leaf_nodes)
+                if not bool(leaf_nodes):
+                    print("Selected nodes are not leaf nodes.")
+                    return
+
+        Y = self._error_train_Y
+        n_total_errors = Y[Y == WRONG_PREDICTION].shape[0]
+        error_class_idx = np.where(self.error_clf.classes_ == WRONG_PREDICTION)[0]
+        correct_class_idx = np.where(self.error_clf.classes_ == CORRECT_PREDICTION)[0]
+        for leaf in leaf_nodes:
+            values = self.error_clf.tree_.value[leaf, :]
+            n_errors = values[0, error_class_idx]
+            n_corrects = values[0, correct_class_idx]
+            print('Node %d: (%d correct predictions, %d wrong predictions)' % (leaf, n_corrects, n_errors))
+            print('Local error (Purity): %.2f' % (float(n_errors) / (n_corrects + n_errors)))
+            print('Global error: %.2f' % (float(n_errors) / n_total_errors))
+            print('Path to node: ... TODO ...')
+
+    def mpp_summary(self):
+        """ print ErrorAnalyzer summary metrics """
+        print('The ErrorAnalyzer Decision Tree was trained with accuracy %.2f%%.' %
+              (self.mpp_accuracy_score * 100))
+        print('The Decision Tree estimated the primary model''s accuracy to %.2f%%.' %
+              (self.primary_model_predicted_accuracy * 100))
+        print('The true accuracy of the primary model is %.2f.%%' %
+              (self.primary_model_true_accuracy * 100))
+        inv_fidelity = np.abs(self.primary_model_predicted_accuracy - self.primary_model_true_accuracy)
+        fidelity = 1.-inv_fidelity
+
+        if inv_fidelity <= MPP_ACCURACY_TOLERANCE:
+            print('The Fidelity of the ErrorAnalyzer is %.2f%%, which is sufficient to trust its results.' %
+                  (fidelity * 100))
+        else:
+            print('The Fidelity of the ErrorAnalyzer is %.2f%%, which might invalidate its results.' %
+                  (fidelity * 100))
+
+
+
+
 
