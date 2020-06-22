@@ -302,8 +302,17 @@ class ErrorAnalyzer:
         self.feature_names_deprocessed = feature_list_undo
         self.value_mapping = value_mapping
 
-    def plot_error_node_feature_distribution(self, nodes='all', top_k_features=3, compare_to_global=True,
-                                             figsize=(10, 5)):
+    def plot_hist(self, data, bins, labels, colors, alpha, histtype='bar'):
+        n_samples = 0
+        for x in data:
+            n_samples += x.shape[0]
+
+        weights = [np.ones_like(x, dtype=np.float) / n_samples for x in data]
+        plt.hist(data, bins, label=labels, stacked=True, density=False,
+                 alpha=alpha, color=colors, weights=weights, histtype=histtype)
+
+    def plot_error_node_feature_distribution(self, nodes='all_errors', top_k_features=3, compare_to_global=True,
+                                             show_class=False, figsize=(10, 5)):
         """ return plot of error node feature distribution and compare to global baseline """
 
         if not (isinstance(nodes, list) or isinstance(nodes, int)):
@@ -372,6 +381,9 @@ class ErrorAnalyzer:
 
                 print(f_name)
 
+                f_global = X[:, f_id]
+                f_node = X_node[:, f_id]
+
                 f_correct_global = X_correct_global[:, f_id]
                 f_error_global = X_error_global[:, f_id]
                 f_correct_node = X_correct_node[:, f_id]
@@ -390,18 +402,28 @@ class ErrorAnalyzer:
                     bins = np.linspace(np.min(f_values), np.max(f_values))
 
                 if compare_to_global:
-                    x = [f_correct_global, f_error_global]
-                    weights = [np.ones_like(f_correct_global, dtype=np.float) / X.shape[0],
-                               np.ones_like(f_error_global, dtype=np.float) / X.shape[0]]
-                    plt.hist(x, bins, label=['global correct', 'global error'], stacked=True, density=False,
-                             alpha=0.5, color=class_colors, weights=weights)
+                    if show_class:
+                        x = [f_correct_global, f_error_global]
+                        labels = ['global correct', 'global error']
+                        colors = class_colors
+                    else:
+                        x = [f_global]
+                        labels = ['global']
+                        colors = [ERROR_TREE_COLORS[CORRECT_PREDICTION]] # global is mainly correct
 
-                x = [f_correct_node, f_error_node]
-                weights = [np.ones_like(f_correct_node, dtype=np.float) / X_node.shape[0],
-                           np.ones_like(f_error_node, dtype=np.float) / X_node.shape[0]]
-                plt.hist(x, bins,
-                         label=['node correct', 'node error'], stacked=True, density=False, color=class_colors,
-                         weights=weights)
+                    self.plot_hist(x, bins, labels, colors, alpha=0.5)
+
+                if show_class:
+                    x = [f_correct_node, f_error_node]
+                    labels = ['node correct', 'node error']
+                    colors = class_colors
+                else:
+                    x = [f_node]
+                    labels = ['node']
+                    decision = self.error_clf.tree_.value[leaf, :].argmax()
+                    colors = [ERROR_TREE_COLORS[self.error_clf.classes_[decision]]]
+
+                self.plot_hist(x, bins, labels, colors, alpha=1.0)
 
                 plt.xlabel(f_name)
                 plt.ylabel('Proportion of samples')
