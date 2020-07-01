@@ -250,6 +250,16 @@ class ErrorAnalyzer:
                 color = '#{:02x}{:02x}{:02x}'.format(color_rgb[0], color_rgb[1], color_rgb[2])
                 node.set_fillcolor(color)
 
+                # descale thresholf value
+                idx = int(node.get_label().split('node #')[1].split('\\n')[0])
+                less_than_equal_split = node.get_label().split('<= ')
+                entropy_split = less_than_equal_split[1].split('\\nentropy')
+                descaled_value = self.tree.nodes[self.tree.nodes[idx].children_ids[0]].end
+                descaled_value = '%.2f' % descaled_value
+                less_than_equal_modified = '<= '.join([less_than_equal_split[0], descaled_value])
+                new_label = '\\nentropy'.join([less_than_equal_modified, entropy_split[1]])
+                node.set_label(new_label)
+
         if size is not None:
             pydot_graph.set_size('"%d,%d!"' % (size[0], size[1]))
         gvz_graph = gv.Source(pydot_graph.to_string())
