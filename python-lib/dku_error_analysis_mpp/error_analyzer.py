@@ -530,7 +530,7 @@ class ErrorAnalyzer:
             print('Local error (Purity): %.2f' % (float(n_errors) / (n_corrects + n_errors)))
             print('Global error: %.2f' % (float(n_errors) / n_total_errors))
             print('Path to node:')
-            print(get_path_to_node(self, leaf))
+            print(get_path_to_node(leaf))
 
     def mpp_summary(self):
         """ print ErrorAnalyzer summary metrics """
