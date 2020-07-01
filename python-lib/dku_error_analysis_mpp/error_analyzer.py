@@ -250,7 +250,7 @@ class ErrorAnalyzer:
                 color = '#{:02x}{:02x}{:02x}'.format(color_rgb[0], color_rgb[1], color_rgb[2])
                 node.set_fillcolor(color)
 
-                # descale thresholf value
+                # descale threshold value
                 idx = int(node.get_label().split('node #')[1].split('\\n')[0])
                 less_than_equal_split = node.get_label().split('<= ')
                 entropy_split = less_than_equal_split[1].split('\\nentropy')
