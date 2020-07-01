@@ -472,6 +472,32 @@ class ErrorAnalyzer:
 
         plt.show()
 
+    def get_path_to_node(self, node_idx):
+        run_node_idx = node_idx
+        path_to_node = []
+        while self.tree.nodes[run_node_idx].feature:
+            cur_node = self.tree.nodes[run_node_idx]
+            feature = cur_node.feature
+            if cur_node.get_type() == Node.TYPES.NUM:
+                if cur_node.beginning:
+                    sign = ' > '
+                    value = "%.2f" % cur_node.beginning
+                else:
+                    sign = ' <= '
+                    value = "%.2f" % cur_node.end
+            else:
+                if cur_node.others:
+                    sign = ' != '
+                else:
+                    sign = ' == '
+                value = cur_node.values[0]
+            path_to_node.append(feature + sign + value)
+            run_node_idx = self.tree.nodes[run_node_idx].parent_id
+        path_to_node = path_to_node[::-1]
+
+        return path_to_node
+
+
     def error_node_summary(self, nodes='all_errors'):
         """ return summary information regarding input nodes """
 
@@ -503,7 +529,8 @@ class ErrorAnalyzer:
             print('Node %d: (%d correct predictions, %d wrong predictions)' % (leaf, n_corrects, n_errors))
             print('Local error (Purity): %.2f' % (float(n_errors) / (n_corrects + n_errors)))
             print('Global error: %.2f' % (float(n_errors) / n_total_errors))
-            print('Path to node: ... TODO ...')
+            print('Path to node:')
+            print(get_path_to_node(self, leaf))
 
     def mpp_summary(self):
         """ print ErrorAnalyzer summary metrics """
