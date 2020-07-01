@@ -528,10 +528,12 @@ class ErrorAnalyzer:
             n_errors = values[0, error_class_idx]
             n_corrects = values[0, correct_class_idx]
             print('Node %d: (%d correct predictions, %d wrong predictions)' % (leaf, n_corrects, n_errors))
-            print('Local error (Purity): %.2f' % (float(n_errors) / (n_corrects + n_errors)))
-            print('Global error: %.2f' % (float(n_errors) / n_total_errors))
-            print('Path to node:')
-            print(self.get_path_to_node(leaf))
+            print(' Local error (Purity): %.2f' % (float(n_errors) / (n_corrects + n_errors)))
+            print(' Global error: %.2f' % (float(n_errors) / n_total_errors))
+            print(' Path to node:')
+            path_to_node = self.get_path_to_node(leaf)
+            for step in path_to_node:
+                print('     ' + step)
 
     def mpp_summary(self):
         """ print ErrorAnalyzer summary metrics """
