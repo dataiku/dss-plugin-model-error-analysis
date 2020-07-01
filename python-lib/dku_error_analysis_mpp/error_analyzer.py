@@ -12,6 +12,7 @@ matplotlib.use('agg')
 import matplotlib.pyplot as plt
 from dku_error_analysis_mpp.error_config import *
 from dku_error_analysis_tree_parsing.tree_parser import TreeParser
+from dku_error_analysis_decision_tree.node import Node
 from dku_error_analysis_tree_parsing.depreprocessor import _denormalize_feature_value
 import logging
 
@@ -252,11 +253,19 @@ class ErrorAnalyzer:
 
                 # descale threshold value
                 idx = int(node.get_label().split('node #')[1].split('\\n')[0])
-                less_than_equal_split = node.get_label().split('<= ')
+                less_than_equal_split = node.get_label().split(' <= ')
                 entropy_split = less_than_equal_split[1].split('\\nentropy')
-                descaled_value = self.tree.nodes[self.tree.nodes[idx].children_ids[0]].end
-                descaled_value = '%.2f' % descaled_value
-                less_than_equal_modified = '<= '.join([less_than_equal_split[0], descaled_value])
+                left_child = error_analyzer.tree.nodes[error_analyzer.tree.nodes[idx].children_ids[0]]
+                if left_child.get_type() == Node.TYPES.NUM:
+                    descaled_value = left_child.end
+                    descaled_value = '%.2f' % descaled_value
+                    less_than_equal_modified = ' <= '.join([less_than_equal_split[0], descaled_value])
+                else:
+                    descaled_value = left_child.values[0]
+                    less_than_equal_split_without_feature = less_than_equal_split[0].split('\\n')[0]
+                    new_feature = left_child.feature
+                    less_than_equal_split_with_new_feature = less_than_equal_split_without_feature + '\\n' + new_feature
+                    less_than_equal_modified = ' != '.join([less_than_equal_split_with_new_feature, descaled_value])
                 new_label = '\\nentropy'.join([less_than_equal_modified, entropy_split[1]])
                 node.set_label(new_label)
 
