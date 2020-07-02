@@ -4,7 +4,8 @@ import pandas as pd
 from collections import deque
 from dku_error_analysis_tree_parsing.depreprocessor import descale_numerical_thresholds
 
-from dku_error_analysis_mpp.error_config import WRONG_PREDICTION
+from dku_error_analysis_mpp.error_config import ErrorAnalyzerConstants
+
 
 class InteractiveTree(object):
     """
@@ -74,11 +75,11 @@ class InteractiveTree(object):
                 ids.append(right_child_id)
 
     def set_node_info(self, node):
-        nr_errors = self.df[self.df[self.target] == WRONG_PREDICTION].shape[0]
+        nr_errors = self.df[self.df[self.target] == ErrorAnalyzerConstants.WRONG_PREDICTION].shape[0]
         filtered_df = self.get_filtered_df(node, self.df)
         probabilities = filtered_df[self.target].value_counts()
-        if WRONG_PREDICTION in probabilities:
-            error = probabilities[WRONG_PREDICTION] / float(nr_errors)
+        if ErrorAnalyzerConstants.WRONG_PREDICTION in probabilities:
+            error = probabilities[ErrorAnalyzerConstants.WRONG_PREDICTION] / float(nr_errors)
         else:
             error = 0
         samples = filtered_df.shape[0]

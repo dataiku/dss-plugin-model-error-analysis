@@ -10,7 +10,7 @@ import graphviz as gv
 import matplotlib
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
-from dku_error_analysis_mpp.error_config import *
+from dku_error_analysis_mpp.error_config import ErrorAnalyzerConstants
 from dku_error_analysis_tree_parsing.tree_parser import TreeParser
 from dku_error_analysis_decision_tree.node import Node
 from dku_error_analysis_tree_parsing.depreprocessor import _denormalize_feature_value
@@ -105,7 +105,7 @@ class ErrorAnalyzer:
 
         np.random.seed(self._seed)
 
-        original_df = self._model_accessor.get_original_test_df(MAX_NUM_ROW)
+        original_df = self._model_accessor.get_original_test_df(ErrorAnalyzerConstants.MAX_NUM_ROW)
 
         predictor = self._model_accessor.get_predictor()
         self._preprocessed_x, _, _, _, _ = predictor.preprocessing.preprocess(
@@ -115,7 +115,7 @@ class ErrorAnalyzer:
 
         self._error_df = self.prepare_data_for_model_performance_predictor(original_df)
 
-        error_y = np.array(self._error_df[ERROR_COLUMN])
+        error_y = np.array(self._error_df[ErrorAnalyzerConstants.ERROR_COLUMN])
         error_train_x, error_test_x, error_train_y, error_test_y = train_test_split(
             self._preprocessed_x,
             error_y,
@@ -132,10 +132,10 @@ class ErrorAnalyzer:
         logger.info("Fitting the model performance predictor...")
 
         # entropy/mutual information is used to split nodes in Microsoft Pandora system
-        criterion = CRITERION
+        criterion = ErrorAnalyzerConstants.CRITERION
 
         dt_clf = tree.DecisionTreeClassifier(criterion=criterion, min_samples_leaf=1, random_state=1337)
-        parameters = {'max_depth': MAX_DEPTH_GRID}
+        parameters = {'max_depth': ErrorAnalyzerConstants.MAX_DEPTH_GRID}
         gs_clf = GridSearchCV(dt_clf, parameters, cv=5)
         gs_clf.fit(error_train_x, error_train_y)
         self._error_clf = gs_clf.best_estimator_
@@ -148,7 +148,7 @@ class ErrorAnalyzer:
 
     def prepare_data_for_model_performance_predictor(self, original_df):
         """
-        Computes the errors of the primary model predictions and samples with max n = MAX_NUM_ROW
+        Computes the errors of the primary model predictions and samples with max n = ErrorAnalyzerConstants.MAX_NUM_ROW
         :return: a dataframe with error target (correctly predicted vs wrongly predicted)
         """
 
@@ -157,25 +157,29 @@ class ErrorAnalyzer:
         if self._target not in original_df:
             raise ValueError('The original dataset does not contain target "{}".'.format(self._target))
 
-        if not_enough_data(original_df, min_len=MIN_NUM_ROWS):
+        if not_enough_data(original_df, min_len=ErrorAnalyzerConstants.MIN_NUM_ROWS):
             raise ValueError(
-                'The original dataset is too small ({} rows) to have stable result, it needs to have at least {} rows'.format(
-                    len(original_df), MIN_NUM_ROWS))
+                'The original dataset is too small ({} rows) to have stable result, it needs to have at least '
+                '{} rows'.format(len(original_df), ErrorAnalyzerConstants.MIN_NUM_ROWS))
 
         logger.info("Rebalancing data:")
-        number_of_rows = min(original_df.shape[0], MAX_NUM_ROW)
+        number_of_rows = min(original_df.shape[0], ErrorAnalyzerConstants.MAX_NUM_ROW)
         logger.info(" - original dataset had %s rows. Selecting the first %s." % (original_df.shape[0], number_of_rows))
 
         df = original_df.head(number_of_rows)
 
         # get prediction, is there a way to get predictions from the model handler?
-        if PREDICTION_COLUMN not in df.columns:
-            df[PREDICTION_COLUMN] = self._model_accessor.predict(df)
+        if ErrorAnalyzerConstants.PREDICTION_COLUMN not in df.columns:
+            df[ErrorAnalyzerConstants.PREDICTION_COLUMN] = self._model_accessor.predict(df)
 
-        df[ERROR_COLUMN] = self._get_errors(df, prediction_column=PREDICTION_COLUMN)
-        df[ERROR_COLUMN] = df[ERROR_COLUMN].replace({True: WRONG_PREDICTION, False: CORRECT_PREDICTION})
+        df[ErrorAnalyzerConstants.ERROR_COLUMN] = self._get_errors(
+            df,
+            prediction_column=ErrorAnalyzerConstants.PREDICTION_COLUMN)
 
-        selected_features = [ERROR_COLUMN] + self._model_accessor.get_selected_features()
+        df[ErrorAnalyzerConstants.ERROR_COLUMN] = df[ErrorAnalyzerConstants.ERROR_COLUMN].replace(
+            {True: ErrorAnalyzerConstants.CORRECT_PREDICTION, False: ErrorAnalyzerConstants.CORRECT_PREDICTION})
+
+        selected_features = [ErrorAnalyzerConstants.ERROR_COLUMN] + self._model_accessor.get_selected_features()
 
         return df.loc[:, selected_features]
 
@@ -191,14 +195,17 @@ class ErrorAnalyzer:
         self._mpp_accuracy_score = accuracy_score(y_true, y_pred)
         logger.info('Model Performance Predictor accuracy: {}'.format(self._mpp_accuracy_score))
 
-        self._primary_model_predicted_accuracy = float(np.count_nonzero(y_pred == CORRECT_PREDICTION)) / n_test_samples
-        self._primary_model_true_accuracy = float(np.count_nonzero(y_true == CORRECT_PREDICTION)) / n_test_samples
+        self._primary_model_predicted_accuracy = float(
+            np.count_nonzero(y_pred == ErrorAnalyzerConstants.CORRECT_PREDICTION)) / n_test_samples
+        self._primary_model_true_accuracy = float(
+            np.count_nonzero(y_true == ErrorAnalyzerConstants.CORRECT_PREDICTION)) / n_test_samples
 
         logger.info('Primary model accuracy: {}'.format(self._primary_model_true_accuracy))
         logger.info('MPP predicted accuracy: {}'.format(self._primary_model_predicted_accuracy))
 
-        difference_true_pred_accuracy = np.abs(self._primary_model_true_accuracy - self._primary_model_predicted_accuracy)
-        if difference_true_pred_accuracy > MPP_ACCURACY_TOLERANCE:  # TODO: add message in UI?
+        difference_true_pred_accuracy = np.abs(
+            self._primary_model_true_accuracy - self._primary_model_predicted_accuracy)
+        if difference_true_pred_accuracy > ErrorAnalyzerConstants.MPP_ACCURACY_TOLERANCE:  # TODO: add message in UI?
             logger.warning("Warning: the built MPP might not be representative of the primary model performances.")
 
     def _get_epsilon(self, difference, mode='rec'):
@@ -209,7 +216,7 @@ class ErrorAnalyzer:
             mean_diff = np.mean(difference)
             epsilon = mean_diff + std_diff
         elif mode == 'rec':
-            n_points = NUMBER_EPSILON_VALUES
+            n_points = ErrorAnalyzerConstants.NUMBER_EPSILON_VALUES
             epsilon_range = np.linspace(min(difference), max(difference), num=n_points)
             cdf_error = np.zeros_like(epsilon_range)
             n_samples = difference.shape[0]
@@ -258,7 +265,7 @@ class ErrorAnalyzer:
                 node_class = self._error_clf.classes_[node_arg_class]
                 # transparency as the entropy value
                 alpha = values[node_arg_class]
-                class_color = ERROR_TREE_COLORS[node_class].strip('#')
+                class_color = ErrorAnalyzerConstants.ERROR_TREE_COLORS[node_class].strip('#')
                 class_color_rgb = tuple(int(class_color[i:i + 2], 16) for i in (0, 2, 4))
                 # compute the color as alpha against white
                 color_rgb = [int(round(alpha * c + (1 - alpha) * 255, 0)) for c in class_color_rgb]
@@ -268,20 +275,20 @@ class ErrorAnalyzer:
                 # descale threshold value
                 if ' <= ' in node.get_label():
                     idx = int(node.get_label().split('node #')[1].split('\\n')[0])
-                    less_than_equal_split = node.get_label().split(' <= ')
+                    lte_split = node.get_label().split(' <= ')
                     entropy_split = less_than_equal_split[1].split('\\nentropy')
                     left_child = self._tree.nodes[self._tree.nodes[idx].children_ids[0]]
                     if left_child.get_type() == Node.TYPES.NUM:
                         descaled_value = left_child.end
                         descaled_value = '%.2f' % descaled_value
-                        less_than_equal_modified = ' <= '.join([less_than_equal_split[0], descaled_value])
+                        lte_modified = ' <= '.join([lte_split[0], descaled_value])
                     else:
                         descaled_value = left_child.values[0]
-                        less_than_equal_split_without_feature = less_than_equal_split[0].split('\\n')[0]
+                        lte_split_without_feature = lte_split[0].split('\\n')[0]
                         new_feature = left_child.feature
-                        less_than_equal_split_with_new_feature = less_than_equal_split_without_feature + '\\n' + new_feature
-                        less_than_equal_modified = ' != '.join([less_than_equal_split_with_new_feature, descaled_value])
-                    new_label = '\\nentropy'.join([less_than_equal_modified, entropy_split[1]])
+                        lte_split_with_new_feature = lte_split_without_feature + '\\n' + new_feature
+                        lte_modified = ' != '.join([lte_split_with_new_feature, descaled_value])
+                    new_label = '\\nentropy'.join([lte_modified, entropy_split[1]])
                     node.set_label(new_label)
 
         if size is not None:
@@ -350,11 +357,11 @@ class ErrorAnalyzer:
             error_leaf_nodes_importance = []
             leaf_ids = self.get_leaf_ids()
             leaf_nodes = np.unique(leaf_ids)
-            error_class_idx = np.where(self._error_clf.classes_ == WRONG_PREDICTION)[0]
-            correct_class_idx = np.where(self._error_clf.classes_ == CORRECT_PREDICTION)[0]
+            error_class_idx = np.where(self._error_clf.classes_ == ErrorAnalyzerConstants.WRONG_PREDICTION)[0]
+            correct_class_idx = np.where(self._error_clf.classes_ == ErrorAnalyzerConstants.CORRECT_PREDICTION)[0]
             for leaf in leaf_nodes:
                 decision = self._error_clf.tree_.value[leaf, :].argmax()
-                if self._error_clf.classes_[decision] == WRONG_PREDICTION:
+                if self._error_clf.classes_[decision] == ErrorAnalyzerConstants.WRONG_PREDICTION:
                     error_leaf_nodes.append(leaf)
                     values = self._error_clf.tree_.value[leaf, :]
                     n_errors = values[0, error_class_idx]
@@ -385,8 +392,8 @@ class ErrorAnalyzer:
         if isinstance(nodes, int):
             nodes = [nodes]
 
-        error_class_idx = np.where(self._error_clf.classes_ == WRONG_PREDICTION)[0]
-        correct_class_idx = np.where(self._error_clf.classes_ == CORRECT_PREDICTION)[0]
+        error_class_idx = np.where(self._error_clf.classes_ == ErrorAnalyzerConstants.WRONG_PREDICTION)[0]
+        correct_class_idx = np.where(self._error_clf.classes_ == ErrorAnalyzerConstants.CORRECT_PREDICTION)[0]
 
         feature_list = self._features_in_model_performance_predictor
         ranked_features = self._tree_parser._rank_features_by_error_correlation(feature_list,
@@ -410,10 +417,12 @@ class ErrorAnalyzer:
                     print("Selected nodes are not leaf nodes.")
                     return
 
-        x_error_global = x[y == WRONG_PREDICTION, :]
-        x_correct_global = x[y == CORRECT_PREDICTION, :]
+        x_error_global = x[y == ErrorAnalyzerConstants.WRONG_PREDICTION, :]
+        x_correct_global = x[y == ErrorAnalyzerConstants.CORRECT_PREDICTION, :]
 
-        class_colors = [ERROR_TREE_COLORS[CORRECT_PREDICTION], ERROR_TREE_COLORS[WRONG_PREDICTION]]
+        class_colors = [
+            ErrorAnalyzerConstants.ERROR_TREE_COLORS[ErrorAnalyzerConstants.CORRECT_PREDICTION],
+            ErrorAnalyzerConstants.ERROR_TREE_COLORS[ErrorAnalyzerConstants.WRONG_PREDICTION]]
 
         for leaf in leaf_nodes:
             values = self._error_clf.tree_.value[leaf, :]
@@ -423,8 +432,8 @@ class ErrorAnalyzer:
             node_indices = leaf_ids == leaf
             y_node = y[node_indices]
             x_node = x[node_indices, :]
-            x_error_node = x_node[y_node == WRONG_PREDICTION, :]
-            x_correct_node = x_node[y_node == CORRECT_PREDICTION, :]
+            x_error_node = x_node[y_node == ErrorAnalyzerConstants.WRONG_PREDICTION, :]
+            x_correct_node = x_node[y_node == ErrorAnalyzerConstants.CORRECT_PREDICTION, :]
 
             for f_id in feature_idx_by_importance:
 
@@ -462,7 +471,8 @@ class ErrorAnalyzer:
                     else:
                         x = [f_global]
                         labels = ['global']
-                        colors = [ERROR_TREE_COLORS[CORRECT_PREDICTION]] # global is mainly correct
+                        # global is mainly correct: take color of correct prediction class
+                        colors = [ErrorAnalyzerConstants.ERROR_TREE_COLORS[ErrorAnalyzerConstants.CORRECT_PREDICTION]]
 
                     self.plot_hist(x, bins, labels, colors, alpha=0.5)
 
@@ -474,7 +484,7 @@ class ErrorAnalyzer:
                     x = [f_node]
                     labels = ['node']
                     decision = self._error_clf.tree_.value[leaf, :].argmax()
-                    colors = [ERROR_TREE_COLORS[self._error_clf.classes_[decision]]]
+                    colors = [ErrorAnalyzerConstants.ERROR_TREE_COLORS[self._error_clf.classes_[decision]]]
 
                 self.plot_hist(x, bins, labels, colors, alpha=1.0)
 
@@ -532,9 +542,9 @@ class ErrorAnalyzer:
                     return
 
         y = self._error_train_y
-        n_total_errors = y[y == WRONG_PREDICTION].shape[0]
-        error_class_idx = np.where(self._error_clf.classes_ == WRONG_PREDICTION)[0]
-        correct_class_idx = np.where(self._error_clf.classes_ == CORRECT_PREDICTION)[0]
+        n_total_errors = y[y == ErrorAnalyzerConstants.WRONG_PREDICTION].shape[0]
+        error_class_idx = np.where(self._error_clf.classes_ == ErrorAnalyzerConstants.WRONG_PREDICTION)[0]
+        correct_class_idx = np.where(self._error_clf.classes_ == ErrorAnalyzerConstants.CORRECT_PREDICTION)[0]
         for leaf in leaf_nodes:
             values = self._error_clf.tree_.value[leaf, :]
             n_errors = values[0, error_class_idx]
@@ -558,7 +568,7 @@ class ErrorAnalyzer:
         inv_fidelity = np.abs(self._primary_model_predicted_accuracy - self._primary_model_true_accuracy)
         fidelity = 1.-inv_fidelity
 
-        if inv_fidelity <= MPP_ACCURACY_TOLERANCE:
+        if inv_fidelity <= ErrorAnalyzerConstants.MPP_ACCURACY_TOLERANCE:
             print('The Fidelity of the ErrorAnalyzer is %.2f%%, which is sufficient to trust its results.' %
                   (fidelity * 100))
         else:

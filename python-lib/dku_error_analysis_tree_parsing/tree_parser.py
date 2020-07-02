@@ -4,7 +4,7 @@ from dku_error_analysis_decision_tree.tree import InteractiveTree
 from dataiku.doctor.preprocessing.dataframe_preprocessing import RescalingProcessor2, QuantileBinSeries, UnfoldVectorProcessor, BinarizeSeries, \
     FastSparseDummifyProcessor, ImpactCodingStep, FlagMissingValue2, TextCountVectorizerProcessor, TextHashingVectorizerWithSVDProcessor, \
     TextHashingVectorizerProcessor, TextTFIDFVectorizerProcessor
-from dku_error_analysis_mpp.error_config import ERROR_COLUMN
+from dku_error_analysis_mpp.error_config import ErrorAnalyzerConstants
 
 MAX_MOST_IMPORTANT_FEATURES = 3
 
@@ -97,7 +97,7 @@ class TreeParser(object):
     def get_split_parameters(self, preprocessed_name, threshold=None):
         return self.preprocessed_feature_mapping.get(preprocessed_name, self.SplitParameters(Node.TYPES.NUM, preprocessed_name, threshold))
 
-    def build_tree(self, df, feature_list, target=ERROR_COLUMN):
+    def build_tree(self, df, feature_list, target=ErrorAnalyzerConstants.ERROR_COLUMN):
         features = {}
         for name, settings in self.model_handler.get_preproc_handler().collector_data.get('per_feature').iteritems():
             avg = settings.get('stats').get('average')
