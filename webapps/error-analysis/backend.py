@@ -30,21 +30,15 @@ def get_error_dt(model_handler):
     error_analyzer = ErrorAnalyzer(model_accessor)
 
     error_analyzer.fit()
-    error_clf = error_analyzer.get_model_performance_predictor()
-    test_df = error_analyzer.get_model_performance_predictor_test_df()
-    feature_names = error_analyzer.get_model_performance_predictor_features()
-    preprocessed_x = error_analyzer.get_preprocessed_array()
+    tree = error_analyzer.tree
 
-    return error_clf, test_df, preprocessed_x, feature_names
+    return tree
 
 @app.route("/load", methods=["GET"])
 def load():
     try:
         model_handler = get_model_handler(dataiku.Model(MODEL_ID), VERSION_ID)
-        clf, test_df, preprocessed_x, features = get_error_dt(model_handler)
-        tree_parser = TreeParser(model_handler, clf)
-        tree = tree_parser.build_tree(test_df, features)
-        tree.parse_nodes(tree_parser, features, preprocessed_x)
+        tree = get_error_dt(model_handler)
         TREE.append(tree)
         return jsonify(nodes=tree.jsonify_nodes(), target_values=tree.target_values, features=tree.features, rankedFeatures=tree.ranked_features)
     except:

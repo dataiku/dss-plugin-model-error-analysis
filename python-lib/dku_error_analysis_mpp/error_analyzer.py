@@ -31,56 +31,70 @@ class ErrorAnalyzer:
     def __init__(self, model_accessor, seed=None):
 
         if model_accessor is None:
-            raise NotImplementedError('You need to define a model accessor.')
+            raise NotImplementedError('you need to define a model accessor.')
 
         self._model_accessor = model_accessor
-        self.target = self._model_accessor.get_target_variable()
-        self.is_regression = self._model_accessor.is_regression()
+        self._target = self._model_accessor.get_target_variable()
+        self._is_regression = self._model_accessor.is_regression()
 
         self._error_df = None
-        self.error_clf = None
-        self._error_train_X = None
-        self._error_train_Y = None
-        self._error_test_X = None
-        self._error_test_Y = None
-        self.preprocessed_x = None
-        self.features_in_model_performance_predictor = None
-        self.mpp_accuracy_score = None
-        self.primary_model_predicted_accuracy = None
-        self.primary_model_true_accuracy = None
+        self._error_clf = None
+        self._error_train_x = None
+        self._error_train_y = None
+        self._error_test_x = None
+        self._error_test_y = None
+        self._preprocessed_x = None
+        self._features_in_model_performance_predictor = None
+        self._mpp_accuracy_score = None
+        self._primary_model_predicted_accuracy = None
+        self._primary_model_true_accuracy = None
 
-        self.X_deprocessed = None
-        self.feature_names_deprocessed = None
-        self.value_mapping = None
+        self._x_deprocessed = None
+        self._feature_names_deprocessed = None
+        self._value_mapping = None
 
-        self.error_train_leaf_id = None
-        self.ranked_error_nodes = None
+        self._error_train_leaf_id = None
+        self._ranked_error_nodes = None
+
+        self._tree = None
+        self._tree_parser = None
 
         if seed:
-            self.seed = seed
+            self._seed = seed
         else:
-            self.seed = 65537
+            self._seed = 65537
 
-    def get_preprocessed_array(self):
-        return self.preprocessed_x
+    @property
+    def tree(self):
+        return self._tree
 
-    def get_model_performance_predictor_test_df(self):
+    @property
+    def preprocessed_array(self):
+        return self._preprocessed_x
+
+    @property
+    def model_performance_predictor_test_df(self):
         return self._error_df
 
-    def get_model_performance_predictor_features(self):
-        return self.features_in_model_performance_predictor
+    @property
+    def model_performance_predictor_features(self):
+        return self._features_in_model_performance_predictor
 
-    def get_model_performance_predictor(self):
-        return self.error_clf
+    @property
+    def model_performance_predictor(self):
+        return self._error_clf
 
-    def get_mpp_accuracy_score(self):
-        return self.mpp_accuracy_score
+    @property
+    def mpp_accuracy_score(self):
+        return self._mpp_accuracy_score
 
-    def get_primary_model_predicted_accuracy(self):
-        return self.primary_model_predicted_accuracy
+    @property
+    def primary_model_predicted_accuracy(self):
+        return self._primary_model_predicted_accuracy
 
-    def get_primary_model_true_accuracy(self):
-        return self.primary_model_true_accuracy
+    @property
+    def primary_model_true_accuracy(self):
+        return self._primary_model_true_accuracy
 
     def fit(self):
         """
@@ -89,12 +103,12 @@ class ErrorAnalyzer:
         """
         logger.info("Preparing the model performance predictor...")
 
-        np.random.seed(self.seed)
+        np.random.seed(self._seed)
 
         original_df = self._model_accessor.get_original_test_df(MAX_NUM_ROW)
 
         predictor = self._model_accessor.get_predictor()
-        self.preprocessed_x, _, _, _, _ = predictor.preprocessing.preprocess(
+        self._preprocessed_x, _, _, _, _ = predictor.preprocessing.preprocess(
             original_df,
             with_target=True,
             with_sample_weights=True)
@@ -102,18 +116,18 @@ class ErrorAnalyzer:
         self._error_df = self.prepare_data_for_model_performance_predictor(original_df)
 
         error_y = np.array(self._error_df[ERROR_COLUMN])
-        error_train_X, error_test_X, error_train_Y, error_test_Y = train_test_split(
-            self.preprocessed_x,
+        error_train_x, error_test_x, error_train_y, error_test_y = train_test_split(
+            self._preprocessed_x,
             error_y,
             test_size=0.2
         )
 
-        self._error_train_X = error_train_X  # we will use them later when plotting
-        self._error_train_Y = error_train_Y
+        self._error_train_x = error_train_x  # we will use them later when plotting
+        self._error_train_y = error_train_y
 
-        self._error_test_X = error_test_X  # we will use them later when compute metrics
-        self._error_test_Y = error_test_Y
-        self.features_in_model_performance_predictor = predictor.get_features()
+        self._error_test_x = error_test_x  # we will use them later when compute metrics
+        self._error_test_y = error_test_y
+        self._features_in_model_performance_predictor = predictor.get_features()
 
         logger.info("Fitting the model performance predictor...")
 
@@ -123,8 +137,8 @@ class ErrorAnalyzer:
         dt_clf = tree.DecisionTreeClassifier(criterion=criterion, min_samples_leaf=1, random_state=1337)
         parameters = {'max_depth': MAX_DEPTH_GRID}
         gs_clf = GridSearchCV(dt_clf, parameters, cv=5)
-        gs_clf.fit(error_train_X, error_train_Y)
-        self.error_clf = gs_clf.best_estimator_
+        gs_clf.fit(error_train_x, error_train_y)
+        self._error_clf = gs_clf.best_estimator_
 
         logger.info('Grid search selected max_depth = {}'.format(gs_clf.best_params_['max_depth']))
 
@@ -140,8 +154,8 @@ class ErrorAnalyzer:
 
         logger.info('Prepare data with model for model performance predictor')
 
-        if self.target not in original_df:
-            raise ValueError('The original dataset does not contain target "{}".'.format(self.target))
+        if self._target not in original_df:
+            raise ValueError('The original dataset does not contain target "{}".'.format(self._target))
 
         if not_enough_data(original_df, min_len=MIN_NUM_ROWS):
             raise ValueError(
@@ -171,19 +185,19 @@ class ErrorAnalyzer:
         to primary_model_true_accuracy
         """
 
-        y_true = self._error_test_Y
-        y_pred = self.error_clf.predict(self._error_test_X)
+        y_true = self._error_test_y
+        y_pred = self._error_clf.predict(self._error_test_x)
         n_test_samples = y_pred.shape[0]
-        self.mpp_accuracy_score = accuracy_score(y_true, y_pred)
-        logger.info('Model Performance Predictor accuracy: {}'.format(self.mpp_accuracy_score))
+        self._mpp_accuracy_score = accuracy_score(y_true, y_pred)
+        logger.info('Model Performance Predictor accuracy: {}'.format(self._mpp_accuracy_score))
 
-        self.primary_model_predicted_accuracy = float(np.count_nonzero(y_pred == CORRECT_PREDICTION)) / n_test_samples
-        self.primary_model_true_accuracy = float(np.count_nonzero(y_true == CORRECT_PREDICTION)) / n_test_samples
+        self._primary_model_predicted_accuracy = float(np.count_nonzero(y_pred == CORRECT_PREDICTION)) / n_test_samples
+        self._primary_model_true_accuracy = float(np.count_nonzero(y_true == CORRECT_PREDICTION)) / n_test_samples
 
-        logger.info('Primary model accuracy: {}'.format(self.primary_model_true_accuracy))
-        logger.info('MPP predicted accuracy: {}'.format(self.primary_model_predicted_accuracy))
+        logger.info('Primary model accuracy: {}'.format(self._primary_model_true_accuracy))
+        logger.info('MPP predicted accuracy: {}'.format(self._primary_model_predicted_accuracy))
 
-        difference_true_pred_accuracy = np.abs(self.primary_model_true_accuracy - self.primary_model_predicted_accuracy)
+        difference_true_pred_accuracy = np.abs(self._primary_model_true_accuracy - self._primary_model_predicted_accuracy)
         if difference_true_pred_accuracy > MPP_ACCURACY_TOLERANCE:  # TODO: add message in UI?
             logger.warning("Warning: the built MPP might not be representative of the primary model performances.")
 
@@ -208,8 +222,8 @@ class ErrorAnalyzer:
 
     def _get_errors(self, test_df, prediction_column):
         """ compute errors of the primary model on the test set """
-        if self.is_regression:
-            target = test_df[self.target]
+        if self._is_regression:
+            target = test_df[self._target]
             predictions = test_df[prediction_column]
             difference = np.abs(target - predictions)
 
@@ -218,14 +232,14 @@ class ErrorAnalyzer:
             error = difference > epsilon
             return error
 
-        error = (test_df[self.target] != test_df[prediction_column])
+        error = (test_df[self._target] != test_df[prediction_column])
         return np.array(error)
 
     def plot_error_tree(self, size=None):
 
-        digraph_tree = tree.export_graphviz(self.error_clf,
-                                            feature_names=self.features_in_model_performance_predictor,
-                                            class_names=self.error_clf.classes_,
+        digraph_tree = tree.export_graphviz(self._error_clf,
+                                            feature_names=self._features_in_model_performance_predictor,
+                                            class_names=self._error_clf.classes_,
                                             node_ids=True,
                                             proportion=False,
                                             rotate=False,
@@ -241,7 +255,7 @@ class ErrorAnalyzer:
                 values = [int(ii) for ii in node.get_label().split('value = [')[1].split(']')[0].split(',')]
                 values = [float(v) / sum(values) for v in values]
                 node_arg_class = np.argmax(values)
-                node_class = self.error_clf.classes_[node_arg_class]
+                node_class = self._error_clf.classes_[node_arg_class]
                 # transparency as the entropy value
                 alpha = values[node_arg_class]
                 class_color = ERROR_TREE_COLORS[node_class].strip('#')
@@ -256,7 +270,7 @@ class ErrorAnalyzer:
                     idx = int(node.get_label().split('node #')[1].split('\\n')[0])
                     less_than_equal_split = node.get_label().split(' <= ')
                     entropy_split = less_than_equal_split[1].split('\\nentropy')
-                    left_child = self.tree.nodes[self.tree.nodes[idx].children_ids[0]]
+                    left_child = self._tree.nodes[self._tree.nodes[idx].children_ids[0]]
                     if left_child.get_type() == Node.TYPES.NUM:
                         descaled_value = left_child.end
                         descaled_value = '%.2f' % descaled_value
@@ -277,30 +291,30 @@ class ErrorAnalyzer:
         return gvz_graph
 
     def read_feature(self, preprocessed_feature):
-        if preprocessed_feature in self.tree_parser.preprocessed_feature_mapping:
-            split_param = self.tree_parser.preprocessed_feature_mapping[preprocessed_feature]
+        if preprocessed_feature in self._tree_parser.preprocessed_feature_mapping:
+            split_param = self._tree_parser.preprocessed_feature_mapping[preprocessed_feature]
             return split_param.feature, split_param.value
         else:
             return preprocessed_feature, None
 
     def prepare_features_for_plot(self):
 
-        self.tree_parser = TreeParser(self._model_accessor.model_handler, self.error_clf)
-        self.tree = self.tree_parser.build_tree(self._error_df, self.features_in_model_performance_predictor)
-        self.tree.parse_nodes(self.tree_parser, self.features_in_model_performance_predictor, self.preprocessed_x)
+        self._tree_parser = TreeParser(self._model_accessor.model_handler, self._error_clf)
+        self._tree = self._tree_parser.build_tree(self._error_df, self._features_in_model_performance_predictor)
+        self._tree.parse_nodes(self._tree_parser, self._features_in_model_performance_predictor, self._preprocessed_x)
 
-        rescalers = self.tree_parser.rescalers
+        rescalers = self._tree_parser.rescalers
         scalings = {rescaler.in_col: rescaler for rescaler in rescalers}
 
-        feature_list = self.features_in_model_performance_predictor
+        feature_list = self._features_in_model_performance_predictor
 
-        X = self._error_train_X
+        x = self._error_train_x
 
         feature_list_undo = [self.read_feature(feature_name)[0] for feature_name in feature_list]
         feature_list_undo = list(dict.fromkeys(feature_list_undo))
 
         n_features_undo = len(feature_list_undo)
-        X_deprocessed = np.zeros((X.shape[0], n_features_undo))
+        x_deprocessed = np.zeros((x.shape[0], n_features_undo))
         value_mapping = dict.fromkeys(list(range(n_features_undo)), [])
 
         for f_id, feature_name in enumerate(feature_list):
@@ -308,10 +322,9 @@ class ErrorAnalyzer:
             f_id_undo = feature_list_undo.index(feature_name_undo)
 
             if self._model_accessor.get_per_feature().get(feature_name_undo).get("type") == "NUMERIC":
-                x_deprocessed = _denormalize_feature_value(scalings, feature_name, X[:, f_id])
-                X_deprocessed[:, f_id_undo] = x_deprocessed
+                x_deprocessed[:, f_id_undo] = _denormalize_feature_value(scalings, feature_name, x[:, f_id])
             else:
-                samples_indices = np.where(X[:, f_id] == 1)
+                samples_indices = np.where(x[:, f_id] == 1)
                 if samples_indices is not None:
                     if len(feature_value) > 1:
                         feature_value = 'Others'
@@ -319,39 +332,39 @@ class ErrorAnalyzer:
                         feature_value = feature_value[0]
                     value_mapping[f_id_undo].append(feature_value)
                     samples_indices = samples_indices[0]
-                    X_deprocessed[samples_indices, f_id_undo] = len(value_mapping[f_id_undo]) - 1
+                    x_deprocessed[samples_indices, f_id_undo] = len(value_mapping[f_id_undo]) - 1
 
-        self.X_deprocessed = X_deprocessed
-        self.feature_names_deprocessed = feature_list_undo
-        self.value_mapping = value_mapping
+        self._x_deprocessed = x_deprocessed
+        self._feature_names_deprocessed = feature_list_undo
+        self._value_mapping = value_mapping
 
     def get_leaf_ids(self):
-        if self.error_train_leaf_id is None:
-            self.error_train_leaf_id = self.error_clf.apply(self._error_train_X)
+        if self._error_train_leaf_id is None:
+            self._error_train_leaf_id = self._error_clf.apply(self._error_train_x)
 
-        return self.error_train_leaf_id
+        return self._error_train_leaf_id
 
     def get_ranked_error_nodes(self):
-        if self.ranked_error_nodes is None:
+        if self._ranked_error_nodes is None:
             error_leaf_nodes = []
             error_leaf_nodes_importance = []
             leaf_ids = self.get_leaf_ids()
             leaf_nodes = np.unique(leaf_ids)
-            error_class_idx = np.where(self.error_clf.classes_ == WRONG_PREDICTION)[0]
-            correct_class_idx = np.where(self.error_clf.classes_ == CORRECT_PREDICTION)[0]
+            error_class_idx = np.where(self._error_clf.classes_ == WRONG_PREDICTION)[0]
+            correct_class_idx = np.where(self._error_clf.classes_ == CORRECT_PREDICTION)[0]
             for leaf in leaf_nodes:
-                decision = self.error_clf.tree_.value[leaf, :].argmax()
-                if self.error_clf.classes_[decision] == WRONG_PREDICTION:
+                decision = self._error_clf.tree_.value[leaf, :].argmax()
+                if self._error_clf.classes_[decision] == WRONG_PREDICTION:
                     error_leaf_nodes.append(leaf)
-                    values = self.error_clf.tree_.value[leaf, :]
+                    values = self._error_clf.tree_.value[leaf, :]
                     n_errors = values[0, error_class_idx]
                     n_corrects = values[0, correct_class_idx]
                     leaf_impurity = float(n_corrects) / (n_errors + n_corrects)
                     n_difference = n_corrects - n_errors  # always negative
                     error_leaf_nodes_importance.append(n_difference + leaf_impurity)
-            self.ranked_error_nodes = [x for _, x in sorted(zip(error_leaf_nodes_importance, error_leaf_nodes))]
+            self._ranked_error_nodes = [x for _, x in sorted(zip(error_leaf_nodes_importance, error_leaf_nodes))]
 
-        return self.ranked_error_nodes
+        return self._ranked_error_nodes
 
     def plot_hist(self, data, bins, labels, colors, alpha, histtype='bar'):
         n_samples = 0
@@ -372,19 +385,19 @@ class ErrorAnalyzer:
         if isinstance(nodes, int):
             nodes = [nodes]
 
-        error_class_idx = np.where(self.error_clf.classes_ == WRONG_PREDICTION)[0]
-        correct_class_idx = np.where(self.error_clf.classes_ == CORRECT_PREDICTION)[0]
+        error_class_idx = np.where(self._error_clf.classes_ == WRONG_PREDICTION)[0]
+        correct_class_idx = np.where(self._error_clf.classes_ == CORRECT_PREDICTION)[0]
 
-        feature_list = self.features_in_model_performance_predictor
-        ranked_features = self.tree_parser._rank_features_by_error_correlation(feature_list,
+        feature_list = self._features_in_model_performance_predictor
+        ranked_features = self._tree_parser._rank_features_by_error_correlation(feature_list,
                                                                                max_number_features=top_k_features,
                                                                                include_non_split_features=True)
 
-        feature_names = self.feature_names_deprocessed
+        feature_names = self._feature_names_deprocessed
 
         feature_idx_by_importance = [feature_names.index(feat_name) for feat_name in ranked_features]
 
-        X, Y = self.X_deprocessed, self._error_train_Y
+        x, y = self._x_deprocessed, self._error_train_y
 
         leaf_ids = self.get_leaf_ids()
         leaf_nodes = np.unique(leaf_ids)
@@ -397,21 +410,21 @@ class ErrorAnalyzer:
                     print("Selected nodes are not leaf nodes.")
                     return
 
-        X_error_global = X[Y == WRONG_PREDICTION, :]
-        X_correct_global = X[Y == CORRECT_PREDICTION, :]
+        x_error_global = x[y == WRONG_PREDICTION, :]
+        x_correct_global = x[y == CORRECT_PREDICTION, :]
 
         class_colors = [ERROR_TREE_COLORS[CORRECT_PREDICTION], ERROR_TREE_COLORS[WRONG_PREDICTION]]
 
         for leaf in leaf_nodes:
-            values = self.error_clf.tree_.value[leaf, :]
+            values = self._error_clf.tree_.value[leaf, :]
             n_errors = values[0, error_class_idx]
             n_corrects = values[0, correct_class_idx]
             print('Node %d: (%d correct predictions, %d wrong predictions)' % (leaf, n_corrects, n_errors))
             node_indices = leaf_ids == leaf
-            Y_node = Y[node_indices]
-            X_node = X[node_indices, :]
-            X_error_node = X_node[Y_node == WRONG_PREDICTION, :]
-            X_correct_node = X_node[Y_node == CORRECT_PREDICTION, :]
+            y_node = y[node_indices]
+            x_node = x[node_indices, :]
+            x_error_node = x_node[y_node == WRONG_PREDICTION, :]
+            x_correct_node = x_node[y_node == CORRECT_PREDICTION, :]
 
             for f_id in feature_idx_by_importance:
 
@@ -421,16 +434,16 @@ class ErrorAnalyzer:
 
                 print(f_name)
 
-                f_global = X[:, f_id]
-                f_node = X_node[:, f_id]
+                f_global = x[:, f_id]
+                f_node = x_node[:, f_id]
 
-                f_correct_global = X_correct_global[:, f_id]
-                f_error_global = X_error_global[:, f_id]
-                f_correct_node = X_correct_node[:, f_id]
-                f_error_node = X_error_node[:, f_id]
+                f_correct_global = x_correct_global[:, f_id]
+                f_error_global = x_error_global[:, f_id]
+                f_correct_node = x_correct_node[:, f_id]
+                f_error_node = x_error_node[:, f_id]
 
                 if self._model_accessor.get_per_feature().get(f_name).get("type") != "NUMERIC":
-                    labels = self.value_mapping[f_id]
+                    labels = self._value_mapping[f_id]
                     n_labels = len(labels)
                     bins = np.linspace(0, n_labels - 1, n_labels)
                     ax = plt.gca()
@@ -438,7 +451,7 @@ class ErrorAnalyzer:
                     ax.set_xticklabels(labels)
                     plt.xticks(rotation=90)
                 else:
-                    f_values = np.unique(X[:, f_id])
+                    f_values = np.unique(x[:, f_id])
                     bins = np.linspace(np.min(f_values), np.max(f_values))
 
                 if compare_to_global:
@@ -460,8 +473,8 @@ class ErrorAnalyzer:
                 else:
                     x = [f_node]
                     labels = ['node']
-                    decision = self.error_clf.tree_.value[leaf, :].argmax()
-                    colors = [ERROR_TREE_COLORS[self.error_clf.classes_[decision]]]
+                    decision = self._error_clf.tree_.value[leaf, :].argmax()
+                    colors = [ERROR_TREE_COLORS[self._error_clf.classes_[decision]]]
 
                 self.plot_hist(x, bins, labels, colors, alpha=1.0)
 
@@ -476,8 +489,8 @@ class ErrorAnalyzer:
     def get_path_to_node(self, node_idx):
         run_node_idx = node_idx
         path_to_node = []
-        while self.tree.nodes[run_node_idx].feature:
-            cur_node = self.tree.nodes[run_node_idx]
+        while self._tree.nodes[run_node_idx].feature:
+            cur_node = self._tree.nodes[run_node_idx]
             feature = cur_node.feature
             if cur_node.get_type() == Node.TYPES.NUM:
                 if cur_node.beginning:
@@ -493,11 +506,10 @@ class ErrorAnalyzer:
                     sign = ' == '
                 value = cur_node.values[0]
             path_to_node.append(feature + sign + value)
-            run_node_idx = self.tree.nodes[run_node_idx].parent_id
+            run_node_idx = self._tree.nodes[run_node_idx].parent_id
         path_to_node = path_to_node[::-1]
 
         return path_to_node
-
 
     def error_node_summary(self, nodes='all_errors'):
         """ return summary information regarding input nodes """
@@ -519,12 +531,12 @@ class ErrorAnalyzer:
                     print("Selected nodes are not leaf nodes.")
                     return
 
-        Y = self._error_train_Y
-        n_total_errors = Y[Y == WRONG_PREDICTION].shape[0]
-        error_class_idx = np.where(self.error_clf.classes_ == WRONG_PREDICTION)[0]
-        correct_class_idx = np.where(self.error_clf.classes_ == CORRECT_PREDICTION)[0]
+        y = self._error_train_y
+        n_total_errors = y[y == WRONG_PREDICTION].shape[0]
+        error_class_idx = np.where(self._error_clf.classes_ == WRONG_PREDICTION)[0]
+        correct_class_idx = np.where(self._error_clf.classes_ == CORRECT_PREDICTION)[0]
         for leaf in leaf_nodes:
-            values = self.error_clf.tree_.value[leaf, :]
+            values = self._error_clf.tree_.value[leaf, :]
             n_errors = values[0, error_class_idx]
             n_corrects = values[0, correct_class_idx]
             print('Node %d: (%d correct predictions, %d wrong predictions)' % (leaf, n_corrects, n_errors))
@@ -538,12 +550,12 @@ class ErrorAnalyzer:
     def mpp_summary(self):
         """ print ErrorAnalyzer summary metrics """
         print('The ErrorAnalyzer Decision Tree was trained with accuracy %.2f%%.' %
-              (self.mpp_accuracy_score * 100))
+              (self._mpp_accuracy_score * 100))
         print('The Decision Tree estimated the primary model''s accuracy to %.2f%%.' %
-              (self.primary_model_predicted_accuracy * 100))
+              (self._primary_model_predicted_accuracy * 100))
         print('The true accuracy of the primary model is %.2f.%%' %
-              (self.primary_model_true_accuracy * 100))
-        inv_fidelity = np.abs(self.primary_model_predicted_accuracy - self.primary_model_true_accuracy)
+              (self._primary_model_true_accuracy * 100))
+        inv_fidelity = np.abs(self._primary_model_predicted_accuracy - self._primary_model_true_accuracy)
         fidelity = 1.-inv_fidelity
 
         if inv_fidelity <= MPP_ACCURACY_TOLERANCE:
