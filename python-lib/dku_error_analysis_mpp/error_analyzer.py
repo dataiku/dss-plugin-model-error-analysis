@@ -470,28 +470,28 @@ class ErrorAnalyzer:
 
                 if compare_to_global:
                     if show_class:
-                        x = [f_correct_global, f_error_global]
+                        x_hist = [f_correct_global, f_error_global]
                         labels = ['global correct', 'global error']
                         colors = class_colors
                     else:
-                        x = [f_global]
+                        x_hist = [f_global]
                         labels = ['global']
                         # global is mainly correct: take color of correct prediction class
                         colors = [ErrorAnalyzerConstants.ERROR_TREE_COLORS[ErrorAnalyzerConstants.CORRECT_PREDICTION]]
 
-                    self.plot_hist(x, bins, labels, colors, alpha=0.5)
+                    self.plot_hist(x_hist, bins, labels, colors, alpha=0.5)
 
                 if show_class:
-                    x = [f_correct_node, f_error_node]
+                    x_hist = [f_correct_node, f_error_node]
                     labels = ['node correct', 'node error']
                     colors = class_colors
                 else:
-                    x = [f_node]
+                    x_hist = [f_node]
                     labels = ['node']
                     decision = self._error_clf.tree_.value[leaf, :].argmax()
                     colors = [ErrorAnalyzerConstants.ERROR_TREE_COLORS[self._error_clf.classes_[decision]]]
 
-                self.plot_hist(x, bins, labels, colors, alpha=1.0)
+                self.plot_hist(x_hist, bins, labels, colors, alpha=1.0)
 
                 plt.xlabel(f_name)
                 plt.ylabel('Proportion of samples')
