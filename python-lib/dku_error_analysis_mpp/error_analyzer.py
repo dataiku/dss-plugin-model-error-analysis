@@ -259,7 +259,6 @@ class ErrorAnalyzer:
         nodes = pydot_graph.get_node_list()
         for node in nodes:
             if node.get_label():
-                print(node.get_label())
                 node_label = node.get_label()
                 alpha = 0.0
                 node_class = ErrorAnalyzerConstants.CORRECT_PREDICTION
