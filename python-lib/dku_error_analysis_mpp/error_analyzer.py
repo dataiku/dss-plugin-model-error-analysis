@@ -282,7 +282,7 @@ class ErrorAnalyzer:
                 if ' <= ' in node_label:
                     idx = int(node_label.split('node #')[1].split('\\n')[0])
                     lte_split = node_label.split(' <= ')
-                    entropy_split = less_than_equal_split[1].split('\\nentropy')
+                    entropy_split = lte_split[1].split('\\nentropy')
                     left_child = self._tree.nodes[self._tree.nodes[idx].children_ids[0]]
                     if left_child.get_type() == Node.TYPES.NUM:
                         descaled_value = left_child.end
