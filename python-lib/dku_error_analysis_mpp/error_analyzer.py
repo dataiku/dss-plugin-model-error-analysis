@@ -177,7 +177,7 @@ class ErrorAnalyzer:
             prediction_column=ErrorAnalyzerConstants.PREDICTION_COLUMN)
 
         df[ErrorAnalyzerConstants.ERROR_COLUMN] = df[ErrorAnalyzerConstants.ERROR_COLUMN].replace(
-            {True: ErrorAnalyzerConstants.CORRECT_PREDICTION, False: ErrorAnalyzerConstants.CORRECT_PREDICTION})
+            {True: ErrorAnalyzerConstants.WRONG_PREDICTION, False: ErrorAnalyzerConstants.CORRECT_PREDICTION})
 
         selected_features = [ErrorAnalyzerConstants.ERROR_COLUMN] + self._model_accessor.get_selected_features()
 
@@ -259,12 +259,18 @@ class ErrorAnalyzer:
         nodes = pydot_graph.get_node_list()
         for node in nodes:
             if node.get_label():
-                values = [int(ii) for ii in node.get_label().split('value = [')[1].split(']')[0].split(',')]
-                values = [float(v) / sum(values) for v in values]
-                node_arg_class = np.argmax(values)
-                node_class = self._error_clf.classes_[node_arg_class]
-                # transparency as the entropy value
-                alpha = values[node_arg_class]
+                print(node.get_label())
+                node_label = node.get_label()
+                alpha = 0.0
+                node_class = ErrorAnalyzerConstants.CORRECT_PREDICTION
+                if 'value = [' in node_label:
+                    values = [int(ii) for ii in node_label.split('value = [')[1].split(']')[0].split(',')]
+                    values = [float(v) / sum(values) for v in values]
+                    node_arg_class = np.argmax(values)
+                    node_class = self._error_clf.classes_[node_arg_class]
+                    # transparency as the entropy value
+                    alpha = values[node_arg_class]
+
                 class_color = ErrorAnalyzerConstants.ERROR_TREE_COLORS[node_class].strip('#')
                 class_color_rgb = tuple(int(class_color[i:i + 2], 16) for i in (0, 2, 4))
                 # compute the color as alpha against white
@@ -273,9 +279,9 @@ class ErrorAnalyzer:
                 node.set_fillcolor(color)
 
                 # descale threshold value
-                if ' <= ' in node.get_label():
-                    idx = int(node.get_label().split('node #')[1].split('\\n')[0])
-                    lte_split = node.get_label().split(' <= ')
+                if ' <= ' in node_label:
+                    idx = int(node_label.split('node #')[1].split('\\n')[0])
+                    lte_split = node_label.split(' <= ')
                     entropy_split = less_than_equal_split[1].split('\\nentropy')
                     left_child = self._tree.nodes[self._tree.nodes[idx].children_ids[0]]
                     if left_child.get_type() == Node.TYPES.NUM:
