@@ -122,7 +122,7 @@ class ErrorAnalyzer:
         error_train_x, error_test_x, error_train_y, error_test_y = train_test_split(
             self._preprocessed_x,
             self._error_y,
-            test_size=0.2
+            test_size=ErrorAnalyzerConstants.TEST_SIZE
         )
 
         self._error_train_x = error_train_x  # we will use them later when plotting

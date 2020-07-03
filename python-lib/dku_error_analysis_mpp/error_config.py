@@ -8,6 +8,7 @@ class ErrorAnalyzerConstants(object):
     WRONG_PREDICTION = "Wrong prediction"
     CORRECT_PREDICTION = "Correct prediction"
     MAX_DEPTH_GRID = [5, 10, 15, 20, 30, 50]
+    TEST_SIZE = 0.2
 
     MIN_NUM_ROWS = 500  # heuristic choice
     MAX_NUM_ROW = 100000  # heuristic choice
