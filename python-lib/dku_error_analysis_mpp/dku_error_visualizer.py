@@ -150,11 +150,8 @@ class DkuErrorVisualizer:
                                              show_class=False, figsize=(10, 5)):
         """ return plot of error node feature distribution and compare to global baseline """
 
-        if not (isinstance(nodes, list) or isinstance(nodes, int)):
-            assert (nodes in ['all', 'all_errors'])
-
-        if isinstance(nodes, int):
-            nodes = [nodes]
+        leaf_nodes = self._error_visualizer.get_list_of_nodes(nodes)
+        leaf_ids = self._error_visualizer.leaf_ids
 
         error_class_idx = np.where(self._error_clf.classes_ == ErrorAnalyzerConstants.WRONG_PREDICTION)[0]
         correct_class_idx = np.where(self._error_clf.classes_ == ErrorAnalyzerConstants.CORRECT_PREDICTION)[0]
@@ -169,9 +166,6 @@ class DkuErrorVisualizer:
         feature_idx_by_importance = [feature_names.index(feat_name) for feat_name in ranked_features]
 
         x, y = self._x_deprocessed, self._error_train_y
-
-        leaf_nodes = self._error_visualizer.get_list_of_nodes(nodes)
-        leaf_ids = self._error_visualizer.leaf_ids
 
         x_error_global = x[y == ErrorAnalyzerConstants.WRONG_PREDICTION, :]
         x_correct_global = x[y == ErrorAnalyzerConstants.CORRECT_PREDICTION, :]
