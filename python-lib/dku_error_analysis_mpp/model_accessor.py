@@ -4,6 +4,7 @@
 import logging
 logger = logging.getLogger(__name__)
 
+
 class ModelAccessor:
 
     def __init__(self, model_handler):
@@ -49,3 +50,6 @@ class ModelAccessor:
 
     def predict(self, df):
         return self.get_predictor().predict(df, with_probas=False)
+
+    def get_clf(self):
+        return self.model_handler.get_clf()

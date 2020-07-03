@@ -17,3 +17,5 @@ class ErrorAnalyzerConstants(object):
     NUMBER_EPSILON_VALUES = 50
 
     ERROR_TREE_COLORS = {CORRECT_PREDICTION: '#ed6547', WRONG_PREDICTION: '#fdc765'}
+
+    TOP_K_FEATURES = 3
