@@ -19,7 +19,7 @@ class DkuErrorAnalyzer(object):
     The nodes of the decision tree are different segments of errors to be studied individually.
     """
 
-    def __init__(self, model_accessor, seed=None):
+    def __init__(self, model_accessor, seed=65537):
 
         if model_accessor is None:
             raise NotImplementedError('you need to define a model accessor.')
@@ -31,10 +31,7 @@ class DkuErrorAnalyzer(object):
 
         self._error_df = None
 
-        if seed:
-            self._seed = seed
-        else:
-            self._seed = 65537
+        self._seed = seed
 
         self._error_analyzer = ErrorAnalyzer(self._model_accessor.get_clf(), self._seed)
 

@@ -24,7 +24,7 @@ class ErrorAnalyzer:
     The nodes of the decision tree are different segments of errors to be studied individually.
     """
 
-    def __init__(self, predictor, seed=None):
+    def __init__(self, predictor, seed=65537):
 
         try:
             # TODO need to set the right attributes to check for each type of estimator
@@ -56,10 +56,7 @@ class ErrorAnalyzer:
 
         self._error_visualizer = None
 
-        if seed:
-            self._seed = seed
-        else:
-            self._seed = 65537
+        self._seed = seed
 
     @property
     def tree(self):
