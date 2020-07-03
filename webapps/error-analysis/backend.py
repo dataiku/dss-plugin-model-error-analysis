@@ -10,7 +10,7 @@ from dataiku.core.dkujson import DKUJSONEncoder
 from dku_error_analysis_tree_parsing.tree_parser import TreeParser
 from dku_error_analysis_utils import safe_str
 from dku_error_analysis_mpp.model_metadata import get_model_handler
-from dku_error_analysis_mpp.error_analyzer import ErrorAnalyzer
+from dku_error_analysis_mpp.dku_error_analyzer import DkuErrorAnalyzer
 from dku_error_analysis_mpp.model_accessor import ModelAccessor
 
 
@@ -27,10 +27,10 @@ TREE = []
 
 def get_error_dt(model_handler):
     model_accessor = ModelAccessor(model_handler)
-    error_analyzer = ErrorAnalyzer(model_accessor)
+    dku_error_analyzer = DkuErrorAnalyzer(model_accessor)
 
-    error_analyzer.fit()
-    tree = error_analyzer.tree
+    dku_error_analyzer.fit()
+    tree = dku_error_analyzer.tree
 
     return tree
 
