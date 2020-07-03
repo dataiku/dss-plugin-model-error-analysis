@@ -73,6 +73,10 @@ class DkuErrorAnalyzer(object):
     def primary_model_true_accuracy(self):
         return self._error_analyzer.primary_model_true_accuracy
 
+    @property
+    def confidence_decision(self):
+        return self._error_analyzer.confidence_decision
+
     def fit(self):
         """
         Trains a Decision Tree to discriminate between samples that are correctly predicted or wrongly predicted

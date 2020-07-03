@@ -2,7 +2,6 @@
 import numpy as np
 from sklearn import tree
 from sklearn.model_selection import GridSearchCV, train_test_split
-from sklearn.metrics import accuracy_score
 from sklearn.base import is_regressor
 from sklearn.utils.validation import check_is_fitted
 from sklearn.exceptions import NotFittedError
@@ -10,6 +9,8 @@ from dku_error_analysis_mpp.kneed import KneeLocator
 from dku_error_analysis_utils import not_enough_data
 from dku_error_analysis_mpp.error_config import ErrorAnalyzerConstants
 from dku_error_analysis_mpp.error_visualizer import ErrorVisualizer
+from dku_error_analysis_mpp.metrics import mpp_report
+
 import logging
 
 logger = logging.getLogger(__name__)
@@ -40,14 +41,14 @@ class ErrorAnalyzer:
         self._error_train_y = None
         self._error_test_x = None
         self._error_test_y = None
+        self._error_test_y_pred = None
         self._preprocessed_x = None
         self._features_in_model_performance_predictor = None
         self._mpp_accuracy_score = None
         self._primary_model_predicted_accuracy = None
         self._primary_model_true_accuracy = None
-
-        self._error_train_leaf_id = None
-        self._ranked_error_nodes = None
+        self._confidence_decision = None
+        self._report = None
 
         self._error_y = None
 
@@ -84,15 +85,27 @@ class ErrorAnalyzer:
 
     @property
     def mpp_accuracy_score(self):
+        self.check_computed_metrics(self._mpp_accuracy_score)
         return self._mpp_accuracy_score
 
     @property
     def primary_model_predicted_accuracy(self):
+        self.check_computed_metrics(self._primary_model_predicted_accuracy)
         return self._primary_model_predicted_accuracy
 
     @property
     def primary_model_true_accuracy(self):
+        self.check_computed_metrics(self._primary_model_true_accuracy)
         return self._primary_model_true_accuracy
+
+    @property
+    def confidence_decision(self):
+        self.check_computed_metrics(self._confidence_decision)
+        return self._confidence_decision
+
+    def check_computed_metrics(self, attribute):
+        if attribute is None:
+            self.compute_model_performance_predictor_metrics()
 
     def fit(self, x, y):
         """
@@ -131,8 +144,6 @@ class ErrorAnalyzer:
 
         logger.info('Grid search selected max_depth = {}'.format(gs_clf.best_params_['max_depth']))
 
-        self.compute_model_performance_predictor_metrics()
-
     def prepare_data_for_model_performance_predictor(self, x, y):
         """
         Computes the errors of the primary model predictions and samples with max n = ErrorAnalyzerConstants.MAX_NUM_ROW
@@ -158,30 +169,27 @@ class ErrorAnalyzer:
 
         return
 
+    def predict(self, x):
+        return self._error_clf.predict(x)
+
     def compute_model_performance_predictor_metrics(self):
         """
-        MPP ability to predict primary model performance. Ideally primary_model_predicted_accuracy should be equal
+        Compute MPP ability to predict primary model performance.
+        Ideally primary_model_predicted_accuracy should be equal
         to primary_model_true_accuracy
         """
 
         y_true = self._error_test_y
-        y_pred = self._error_clf.predict(self._error_test_x)
-        n_test_samples = y_pred.shape[0]
-        self._mpp_accuracy_score = accuracy_score(y_true, y_pred)
-        logger.info('Model Performance Predictor accuracy: {}'.format(self._mpp_accuracy_score))
+        self._error_test_y_pred = self._error_clf.predict(self._error_test_x)
+        y_pred = self._error_test_y_pred
 
-        self._primary_model_predicted_accuracy = float(
-            np.count_nonzero(y_pred == ErrorAnalyzerConstants.CORRECT_PREDICTION)) / n_test_samples
-        self._primary_model_true_accuracy = float(
-            np.count_nonzero(y_true == ErrorAnalyzerConstants.CORRECT_PREDICTION)) / n_test_samples
+        report_dict = mpp_report(y_true, y_pred, output_dict=True)
 
-        logger.info('Primary model accuracy: {}'.format(self._primary_model_true_accuracy))
-        logger.info('MPP predicted accuracy: {}'.format(self._primary_model_predicted_accuracy))
+        self._mpp_accuracy_score = report_dict['mpp_accuracy_score']
+        self._primary_model_true_accuracy = report_dict['primary_model_true_accuracy']
+        self._primary_model_predicted_accuracy = report_dict['primary_model_predicted_accuracy']
 
-        difference_true_pred_accuracy = np.abs(
-            self._primary_model_true_accuracy - self._primary_model_predicted_accuracy)
-        if difference_true_pred_accuracy > ErrorAnalyzerConstants.MPP_ACCURACY_TOLERANCE:  # TODO: add message in UI?
-            logger.warning("Warning: the built MPP might not be representative of the primary model performances.")
+        self._confidence_decision = report_dict['confidence_decision']
 
     def _get_epsilon(self, difference, mode='rec'):
         """ compute epsilon to define errors in regression task """
@@ -247,21 +255,14 @@ class ErrorAnalyzer:
 
     def mpp_summary(self):
         """ print ErrorAnalyzer summary metrics """
-        print('The ErrorAnalyzer Decision Tree was trained with accuracy %.2f%%.' %
-              (self._mpp_accuracy_score * 100))
-        print('The Decision Tree estimated the primary model''s accuracy to %.2f%%.' %
-              (self._primary_model_predicted_accuracy * 100))
-        print('The true accuracy of the primary model is %.2f.%%' %
-              (self._primary_model_true_accuracy * 100))
-        inv_fidelity = np.abs(self._primary_model_predicted_accuracy - self._primary_model_true_accuracy)
-        fidelity = 1.-inv_fidelity
+        if self._report is None:
+            y_true = self._error_test_y
+            self.check_computed_metrics(self._error_test_y_pred)
+            y_pred = self._error_test_y_pred
 
-        if inv_fidelity <= ErrorAnalyzerConstants.MPP_ACCURACY_TOLERANCE:
-            print('The Fidelity of the ErrorAnalyzer is %.2f%%, which is sufficient to trust its results.' %
-                  (fidelity * 100))
-        else:
-            print('The Fidelity of the ErrorAnalyzer is %.2f%%, which might invalidate its results.' %
-                  (fidelity * 100))
+            self._report = mpp_report(y_true, y_pred)
+
+        print(self._report)
 
 
 

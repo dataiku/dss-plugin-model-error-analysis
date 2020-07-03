@@ -32,6 +32,10 @@ def get_error_dt(model_handler):
     dku_error_analyzer.fit()
     tree = dku_error_analyzer.tree
 
+    if not dku_error_analyzer.confidence_decision:
+        # TODO: add message in UI?
+        LOGGER.warning("Warning: the built MPP might not be representative of the primary model performances.")
+
     return tree
 
 @app.route("/load", methods=["GET"])
