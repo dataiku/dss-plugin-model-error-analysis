@@ -103,7 +103,10 @@ class ErrorVisualizer:
     def get_list_of_nodes(self, nodes):
 
         if not (isinstance(nodes, list) or isinstance(nodes, int)):
-            assert (nodes in ['all', 'all_errors'])
+            if nodes not in ['all', 'all_errors']:
+                raise ValuerError('The inpute nodes value is invalid. \\n'
+                                  'Nodes should be a node index, a list of node indices, \\n'
+                                  '"all" to show all nodes or "all_errors" to show all error nodes.')
 
         if isinstance(nodes, int):
             nodes = [nodes]
