@@ -1,5 +1,4 @@
 import traceback
-import json
 import logging
 from flask import jsonify
 import dataiku
@@ -7,8 +6,6 @@ import dataiku
 from dataiku.customwebapp import get_webapp_config
 from dataiku.core.dkujson import DKUJSONEncoder
 
-from dku_error_analysis_tree_parsing.tree_parser import TreeParser
-from dku_error_analysis_utils import safe_str
 from dku_error_analysis_mpp.model_metadata import get_model_handler
 from dku_error_analysis_mpp.dku_error_analyzer import DkuErrorAnalyzer
 from dku_error_analysis_mpp.model_accessor import ModelAccessor
