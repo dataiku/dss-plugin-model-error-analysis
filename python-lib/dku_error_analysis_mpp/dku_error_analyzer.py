@@ -4,8 +4,8 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from dku_error_analysis_mpp.error_config import ErrorAnalyzerConstants
 from dku_error_analysis_tree_parsing.tree_parser import TreeParser
+from dku_error_analysis_decision_tree.node import Node
 from dku_error_analysis_mpp.error_analyzer import ErrorAnalyzer
-from dku_error_analysis_mpp.dku_error_visualizer import DkuErrorVisualizer
 import logging
 
 logger = logging.getLogger(__name__)
@@ -45,30 +45,43 @@ class DkuErrorAnalyzer(ErrorAnalyzer):
         self._error_df = None
         self._tree = None
         self._tree_parser = None
+        self._features_dict = None
 
         self._dku_error_visualizer = None
 
     @property
     def tree(self):
         if self._tree_parser is None or self._tree is None:
-            self.parse_tree()
+            self._parse_tree()
         return self._tree
 
     @property
+    def tree_parser(self):
+        if self._tree_parser is None or self._tree is None:
+            self._parse_tree()
+        return self._tree_parser
+
+    @property
+    def features_dict(self):
+        if self._tree_parser is None or self._tree is None:
+            self._parse_tree()
+        return self._features_dict
+
+    @property
     def mpp_accuracy_score(self):
-        return self.mpp_accuracy_score(self._test_x, self._test_y)
+        return super(DkuErrorAnalyzer, self).mpp_accuracy_score(self._test_x, self._test_y)
 
     @property
     def primary_model_predicted_accuracy(self):
-        return self.primary_model_predicted_accuracy(self._test_x, self._test_y)
+        return super(DkuErrorAnalyzer, self).primary_model_predicted_accuracy(self._test_x, self._test_y)
 
     @property
     def primary_model_true_accuracy(self):
-        return self.primary_model_true_accuracy(self._test_x, self._test_y)
+        return super(DkuErrorAnalyzer, self).primary_model_true_accuracy(self._test_x, self._test_y)
 
     @property
     def confidence_decision(self):
-        return self.confidence_decision(self._test_x, self._test_y)
+        return super(DkuErrorAnalyzer, self).confidence_decision(self._test_x, self._test_y)
 
     def fit(self):
         """
@@ -108,7 +121,8 @@ class DkuErrorAnalyzer(ErrorAnalyzer):
 
         super(DkuErrorAnalyzer, self).fit(self._train_x, self._train_y)
 
-    def parse_tree(self):
+    def _parse_tree(self):
+        """ Parse Decision Tree and get features information used to display distributions """
         modified_length = len(self.error_train_x)
         self._error_df = self._train_x_df.head(modified_length)
         self._error_df.loc[:, ErrorAnalyzerConstants.ERROR_COLUMN] = self.error_train_y
@@ -119,42 +133,34 @@ class DkuErrorAnalyzer(ErrorAnalyzer):
                                self._features_in_model_performance_predictor,
                                self.error_train_x)
 
-    def prepare_error_visualizer(self):
+        self._features_dict = self._model_accessor.get_per_feature()
 
-        if self._tree_parser is None:
-            self.parse_tree()
+    def get_path_to_node(self, node_id):
+        """ return path to node as a list of split steps from the nodes of the de-processed
+        dku_error_analysis_decision_tree.tree.InteractiveTree object """
+        run_node_idx = node_id
+        path_to_node = []
+        while self._tree.nodes[run_node_idx].feature:
+            cur_node = self._tree.nodes[run_node_idx]
+            feature = cur_node.feature
+            if cur_node.get_type() == Node.TYPES.NUM:
+                if cur_node.beginning:
+                    sign = ' > '
+                    value = "%.2f" % cur_node.beginning
+                else:
+                    sign = ' <= '
+                    value = "%.2f" % cur_node.end
+            else:
+                if cur_node.others:
+                    sign = ' != '
+                else:
+                    sign = ' == '
+                value = cur_node.values[0]
+            path_to_node.append(feature + sign + value)
+            run_node_idx = self._tree.nodes[run_node_idx].parent_id
+        path_to_node = path_to_node[::-1]
 
-        self._dku_error_visualizer = DkuErrorVisualizer(error_clf=self._error_clf,
-                                                        error_train_x=self.error_train_x,
-                                                        error_train_y=self.error_train_y,
-                                                        features_in_mpp=self._features_in_model_performance_predictor,
-                                                        tree=self._tree,
-                                                        tree_parser=self._tree_parser,
-                                                        features_dict=self._model_accessor.get_per_feature())
-
-    def plot_error_tree(self, size=None):
-
-        if self._dku_error_visualizer is None:
-            self.prepare_error_visualizer()
-
-        return self._dku_error_visualizer.plot_error_tree(size)
-
-    def plot_error_node_feature_distribution(self, nodes='all_errors', top_k_features=3, compare_to_global=True,
-                                             show_class=False, figsize=(10, 5)):
-        """ return plot of error node feature distribution and compare to global baseline """
-
-        if self._dku_error_visualizer is None:
-            self.prepare_error_visualizer()
-
-        self._dku_error_visualizer.plot_error_node_feature_distribution(nodes, top_k_features, compare_to_global,
-                                                                        show_class, figsize)
-
-    def error_node_summary(self, nodes='all_errors'):
-        """ return summary information regarding input nodes """
-        if self._dku_error_visualizer is None:
-            self.prepare_error_visualizer()
-
-        self._dku_error_visualizer.error_node_summary(nodes)
+        return path_to_node
 
     def mpp_summary(self, output_dict=False):
         """ print ErrorAnalyzer summary metrics """

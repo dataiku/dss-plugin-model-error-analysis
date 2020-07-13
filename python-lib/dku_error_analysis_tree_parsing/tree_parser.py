@@ -105,12 +105,12 @@ class TreeParser(object):
                 features[name] = {
                     'mean':  avg
                 }
-        ranked_features = self._rank_features_by_error_correlation(feature_list)
+        ranked_features = self.rank_features_by_error_correlation(feature_list)
         tree = InteractiveTree(df, target, ranked_features, features)
         return tree
 
     # Rank features according to their correlation with the model performance
-    def _rank_features_by_error_correlation(self, feature_list,
+    def rank_features_by_error_correlation(self, feature_list,
                                             max_number_features=MAX_MOST_IMPORTANT_FEATURES,
                                             include_non_split_features=False):
         sorted_feature_indices = np.argsort(- self.error_model.feature_importances_)

@@ -7,38 +7,55 @@ import matplotlib
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
 from dku_error_analysis_mpp.error_config import ErrorAnalyzerConstants
+from dku_error_analysis_mpp.error_analyzer import ErrorAnalyzer
+from dku_error_analysis_mpp.dku_error_analyzer import DkuErrorAnalyzer
+from dku_error_analysis_decision_tree.node import Node
+from dku_error_analysis_tree_parsing.depreprocessor import _denormalize_feature_value
 import logging
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format='Error Analysis Plugin | %(levelname)s - %(message)s')
 
 
-class ErrorVisualizer:
+class ErrorVisualizer(object):
     """
-    ErrorVisualizer provides visual and command line utilities to analyze the error classifier in ErrorAnalyzer and
-    DkuErrorAnalyzer.
+    ErrorVisualizer provides visual utilities to analyze the error classifier in ErrorAnalyzer and DkuErrorAnalyzer.
     """
 
-    def __init__(self, error_clf, error_train_x, error_train_y):
+    def __init__(self, error_analyzer):
 
-        self._error_clf = error_clf
-        self._error_train_x = error_train_x
-        self._error_train_y = error_train_y
-        self._error_train_leaf_id = self.compute_leaf_ids()
-        self._ranked_error_nodes = self.compute_ranked_error_nodes()
+        if not isinstance(error_analyzer, ErrorAnalyzer):
+            raise NotImplementedError('you need to input an ErrorAnalyzer object.')
 
-    @property
-    def leaf_ids(self):
-        return self._error_train_leaf_id
+        self._error_analyzer = error_analyzer
+        self._error_clf = self._error_analyzer.model_performance_predictor
+        self._error_train_x = self._error_analyzer.error_train_x
+        self._error_train_y = self._error_analyzer.error_train_y
+        self._error_train_leaf_id = self._error_analyzer.leaf_ids
+        self._ranked_error_nodes = self._error_analyzer.ranked_error_nodes
 
-    @property
-    def ranked_error_nodes(self):
-        return self._ranked_error_nodes
+        self._features_in_model_performance_predictor = self._error_analyzer.model_performance_predictor_features
 
-    def plot_error_tree(self, size=None, feature_names=None):
+        if self._features_in_model_performance_predictor is None:
+            self._features_in_model_performance_predictor = list(range(self._error_clf.max_features_))
+
+        if isinstance(error_analyzer, DkuErrorAnalyzer):
+            self._tree = self._error_analyzer.tree
+            self._tree_parser = self._error_analyzer.tree_parser
+
+            self._features_dict = self._error_analyzer.features_dict
+
+            self._x_deprocessed = None
+            self._feature_names_deprocessed = None
+            self._value_mapping = None
+
+            self.prepare_features_for_plot()
+
+    def plot_error_tree(self, size=None):
+        """ Plot the graph of the decision tree """
 
         digraph_tree = tree.export_graphviz(self._error_clf,
-                                            feature_names=feature_names,
+                                            feature_names=self._features_in_model_performance_predictor,
                                             class_names=self._error_clf.classes_,
                                             node_ids=True,
                                             proportion=False,
@@ -70,61 +87,80 @@ class ErrorVisualizer:
                 color = '#{:02x}{:02x}{:02x}'.format(color_rgb[0], color_rgb[1], color_rgb[2])
                 node.set_fillcolor(color)
 
+                if isinstance(self._error_analyzer, DkuErrorAnalyzer):
+                    # descale threshold value
+                    if ' <= ' in node_label:
+                        idx = int(node_label.split('node #')[1].split('\\n')[0])
+                        lte_split = node_label.split(' <= ')
+                        entropy_split = lte_split[1].split('\\nentropy')
+                        left_child = self._tree.nodes[self._tree.nodes[idx].children_ids[0]]
+                        if left_child.get_type() == Node.TYPES.NUM:
+                            descaled_value = left_child.end
+                            descaled_value = '%.2f' % descaled_value
+                            lte_modified = ' <= '.join([lte_split[0], descaled_value])
+                        else:
+                            descaled_value = left_child.values[0]
+                            lte_split_without_feature = lte_split[0].split('\\n')[0]
+                            new_feature = left_child.feature
+                            lte_split_with_new_feature = lte_split_without_feature + '\\n' + new_feature
+                            lte_modified = ' != '.join([lte_split_with_new_feature, descaled_value])
+                        new_label = '\\nentropy'.join([lte_modified, entropy_split[1]])
+                        node.set_label(new_label)
+
         if size is not None:
             pydot_graph.set_size('"%d,%d!"' % (size[0], size[1]))
         gvz_graph = gv.Source(pydot_graph.to_string())
 
         return gvz_graph
 
-    def compute_leaf_ids(self):
-        return self._error_clf.apply(self._error_train_x)
+    def read_feature(self, preprocessed_feature):
+        """ Undo the preprocessing of feature names for categorical variables """
+        if preprocessed_feature in self._tree_parser.preprocessed_feature_mapping:
+            split_param = self._tree_parser.preprocessed_feature_mapping[preprocessed_feature]
+            return split_param.feature, split_param.value
+        else:
+            return preprocessed_feature, None
 
-    def compute_ranked_error_nodes(self):
-        error_leaf_nodes = []
-        error_leaf_nodes_importance = []
-        leaf_ids = self._error_train_leaf_id
-        leaf_nodes = np.unique(leaf_ids)
-        error_class_idx = np.where(self._error_clf.classes_ == ErrorAnalyzerConstants.WRONG_PREDICTION)[0]
-        correct_class_idx = np.where(self._error_clf.classes_ == ErrorAnalyzerConstants.CORRECT_PREDICTION)[0]
-        for leaf in leaf_nodes:
-            decision = self._error_clf.tree_.value[leaf, :].argmax()
-            if self._error_clf.classes_[decision] == ErrorAnalyzerConstants.WRONG_PREDICTION:
-                error_leaf_nodes.append(leaf)
-                values = self._error_clf.tree_.value[leaf, :]
-                n_errors = values[0, error_class_idx]
-                n_corrects = values[0, correct_class_idx]
-                leaf_impurity = float(n_corrects) / (n_errors + n_corrects)
-                n_difference = n_corrects - n_errors  # always negative
-                error_leaf_nodes_importance.append(n_difference + leaf_impurity)
-        ranked_error_nodes = [x for _, x in sorted(zip(error_leaf_nodes_importance, error_leaf_nodes))]
+    def prepare_features_for_plot(self):
+        """ Undo the preprocessing of features to plot distributions in DkuErrorAnalyzer """
 
-        return ranked_error_nodes
+        rescalers = self._tree_parser.rescalers
+        scalings = {rescaler.in_col: rescaler for rescaler in rescalers}
 
-    def get_list_of_nodes(self, nodes):
+        feature_list = self._features_in_model_performance_predictor
 
-        if not (isinstance(nodes, list) or isinstance(nodes, int)):
-            if nodes not in ['all', 'all_errors']:
-                raise ValueError('The input nodes value is invalid. '
-                                 'Nodes should be a node index, a list of node indices, '
-                                 '"all" to show all nodes or "all_errors" to show all error nodes.')
+        x = self._error_train_x
 
-        if isinstance(nodes, int):
-            nodes = [nodes]
+        feature_list_undo = [self.read_feature(feature_name)[0] for feature_name in feature_list]
+        feature_list_undo = list(dict.fromkeys(feature_list_undo))
 
-        leaf_ids = self._error_train_leaf_id
-        leaf_nodes = np.unique(leaf_ids)
-        if nodes is not 'all':
-            if nodes is 'all_errors':
-                leaf_nodes = self._ranked_error_nodes
+        n_features_undo = len(feature_list_undo)
+        x_deprocessed = np.zeros((x.shape[0], n_features_undo))
+        value_mapping = dict.fromkeys(list(range(n_features_undo)), [])
+
+        for f_id, feature_name in enumerate(feature_list):
+            feature_name_undo, feature_value = self.read_feature(feature_name)
+            f_id_undo = feature_list_undo.index(feature_name_undo)
+
+            if self._features_dict.get(feature_name_undo).get("type") == "NUMERIC":
+                x_deprocessed[:, f_id_undo] = _denormalize_feature_value(scalings, feature_name, x[:, f_id])
             else:
-                leaf_nodes = set(nodes) & set(leaf_nodes)
-                if not bool(leaf_nodes):
-                    print("Selected nodes are not leaf nodes.")
-                    return
+                samples_indices = np.where(x[:, f_id] == 1)
+                if samples_indices is not None:
+                    if len(feature_value) > 1:
+                        feature_value = 'Others'
+                    else:
+                        feature_value = feature_value[0]
+                    value_mapping[f_id_undo].append(feature_value)
+                    samples_indices = samples_indices[0]
+                    x_deprocessed[samples_indices, f_id_undo] = len(value_mapping[f_id_undo]) - 1
 
-        return leaf_nodes
+        self._x_deprocessed = x_deprocessed
+        self._feature_names_deprocessed = feature_list_undo
+        self._value_mapping = value_mapping
 
-    def plot_hist(self, data, bins, labels, colors, alpha, histtype='bar'):
+    @staticmethod
+    def plot_hist(data, bins, labels, colors, alpha, histtype='bar'):
         n_samples = 0
         for x in data:
             n_samples += x.shape[0]
@@ -136,6 +172,7 @@ class ErrorVisualizer:
     def rank_features_by_error_correlation(self, feature_names=None,
                                            top_k_features=ErrorAnalyzerConstants.TOP_K_FEATURES,
                                            include_non_split_features=False):
+        """ Rank features by correlation with error """
 
         if feature_names is None:
             feature_names = list(range(self._error_clf.max_features_))
@@ -154,25 +191,32 @@ class ErrorVisualizer:
         return ranked_features
 
     def plot_error_node_feature_distribution(self, nodes='all_errors', top_k_features=3, compare_to_global=True,
-                                             show_class=False, figsize=(10, 5), feature_names=None):
-        """ return plot of error node feature distribution and compare to global baseline """
-
-        if feature_names is None:
-            feature_names = list(range(self._error_clf.max_features_))
+                                             show_class=False, figsize=(10, 5)):
+        """ Return plot of error node feature distribution and compare to global baseline """
 
         leaf_ids = self._error_train_leaf_id
-        leaf_nodes = self.get_list_of_nodes(nodes)
+        leaf_nodes = self._error_analyzer.get_list_of_nodes(nodes)
 
         error_class_idx = np.where(self._error_clf.classes_ == ErrorAnalyzerConstants.WRONG_PREDICTION)[0]
         correct_class_idx = np.where(self._error_clf.classes_ == ErrorAnalyzerConstants.CORRECT_PREDICTION)[0]
 
-        ranked_features = self.rank_features_by_error_correlation(feature_names,
-                                                                  top_k_features=top_k_features,
-                                                                  include_non_split_features=True)
+        feature_names = self._features_in_model_performance_predictor
+
+        if isinstance(self._error_analyzer, DkuErrorAnalyzer):
+            ranked_features = self._tree_parser.rank_features_by_error_correlation(feature_names,
+                                                                                    max_number_features=top_k_features,
+                                                                                    include_non_split_features=True)
+            feature_names = self._feature_names_deprocessed
+
+            x, y = self._x_deprocessed, self._error_train_y
+        else:
+            ranked_features = self.rank_features_by_error_correlation(feature_names,
+                                                                      top_k_features=top_k_features,
+                                                                      include_non_split_features=True)
+
+            x, y = self._error_train_x, self._error_train_y
 
         feature_idx_by_importance = [feature_names.index(feat_name) for feat_name in ranked_features]
-
-        x, y = self._error_train_x, self._error_train_y
 
         x_error_global = x[y == ErrorAnalyzerConstants.WRONG_PREDICTION, :]
         x_correct_global = x[y == ErrorAnalyzerConstants.CORRECT_PREDICTION, :]
@@ -211,6 +255,16 @@ class ErrorVisualizer:
                 f_values = np.unique(x[:, f_id])
                 bins = np.linspace(np.min(f_values), np.max(f_values))
 
+                if isinstance(self._error_analyzer, DkuErrorAnalyzer):
+                    if self._features_dict.get(f_name).get("type") != "NUMERIC":
+                        labels = self._value_mapping[f_id]
+                        n_labels = len(labels)
+                        bins = np.linspace(0, n_labels - 1, n_labels)
+                        ax = plt.gca()
+                        ax.set_xticks(bins)
+                        ax.set_xticklabels(labels)
+                        plt.xticks(rotation=90)
+
                 if compare_to_global:
                     if show_class:
                         x_hist = [f_correct_global, f_error_global]
@@ -222,7 +276,7 @@ class ErrorVisualizer:
                         # global is mainly correct: take color of correct prediction class
                         colors = [ErrorAnalyzerConstants.ERROR_TREE_COLORS[ErrorAnalyzerConstants.CORRECT_PREDICTION]]
 
-                    self.plot_hist(x_hist, bins, labels, colors, alpha=0.5)
+                    ErrorVisualizer.plot_hist(x_hist, bins, labels, colors, alpha=0.5)
 
                 if show_class:
                     x_hist = [f_correct_node, f_error_node]
@@ -234,7 +288,7 @@ class ErrorVisualizer:
                     decision = self._error_clf.tree_.value[leaf, :].argmax()
                     colors = [ErrorAnalyzerConstants.ERROR_TREE_COLORS[self._error_clf.classes_[decision]]]
 
-                self.plot_hist(x_hist, bins, labels, colors, alpha=1.0)
+                ErrorVisualizer.plot_hist(x_hist, bins, labels, colors, alpha=1.0)
 
                 plt.xlabel(f_name)
                 plt.ylabel('Proportion of samples')
@@ -243,56 +297,3 @@ class ErrorVisualizer:
                 plt.pause(0.05)
 
         plt.show()
-
-    def get_path_to_node(self, node_id, feature_names=None):
-        """ return path to node as a list of split steps """
-        if feature_names is None:
-            feature_names = list(range(self._error_clf.max_features_))
-
-        children_left = self._error_clf.tree_.children_left
-        children_right = self._error_clf.tree_.children_right
-        feature = self._error_clf.tree_.feature
-        threshold = self._error_clf.tree_.threshold
-
-        cur_node_id = node_id
-        path_to_node = []
-        while cur_node_id > 0:
-            if cur_node_id in children_left:
-                sign = ' <= '
-                parent_id = list(children_left).index(cur_node_id)
-            else:
-                sign = " > "
-                parent_id = list(children_right).index(cur_node_id)
-
-            feat = feature[parent_id]
-            thresh = threshold[parent_id]
-
-            step = str(feature_names[feat]) + sign + ("%.2f" % thresh)
-            path_to_node.append(step)
-            cur_node_id = parent_id
-        path_to_node = path_to_node[::-1]
-
-        return path_to_node
-
-    def error_node_summary(self, nodes='all_errors', print_path_to_node=True, feature_names=None):
-        """ return summary information regarding input nodes """
-
-        leaf_nodes = self.get_list_of_nodes(nodes)
-
-        y = self._error_train_y
-        n_total_errors = y[y == ErrorAnalyzerConstants.WRONG_PREDICTION].shape[0]
-        error_class_idx = np.where(self._error_clf.classes_ == ErrorAnalyzerConstants.WRONG_PREDICTION)[0]
-        correct_class_idx = np.where(self._error_clf.classes_ == ErrorAnalyzerConstants.CORRECT_PREDICTION)[0]
-        for leaf in leaf_nodes:
-            values = self._error_clf.tree_.value[leaf, :]
-            n_errors = values[0, error_class_idx]
-            n_corrects = values[0, correct_class_idx]
-            print('Node %d: (%d correct predictions, %d wrong predictions)' % (leaf, n_corrects, n_errors))
-            print(' Local error (Purity): %.2f' % (float(n_errors) / (n_corrects + n_errors)))
-            print(' Global error: %.2f' % (float(n_errors) / n_total_errors))
-            if print_path_to_node:
-                print(' Path to node:')
-                path_to_node = self.get_path_to_node(leaf, feature_names)
-                for step in path_to_node:
-                    print('     ' + step)
-

@@ -8,7 +8,6 @@ from sklearn.exceptions import NotFittedError
 from dku_error_analysis_mpp.kneed import KneeLocator
 from dku_error_analysis_utils import not_enough_data
 from dku_error_analysis_mpp.error_config import ErrorAnalyzerConstants
-from dku_error_analysis_mpp.error_visualizer import ErrorVisualizer
 from dku_error_analysis_mpp.metrics import mpp_report
 
 import logging
@@ -53,7 +52,8 @@ class ErrorAnalyzer(object):
         self._tree = None
         self._tree_parser = None
 
-        self._error_visualizer = None
+        self._error_train_leaf_id = None
+        self._ranked_error_nodes = None
 
         self._seed = seed
 
@@ -77,25 +77,37 @@ class ErrorAnalyzer(object):
     def model_performance_predictor(self):
         return self._error_clf
 
+    @property
+    def leaf_ids(self):
+        if self._error_train_leaf_id is None:
+            self._error_train_leaf_id = self._compute_leaf_ids()
+        return self._error_train_leaf_id
+
+    @property
+    def ranked_error_nodes(self):
+        if self._ranked_error_nodes is None:
+            self._ranked_error_nodes = self._compute_ranked_error_nodes()
+        return self._ranked_error_nodes
+
     def mpp_accuracy_score(self, x_test, y_test):
-        self.check_computed_metrics(self._mpp_accuracy_score, x_test, y_test)
+        self._check_computed_metrics(self._mpp_accuracy_score, x_test, y_test)
         return self._mpp_accuracy_score
 
     def primary_model_predicted_accuracy(self, x_test, y_test):
-        self.check_computed_metrics(self._primary_model_predicted_accuracy, x_test, y_test)
+        self._check_computed_metrics(self._primary_model_predicted_accuracy, x_test, y_test)
         return self._primary_model_predicted_accuracy
 
     def primary_model_true_accuracy(self, x_test, y_test):
-        self.check_computed_metrics(self._primary_model_true_accuracy, x_test, y_test)
+        self._check_computed_metrics(self._primary_model_true_accuracy, x_test, y_test)
         return self._primary_model_true_accuracy
 
     def confidence_decision(self, x_test, y_test):
-        self.check_computed_metrics(self._confidence_decision, x_test, y_test)
+        self._check_computed_metrics(self._confidence_decision, x_test, y_test)
         return self._confidence_decision
 
-    def check_computed_metrics(self, attribute, x_test, y_test):
+    def _check_computed_metrics(self, attribute, x_test, y_test):
         if attribute is None:
-            self.compute_model_performance_predictor_metrics(x_test, y_test)
+            self._compute_model_performance_predictor_metrics(x_test, y_test)
 
     def fit(self, x, y):
         """
@@ -107,7 +119,7 @@ class ErrorAnalyzer(object):
         np.random.seed(self._seed)
 
         self._error_train_x = x
-        self._error_train_y = self.prepare_data_for_model_performance_predictor(x, y)
+        self._error_train_y = self._prepare_data_for_model_performance_predictor(x, y)
 
         logger.info("Fitting the model performance predictor...")
 
@@ -122,10 +134,10 @@ class ErrorAnalyzer(object):
 
         logger.info('Grid search selected max_depth = {}'.format(gs_clf.best_params_['max_depth']))
 
-    def prepare_data_for_model_performance_predictor(self, x, y):
+    def _prepare_data_for_model_performance_predictor(self, x, y):
         """
         Computes the errors of the primary model predictions and samples with max n = ErrorAnalyzerConstants.MAX_NUM_ROW
-        :return: a dataframe with error target (correctly predicted vs wrongly predicted)
+        :return: an array with error target (correctly predicted vs wrongly predicted)
         """
 
         logger.info('Prepare data with model for model performance predictor')
@@ -148,9 +160,10 @@ class ErrorAnalyzer(object):
         return error_y
 
     def predict(self, x):
+        """ Predict model performance on samples """
         return self._error_clf.predict(x)
 
-    def compute_model_performance_predictor_metrics(self, x_test, y_test):
+    def _compute_model_performance_predictor_metrics(self, x_test, y_test):
         """
         Compute MPP ability to predict primary model performance.
         Ideally primary_model_predicted_accuracy should be equal
@@ -164,7 +177,7 @@ class ErrorAnalyzer(object):
         self._error_test_x = x_test
         self._test_y = y_test
 
-        self._error_test_y = self.prepare_data_for_model_performance_predictor(x_test, y_test)
+        self._error_test_y = self._prepare_data_for_model_performance_predictor(x_test, y_test)
 
         y_true = self._error_test_y
         self._error_test_y_pred = self._error_clf.predict(self._error_test_x)
@@ -178,8 +191,9 @@ class ErrorAnalyzer(object):
 
         self._confidence_decision = report_dict['confidence_decision']
 
-    def _get_epsilon(self, difference, mode='rec'):
-        """ compute epsilon to define errors in regression task """
+    @staticmethod
+    def _get_epsilon(difference, mode='rec'):
+        """ Compute epsilon to define errors in regression task """
         assert (mode in ['std', 'rec'])
         if mode == 'std':
             std_diff = np.std(difference)
@@ -198,12 +212,12 @@ class ErrorAnalyzer(object):
         return epsilon
 
     def _get_errors(self, y, y_pred):
-        """ compute errors of the primary model on the test set """
+        """ Compute errors of the primary model on the test set """
         if self._is_regression:
 
             difference = np.abs(y - y_pred)
 
-            epsilon = self._get_epsilon(difference, mode='rec')
+            epsilon = ErrorAnalyzer._get_epsilon(difference, mode='rec')
 
             error = difference > epsilon
         else:
@@ -216,35 +230,114 @@ class ErrorAnalyzer(object):
 
         return error
 
-    def plot_error_tree(self, size=None):
+    def _compute_leaf_ids(self):
+        """ Compute indices of leaf nodes for the train set """
+        return self._error_clf.apply(self._error_train_x)
 
-        if self._error_visualizer is None:
-            self._error_visualizer = ErrorVisualizer(self._error_clf, self._error_train_x, self._error_train_y)
+    def _compute_ranked_error_nodes(self):
+        """ Select error nodes and rank them by importance, defined as: (n_errors - n_correct) - impurity.
+            Specifically error nodes with the same difference (n_errors - n_correct) are clustered together and
+            sorted by increasing impurity. For instance nodes [n_correct, n_errors]=[0, 7] is ranked before [0, 6] and
+            [0, 5], while [0, 5] is ranked after [0, 6] and [1, 7]: [0, 7], [0, 6], [1, 7], [0, 5]."""
+        error_leaf_nodes = []
+        error_leaf_nodes_importance = []
+        leaf_ids = self._error_train_leaf_id
+        leaf_nodes = np.unique(leaf_ids)
+        error_class_idx = np.where(self._error_clf.classes_ == ErrorAnalyzerConstants.WRONG_PREDICTION)[0]
+        correct_class_idx = np.where(self._error_clf.classes_ == ErrorAnalyzerConstants.CORRECT_PREDICTION)[0]
+        for leaf in leaf_nodes:
+            decision = self._error_clf.tree_.value[leaf, :].argmax()
+            if self._error_clf.classes_[decision] == ErrorAnalyzerConstants.WRONG_PREDICTION:
+                error_leaf_nodes.append(leaf)
+                values = self._error_clf.tree_.value[leaf, :]
+                n_errors = values[0, error_class_idx]
+                n_corrects = values[0, correct_class_idx]
+                leaf_impurity = float(n_corrects) / (n_errors + n_corrects)
+                n_difference = n_corrects - n_errors  # always negative
+                error_leaf_nodes_importance.append(n_difference + leaf_impurity)
+        ranked_error_nodes = [x for _, x in sorted(zip(error_leaf_nodes_importance, error_leaf_nodes))]
 
-        return self._error_visualizer.plot_error_tree(size, self._features_in_model_performance_predictor)
+        return ranked_error_nodes
 
-    def plot_error_node_feature_distribution(self, nodes='all_errors', top_k_features=3, compare_to_global=True,
-                                             show_class=False, figsize=(10, 5)):
-        """ return plot of error node feature distribution and compare to global baseline """
+    def get_list_of_nodes(self, nodes):
+        """ Parse input string and provide the desired nodes indices """
+        if not (isinstance(nodes, list) or isinstance(nodes, int)):
+            if nodes not in ['all', 'all_errors']:
+                raise ValueError('The input nodes value is invalid. '
+                                 'Nodes should be a node index, a list of node indices, '
+                                 '"all" to show all nodes or "all_errors" to show all error nodes.')
 
-        if self._error_visualizer is None:
-            self._error_visualizer = ErrorVisualizer(self._error_clf, self._error_train_x, self._error_train_y)
+        if isinstance(nodes, int):
+            nodes = [nodes]
 
-        self._error_visualizer.plot_error_node_feature_distribution(nodes, top_k_features, compare_to_global,
-                                                                    show_class, figsize,
-                                                                    self._features_in_model_performance_predictor)
+        leaf_ids = self.leaf_ids
+        leaf_nodes = np.unique(leaf_ids)
+        if nodes is not 'all':
+            if nodes is 'all_errors':
+                leaf_nodes = self.ranked_error_nodes
+            else:
+                leaf_nodes = set(nodes) & set(leaf_nodes)
+                if not bool(leaf_nodes):
+                    print("Selected nodes are not leaf nodes.")
+                    return
 
-    def error_node_summary(self, nodes='all_errors'):
-        """ return summary information regarding input nodes """
-        if self._error_visualizer is None:
-            self._error_visualizer = ErrorVisualizer(self._error_clf, self._error_train_x, self._error_train_y)
+        return leaf_nodes
 
-        self._error_visualizer.error_node_summary(nodes, feature_names=self._features_in_model_performance_predictor)
+    def get_path_to_node(self, node_id):
+        """ Return path to node as a list of split steps from the nodes of the sklearn Tree object """
+        feature_names = self._features_in_model_performance_predictor
+
+        children_left = self._error_clf.tree_.children_left
+        children_right = self._error_clf.tree_.children_right
+        feature = self._error_clf.tree_.feature
+        threshold = self._error_clf.tree_.threshold
+
+        cur_node_id = node_id
+        path_to_node = []
+        while cur_node_id > 0:
+            if cur_node_id in children_left:
+                sign = ' <= '
+                parent_id = list(children_left).index(cur_node_id)
+            else:
+                sign = " > "
+                parent_id = list(children_right).index(cur_node_id)
+
+            feat = feature[parent_id]
+            thresh = threshold[parent_id]
+
+            step = str(feature_names[feat]) + sign + ("%.2f" % thresh)
+            path_to_node.append(step)
+            cur_node_id = parent_id
+        path_to_node = path_to_node[::-1]
+
+        return path_to_node
+
+    def error_node_summary(self, nodes='all_errors', print_path_to_node=True):
+        """ Return summary information regarding input nodes """
+
+        leaf_nodes = self.get_list_of_nodes(nodes)
+
+        y = self._error_train_y
+        n_total_errors = y[y == ErrorAnalyzerConstants.WRONG_PREDICTION].shape[0]
+        error_class_idx = np.where(self._error_clf.classes_ == ErrorAnalyzerConstants.WRONG_PREDICTION)[0]
+        correct_class_idx = np.where(self._error_clf.classes_ == ErrorAnalyzerConstants.CORRECT_PREDICTION)[0]
+        for leaf in leaf_nodes:
+            values = self._error_clf.tree_.value[leaf, :]
+            n_errors = values[0, error_class_idx]
+            n_corrects = values[0, correct_class_idx]
+            print('Node %d: (%d correct predictions, %d wrong predictions)' % (leaf, n_corrects, n_errors))
+            print(' Local error (Purity): %.2f' % (float(n_errors) / (n_corrects + n_errors)))
+            print(' Global error: %.2f' % (float(n_errors) / n_total_errors))
+            if print_path_to_node:
+                print(' Path to node:')
+                path_to_node = self.get_path_to_node(leaf)
+                for step in path_to_node:
+                    print('     ' + step)
 
     def mpp_summary(self, x_test, y_test, output_dict=False):
-        """ print ErrorAnalyzer summary metrics """
+        """ Print ErrorAnalyzer summary metrics """
 
-        self.check_computed_metrics(self._error_test_y_pred, x_test, y_test)
+        self._check_computed_metrics(self._error_test_y_pred, x_test, y_test)
         y_true = self._error_test_y
         y_pred = self._error_test_y_pred
 
