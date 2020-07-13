@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format='Error Analysis Plugin | %(levelname)s - %(message)s')
 
 
-class ErrorAnalyzer:
+class ErrorAnalyzer(object):
     """
     ErrorAnalyzer analyzes the errors of a prediction model on a test set.
     It uses model predictions and ground truth target to compute the model errors on the test set.
@@ -25,7 +25,7 @@ class ErrorAnalyzer:
     The nodes of the decision tree are different segments of errors to be studied individually.
     """
 
-    def __init__(self, predictor, seed=65537):
+    def __init__(self, predictor, seed=65537, feature_names=None):
 
         try:
             # TODO need to set the right attributes to check for each type of estimator
@@ -43,7 +43,7 @@ class ErrorAnalyzer:
         self._error_test_y = None
         self._error_test_y_pred = None
         self._test_y = None
-        self._features_in_model_performance_predictor = None
+        self._features_in_model_performance_predictor = feature_names
         self._mpp_accuracy_score = None
         self._primary_model_predicted_accuracy = None
         self._primary_model_true_accuracy = None
@@ -216,29 +216,30 @@ class ErrorAnalyzer:
 
         return error
 
-    def plot_error_tree(self, size=None, feature_names=None):
+    def plot_error_tree(self, size=None):
 
         if self._error_visualizer is None:
             self._error_visualizer = ErrorVisualizer(self._error_clf, self._error_train_x, self._error_train_y)
 
-        return self._error_visualizer.plot_error_tree(size, feature_names)
+        return self._error_visualizer.plot_error_tree(size, self._features_in_model_performance_predictor)
 
     def plot_error_node_feature_distribution(self, nodes='all_errors', top_k_features=3, compare_to_global=True,
-                                             show_class=False, figsize=(10, 5), feature_names=None):
+                                             show_class=False, figsize=(10, 5)):
         """ return plot of error node feature distribution and compare to global baseline """
 
         if self._error_visualizer is None:
             self._error_visualizer = ErrorVisualizer(self._error_clf, self._error_train_x, self._error_train_y)
 
         self._error_visualizer.plot_error_node_feature_distribution(nodes, top_k_features, compare_to_global,
-                                                                    show_class, figsize, feature_names)
+                                                                    show_class, figsize,
+                                                                    self._features_in_model_performance_predictor)
 
-    def error_node_summary(self, nodes='all_errors', feature_names=None):
+    def error_node_summary(self, nodes='all_errors'):
         """ return summary information regarding input nodes """
         if self._error_visualizer is None:
             self._error_visualizer = ErrorVisualizer(self._error_clf, self._error_train_x, self._error_train_y)
 
-        self._error_visualizer.error_node_summary(nodes, feature_names=feature_names)
+        self._error_visualizer.error_node_summary(nodes, feature_names=self._features_in_model_performance_predictor)
 
     def mpp_summary(self, x_test, y_test, output_dict=False):
         """ print ErrorAnalyzer summary metrics """

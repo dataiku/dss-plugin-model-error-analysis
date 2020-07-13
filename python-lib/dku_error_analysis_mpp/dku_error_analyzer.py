@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format='Error Analysis Plugin | %(levelname)s - %(message)s')
 
 
-class DkuErrorAnalyzer(object):
+class DkuErrorAnalyzer(ErrorAnalyzer):
     """
     DkuErrorAnalyzer analyzes the errors of a DSS prediction model on its test set.
     It uses model predictions and ground truth target to compute the model errors on the test set.
@@ -27,14 +27,10 @@ class DkuErrorAnalyzer(object):
 
         self._model_accessor = model_accessor
         self._target = self._model_accessor.get_target_variable()
-        self._is_regression = self._model_accessor.is_regression()
-        self._predictor = self._model_accessor.get_predictor()
+        self._model_predictor = self._model_accessor.get_predictor()
+        feature_names = self._model_predictor.get_features()
 
-        self._error_df = None
-
-        self._seed = seed
-
-        self._error_analyzer = ErrorAnalyzer(self._model_accessor.get_clf(), self._seed)
+        super(DkuErrorAnalyzer, self).__init__(self._model_accessor.get_clf(), seed, feature_names)
 
         self._train_x = None
         self._test_x = None
@@ -47,8 +43,6 @@ class DkuErrorAnalyzer(object):
         self._test_y_df = None
 
         self._error_df = None
-        self._error_clf = None
-        self._features_in_model_performance_predictor = None
         self._tree = None
         self._tree_parser = None
 
@@ -61,28 +55,20 @@ class DkuErrorAnalyzer(object):
         return self._tree
 
     @property
-    def model_performance_predictor_features(self):
-        return self._features_in_model_performance_predictor
-
-    @property
-    def model_performance_predictor(self):
-        return self._error_analyzer.model_performance_predictor
-
-    @property
     def mpp_accuracy_score(self):
-        return self._error_analyzer.mpp_accuracy_score(self._test_x, self._test_y)
+        return self.mpp_accuracy_score(self._test_x, self._test_y)
 
     @property
     def primary_model_predicted_accuracy(self):
-        return self._error_analyzer.primary_model_predicted_accuracy(self._test_x, self._test_y)
+        return self.primary_model_predicted_accuracy(self._test_x, self._test_y)
 
     @property
     def primary_model_true_accuracy(self):
-        return self._error_analyzer.primary_model_true_accuracy(self._test_x, self._test_y)
+        return self.primary_model_true_accuracy(self._test_x, self._test_y)
 
     @property
     def confidence_decision(self):
-        return self._error_analyzer.confidence_decision(self._test_x, self._test_y)
+        return self.confidence_decision(self._test_x, self._test_y)
 
     def fit(self):
         """
@@ -107,12 +93,12 @@ class DkuErrorAnalyzer(object):
         train_df = pd.concat([self._train_x_df, self._train_y_df], axis=1)
         test_df = pd.concat([self._test_x_df, self._test_y_df], axis=1)
 
-        self._train_x, _, _, _, _ = self._predictor.preprocessing.preprocess(
+        self._train_x, _, _, _, _ = self._model_predictor.preprocessing.preprocess(
             train_df,
             with_target=True,
             with_sample_weights=True)
 
-        self._test_x, _, _, _, _ = self._predictor.preprocessing.preprocess(
+        self._test_x, _, _, _, _ = self._model_predictor.preprocessing.preprocess(
             test_df,
             with_target=True,
             with_sample_weights=True)
@@ -120,22 +106,18 @@ class DkuErrorAnalyzer(object):
         self._train_y = np.array(self._train_y_df)
         self._test_y = np.array(self._test_y_df)
 
-        self._error_analyzer.fit(self._train_x, self._train_y)
-
-        self._error_clf = self._error_analyzer.model_performance_predictor
-
-        self._features_in_model_performance_predictor = self._predictor.get_features()
+        super(DkuErrorAnalyzer, self).fit(self._train_x, self._train_y)
 
     def parse_tree(self):
-        modified_length = len(self._error_analyzer.error_train_x)
+        modified_length = len(self.error_train_x)
         self._error_df = self._train_x_df.head(modified_length)
-        self._error_df.loc[:, ErrorAnalyzerConstants.ERROR_COLUMN] = self._error_analyzer.error_train_y
+        self._error_df.loc[:, ErrorAnalyzerConstants.ERROR_COLUMN] = self.error_train_y
 
         self._tree_parser = TreeParser(self._model_accessor.model_handler, self._error_clf)
         self._tree = self._tree_parser.build_tree(self._error_df, self._features_in_model_performance_predictor)
         self._tree.parse_nodes(self._tree_parser,
                                self._features_in_model_performance_predictor,
-                               self._error_analyzer.error_train_x)
+                               self.error_train_x)
 
     def prepare_error_visualizer(self):
 
@@ -143,8 +125,8 @@ class DkuErrorAnalyzer(object):
             self.parse_tree()
 
         self._dku_error_visualizer = DkuErrorVisualizer(error_clf=self._error_clf,
-                                                        error_train_x=self._error_analyzer.error_train_x,
-                                                        error_train_y=self._error_analyzer.error_train_y,
+                                                        error_train_x=self.error_train_x,
+                                                        error_train_y=self.error_train_y,
                                                         features_in_mpp=self._features_in_model_performance_predictor,
                                                         tree=self._tree,
                                                         tree_parser=self._tree_parser,
@@ -177,4 +159,4 @@ class DkuErrorAnalyzer(object):
     def mpp_summary(self, output_dict=False):
         """ print ErrorAnalyzer summary metrics """
 
-        return self._error_analyzer.mpp_summary(self._test_x, self._test_y, output_dict)
+        return super(DkuErrorAnalyzer, self).mpp_summary(self._test_x, self._test_y, output_dict)
