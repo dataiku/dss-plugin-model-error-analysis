@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import numpy as np
 from sklearn import tree
-from sklearn.model_selection import GridSearchCV, train_test_split
+from sklearn.model_selection import GridSearchCV
 from sklearn.base import is_regressor
 from sklearn.utils.validation import check_is_fitted
 from sklearn.exceptions import NotFittedError
@@ -42,15 +42,13 @@ class ErrorAnalyzer:
         self._error_test_x = None
         self._error_test_y = None
         self._error_test_y_pred = None
-        self._preprocessed_x = None
+        self._test_y = None
         self._features_in_model_performance_predictor = None
         self._mpp_accuracy_score = None
         self._primary_model_predicted_accuracy = None
         self._primary_model_true_accuracy = None
         self._confidence_decision = None
         self._report = None
-
-        self._error_y = None
 
         self._tree = None
         self._tree_parser = None
@@ -62,10 +60,6 @@ class ErrorAnalyzer:
     @property
     def tree(self):
         return self._tree
-
-    @property
-    def error(self):
-        return self._error_y
 
     @property
     def error_train_x(self):
@@ -83,29 +77,25 @@ class ErrorAnalyzer:
     def model_performance_predictor(self):
         return self._error_clf
 
-    @property
-    def mpp_accuracy_score(self):
-        self.check_computed_metrics(self._mpp_accuracy_score)
+    def mpp_accuracy_score(self, x_test, y_test):
+        self.check_computed_metrics(self._mpp_accuracy_score, x_test, y_test)
         return self._mpp_accuracy_score
 
-    @property
-    def primary_model_predicted_accuracy(self):
-        self.check_computed_metrics(self._primary_model_predicted_accuracy)
+    def primary_model_predicted_accuracy(self, x_test, y_test):
+        self.check_computed_metrics(self._primary_model_predicted_accuracy, x_test, y_test)
         return self._primary_model_predicted_accuracy
 
-    @property
-    def primary_model_true_accuracy(self):
-        self.check_computed_metrics(self._primary_model_true_accuracy)
+    def primary_model_true_accuracy(self, x_test, y_test):
+        self.check_computed_metrics(self._primary_model_true_accuracy, x_test, y_test)
         return self._primary_model_true_accuracy
 
-    @property
-    def confidence_decision(self):
-        self.check_computed_metrics(self._confidence_decision)
+    def confidence_decision(self, x_test, y_test):
+        self.check_computed_metrics(self._confidence_decision, x_test, y_test)
         return self._confidence_decision
 
-    def check_computed_metrics(self, attribute):
+    def check_computed_metrics(self, attribute, x_test, y_test):
         if attribute is None:
-            self.compute_model_performance_predictor_metrics()
+            self.compute_model_performance_predictor_metrics(x_test, y_test)
 
     def fit(self, x, y):
         """
@@ -116,30 +106,18 @@ class ErrorAnalyzer:
 
         np.random.seed(self._seed)
 
-        self._preprocessed_x = x
-        self.prepare_data_for_model_performance_predictor(x, y)
-
-        error_train_x, error_test_x, error_train_y, error_test_y = train_test_split(
-            self._preprocessed_x,
-            self._error_y,
-            test_size=ErrorAnalyzerConstants.TEST_SIZE
-        )
-
-        self._error_train_x = error_train_x  # we will use them later when plotting
-        self._error_train_y = error_train_y
-
-        self._error_test_x = error_test_x  # we will use them later when compute metrics
-        self._error_test_y = error_test_y
+        self._error_train_x = x
+        self._error_train_y = self.prepare_data_for_model_performance_predictor(x, y)
 
         logger.info("Fitting the model performance predictor...")
 
         # entropy/mutual information is used to split nodes in Microsoft Pandora system
         criterion = ErrorAnalyzerConstants.CRITERION
 
-        dt_clf = tree.DecisionTreeClassifier(criterion=criterion, min_samples_leaf=1, random_state=1337)
+        dt_clf = tree.DecisionTreeClassifier(criterion=criterion, min_samples_leaf=1, random_state=self._seed)
         parameters = {'max_depth': ErrorAnalyzerConstants.MAX_DEPTH_GRID}
         gs_clf = GridSearchCV(dt_clf, parameters, cv=5)
-        gs_clf.fit(error_train_x, error_train_y)
+        gs_clf.fit(self._error_train_x, self._error_train_y)
         self._error_clf = gs_clf.best_estimator_
 
         logger.info('Grid search selected max_depth = {}'.format(gs_clf.best_params_['max_depth']))
@@ -165,19 +143,28 @@ class ErrorAnalyzer:
 
         y_pred = self._predictor.predict(x)
 
-        self._error_y = self._get_errors(y, y_pred)
+        error_y = self._get_errors(y, y_pred)
 
-        return
+        return error_y
 
     def predict(self, x):
         return self._error_clf.predict(x)
 
-    def compute_model_performance_predictor_metrics(self):
+    def compute_model_performance_predictor_metrics(self, x_test, y_test):
         """
         Compute MPP ability to predict primary model performance.
         Ideally primary_model_predicted_accuracy should be equal
         to primary_model_true_accuracy
         """
+
+        if (y_test == self._test_y).all() and (x_test == self._error_test_x).all():
+            # performances already computed on this test set
+            return
+
+        self._error_test_x = x_test
+        self._test_y = y_test
+
+        self._error_test_y = self.prepare_data_for_model_performance_predictor(x_test, y_test)
 
         y_true = self._error_test_y
         self._error_test_y_pred = self._error_clf.predict(self._error_test_x)
@@ -253,16 +240,15 @@ class ErrorAnalyzer:
 
         self._error_visualizer.error_node_summary(nodes, feature_names=feature_names)
 
-    def mpp_summary(self):
+    def mpp_summary(self, x_test, y_test, output_dict=False):
         """ print ErrorAnalyzer summary metrics """
-        if self._report is None:
-            y_true = self._error_test_y
-            self.check_computed_metrics(self._error_test_y_pred)
-            y_pred = self._error_test_y_pred
 
-            self._report = mpp_report(y_true, y_pred)
+        self.check_computed_metrics(self._error_test_y_pred, x_test, y_test)
+        y_true = self._error_test_y
+        y_pred = self._error_test_y_pred
 
-        print(self._report)
+        return mpp_report(y_true, y_pred, output_dict)
+
 
 
 

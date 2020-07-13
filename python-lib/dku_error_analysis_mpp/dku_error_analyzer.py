@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 import numpy as np
+import pandas as pd
+from sklearn.model_selection import train_test_split
 from dku_error_analysis_mpp.error_config import ErrorAnalyzerConstants
 from dku_error_analysis_tree_parsing.tree_parser import TreeParser
-from dku_error_analysis_decision_tree.node import Node
 from dku_error_analysis_mpp.error_analyzer import ErrorAnalyzer
 from dku_error_analysis_mpp.dku_error_visualizer import DkuErrorVisualizer
 import logging
@@ -35,13 +36,19 @@ class DkuErrorAnalyzer(object):
 
         self._error_analyzer = ErrorAnalyzer(self._model_accessor.get_clf(), self._seed)
 
-        self._preprocessed_x = None
-        self._x_deprocessed = None
+        self._train_x = None
+        self._test_x = None
+        self._train_y = None
+        self._test_y = None
+
+        self._train_x_df = None
+        self._test_x_df = None
+        self._train_y_df = None
+        self._test_y_df = None
+
         self._error_df = None
         self._error_clf = None
-        self._feature_names_deprocessed = None
         self._features_in_model_performance_predictor = None
-        self._value_mapping = None
         self._tree = None
         self._tree_parser = None
 
@@ -63,19 +70,19 @@ class DkuErrorAnalyzer(object):
 
     @property
     def mpp_accuracy_score(self):
-        return self._error_analyzer.mpp_accuracy_score
+        return self._error_analyzer.mpp_accuracy_score(self._test_x, self._test_y)
 
     @property
     def primary_model_predicted_accuracy(self):
-        return self._error_analyzer.primary_model_predicted_accuracy
+        return self._error_analyzer.primary_model_predicted_accuracy(self._test_x, self._test_y)
 
     @property
     def primary_model_true_accuracy(self):
-        return self._error_analyzer.primary_model_true_accuracy
+        return self._error_analyzer.primary_model_true_accuracy(self._test_x, self._test_y)
 
     @property
     def confidence_decision(self):
-        return self._error_analyzer.confidence_decision
+        return self._error_analyzer.confidence_decision(self._test_x, self._test_y)
 
     def fit(self):
         """
@@ -90,34 +97,45 @@ class DkuErrorAnalyzer(object):
         if self._target not in original_df:
             raise ValueError('The original dataset does not contain target "{}".'.format(self._target))
 
-        self._preprocessed_x, _, _, _, _ = self._predictor.preprocessing.preprocess(
-            original_df,
+        x_df = original_df.drop(self._target, axis=1)
+        y_df = original_df[self._target]
+
+        self._train_x_df, self._test_x_df, self._train_y_df, self._test_y_df = train_test_split(
+            x_df, y_df, test_size=ErrorAnalyzerConstants.TEST_SIZE
+        )
+
+        train_df = pd.concat([self._train_x_df, self._train_y_df], axis=1)
+        test_df = pd.concat([self._test_x_df, self._test_y_df], axis=1)
+
+        self._train_x, _, _, _, _ = self._predictor.preprocessing.preprocess(
+            train_df,
             with_target=True,
             with_sample_weights=True)
 
-        x = self._preprocessed_x
+        self._test_x, _, _, _, _ = self._predictor.preprocessing.preprocess(
+            test_df,
+            with_target=True,
+            with_sample_weights=True)
 
-        y = original_df[self._target]
-        y = np.array(y)
+        self._train_y = np.array(self._train_y_df)
+        self._test_y = np.array(self._test_y_df)
 
-        self._error_analyzer.fit(x, y)
+        self._error_analyzer.fit(self._train_x, self._train_y)
 
         self._error_clf = self._error_analyzer.model_performance_predictor
 
         self._features_in_model_performance_predictor = self._predictor.get_features()
 
     def parse_tree(self):
-        original_df = self._model_accessor.get_original_test_df(ErrorAnalyzerConstants.MAX_NUM_ROW)
-
-        modified_length = len(self._error_analyzer.error)
-        original_df = original_df.head(modified_length)
-
-        self._error_df = original_df.drop(self._target, axis=1)
-        self._error_df[ErrorAnalyzerConstants.ERROR_COLUMN] = self._error_analyzer.error
+        modified_length = len(self._error_analyzer.error_train_x)
+        self._error_df = self._train_x_df.head(modified_length)
+        self._error_df.loc[:, ErrorAnalyzerConstants.ERROR_COLUMN] = self._error_analyzer.error_train_y
 
         self._tree_parser = TreeParser(self._model_accessor.model_handler, self._error_clf)
         self._tree = self._tree_parser.build_tree(self._error_df, self._features_in_model_performance_predictor)
-        self._tree.parse_nodes(self._tree_parser, self._features_in_model_performance_predictor, self._preprocessed_x)
+        self._tree.parse_nodes(self._tree_parser,
+                               self._features_in_model_performance_predictor,
+                               self._error_analyzer.error_train_x)
 
     def prepare_error_visualizer(self):
 
@@ -125,12 +143,12 @@ class DkuErrorAnalyzer(object):
             self.parse_tree()
 
         self._dku_error_visualizer = DkuErrorVisualizer(error_clf=self._error_clf,
-                                                       error_train_x=self._error_analyzer.error_train_x,
-                                                       error_train_y=self._error_analyzer.error_train_y,
-                                                       features_in_mpp=self._features_in_model_performance_predictor,
-                                                       tree=self._tree,
-                                                       tree_parser=self._tree_parser,
-                                                       features_dict=self._model_accessor.get_per_feature())
+                                                        error_train_x=self._error_analyzer.error_train_x,
+                                                        error_train_y=self._error_analyzer.error_train_y,
+                                                        features_in_mpp=self._features_in_model_performance_predictor,
+                                                        tree=self._tree,
+                                                        tree_parser=self._tree_parser,
+                                                        features_dict=self._model_accessor.get_per_feature())
 
     def plot_error_tree(self, size=None):
 
@@ -147,7 +165,7 @@ class DkuErrorAnalyzer(object):
             self.prepare_error_visualizer()
 
         self._dku_error_visualizer.plot_error_node_feature_distribution(nodes, top_k_features, compare_to_global,
-                                                                       show_class, figsize)
+                                                                        show_class, figsize)
 
     def error_node_summary(self, nodes='all_errors'):
         """ return summary information regarding input nodes """
@@ -156,7 +174,7 @@ class DkuErrorAnalyzer(object):
 
         self._dku_error_visualizer.error_node_summary(nodes)
 
-    def mpp_summary(self):
+    def mpp_summary(self, output_dict=False):
         """ print ErrorAnalyzer summary metrics """
 
-        self._error_analyzer.mpp_summary()
+        return self._error_analyzer.mpp_summary(self._test_x, self._test_y, output_dict)
