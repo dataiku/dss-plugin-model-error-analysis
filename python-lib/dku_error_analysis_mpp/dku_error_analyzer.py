@@ -51,20 +51,14 @@ class DkuErrorAnalyzer(ErrorAnalyzer):
 
     @property
     def tree(self):
-        if self._tree_parser is None or self._tree is None:
-            self._parse_tree()
         return self._tree
 
     @property
     def tree_parser(self):
-        if self._tree_parser is None or self._tree is None:
-            self._parse_tree()
         return self._tree_parser
 
     @property
     def features_dict(self):
-        if self._tree_parser is None or self._tree is None:
-            self._parse_tree()
         return self._features_dict
 
     def fit(self):
@@ -109,7 +103,7 @@ class DkuErrorAnalyzer(ErrorAnalyzer):
         self._train_y = np.array(self._train_y_df)
         self._test_y = np.array(self._test_y_df)
 
-    def _parse_tree(self):
+    def parse_tree(self):
         """ Parse Decision Tree and get features information used to display distributions """
         modified_length = len(self.error_train_x)
         self._error_df = self._train_x_df.head(modified_length)

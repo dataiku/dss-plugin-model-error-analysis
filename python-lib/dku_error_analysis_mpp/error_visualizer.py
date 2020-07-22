@@ -40,6 +40,9 @@ class ErrorVisualizer(object):
             self._features_in_model_performance_predictor = list(range(self._error_clf.max_features_))
 
         if isinstance(error_analyzer, DkuErrorAnalyzer):
+            if self._error_analyzer.tree is None:
+                self._error_analyzer.parse_tree()
+
             self._tree = self._error_analyzer.tree
             self._tree_parser = self._error_analyzer.tree_parser
 
