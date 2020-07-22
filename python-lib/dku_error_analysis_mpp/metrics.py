@@ -53,11 +53,11 @@ def mpp_report(y_true, y_pred, output_dict=False):
     fidelity, confidence_decision = compute_confidence_decision(primary_model_true_accuracy,
                                                                 primary_model_predicted_accuracy)
 
-    report_dict['mpp_accuracy_score'] = mpp_accuracy_score
-    report_dict['primary_model_true_accuracy'] = primary_model_true_accuracy
-    report_dict['primary_model_predicted_accuracy'] = primary_model_predicted_accuracy
+    report_dict[ErrorAnalyzerConstants.MPP_ACCURACY] = mpp_accuracy_score
+    report_dict[ErrorAnalyzerConstants.PRIMARY_MODEL_TRUE_ACCURACY] = primary_model_true_accuracy
+    report_dict[ErrorAnalyzerConstants.PRIMARY_MODEL_PREDICTED_ACCURACY] = primary_model_predicted_accuracy
 
-    report_dict['confidence_decision'] = confidence_decision
+    report_dict[ErrorAnalyzerConstants.CONFIDENCE_DECISION] = confidence_decision
 
     report = 'The MPP was trained with accuracy %.2f%%.' % (mpp_accuracy_score * 100)
     report += '\n'

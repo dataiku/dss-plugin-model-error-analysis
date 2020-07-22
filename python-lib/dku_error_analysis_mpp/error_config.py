@@ -20,3 +20,8 @@ class ErrorAnalyzerConstants(object):
     ERROR_TREE_COLORS = {CORRECT_PREDICTION: '#ed6547', WRONG_PREDICTION: '#fdc765'}
 
     TOP_K_FEATURES = 3
+
+    MPP_ACCURACY = 'mpp_accuracy_score'
+    PRIMARY_MODEL_TRUE_ACCURACY = 'primary_model_true_accuracy'
+    PRIMARY_MODEL_PREDICTED_ACCURACY = 'primary_model_predicted_accuracy'
+    CONFIDENCE_DECISION = 'confidence_decision'

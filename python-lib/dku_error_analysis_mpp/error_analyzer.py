@@ -185,11 +185,11 @@ class ErrorAnalyzer(object):
 
         report_dict = mpp_report(y_true, y_pred, output_dict=True)
 
-        self._mpp_accuracy_score = report_dict['mpp_accuracy_score']
-        self._primary_model_true_accuracy = report_dict['primary_model_true_accuracy']
-        self._primary_model_predicted_accuracy = report_dict['primary_model_predicted_accuracy']
+        self._mpp_accuracy_score = report_dict[ErrorAnalyzerConstants.MPP_ACCURACY]
+        self._primary_model_true_accuracy = report_dict[ErrorAnalyzerConstants.PRIMARY_MODEL_TRUE_ACCURACY]
+        self._primary_model_predicted_accuracy = report_dict[ErrorAnalyzerConstants.PRIMARY_MODEL_PREDICTED_ACCURACY]
 
-        self._confidence_decision = report_dict['confidence_decision']
+        self._confidence_decision = report_dict[ErrorAnalyzerConstants.CONFIDENCE_DECISION]
 
     @staticmethod
     def _get_epsilon(difference, mode='rec'):
