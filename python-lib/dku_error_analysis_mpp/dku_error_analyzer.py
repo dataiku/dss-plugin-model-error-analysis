@@ -73,6 +73,12 @@ class DkuErrorAnalyzer(ErrorAnalyzer):
         (errors) by a primary model.
         """
 
+        self._prepare_data_from_dku_saved_model()
+
+        super(DkuErrorAnalyzer, self).fit(self._train_x, self._train_y)
+
+    def _prepare_data_from_dku_saved_model(self):
+        """ Split original test set from Dku saved model into train and test set for the error analyzer """
         np.random.seed(self._seed)
 
         original_df = self._model_accessor.get_original_test_df(ErrorAnalyzerConstants.MAX_NUM_ROW)
@@ -102,8 +108,6 @@ class DkuErrorAnalyzer(ErrorAnalyzer):
 
         self._train_y = np.array(self._train_y_df)
         self._test_y = np.array(self._test_y_df)
-
-        super(DkuErrorAnalyzer, self).fit(self._train_x, self._train_y)
 
     def _parse_tree(self):
         """ Parse Decision Tree and get features information used to display distributions """
