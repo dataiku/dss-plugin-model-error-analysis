@@ -89,25 +89,21 @@ class ErrorAnalyzer(object):
             self._ranked_error_nodes = self._compute_ranked_error_nodes()
         return self._ranked_error_nodes
 
-    def mpp_accuracy_score(self, x_test, y_test):
-        self._check_computed_metrics(self._mpp_accuracy_score, x_test, y_test)
+    @property
+    def mpp_accuracy_score(self):
         return self._mpp_accuracy_score
 
-    def primary_model_predicted_accuracy(self, x_test, y_test):
-        self._check_computed_metrics(self._primary_model_predicted_accuracy, x_test, y_test)
+    @property
+    def primary_model_predicted_accuracy(self):
         return self._primary_model_predicted_accuracy
 
-    def primary_model_true_accuracy(self, x_test, y_test):
-        self._check_computed_metrics(self._primary_model_true_accuracy, x_test, y_test)
+    @property
+    def primary_model_true_accuracy(self):
         return self._primary_model_true_accuracy
 
-    def confidence_decision(self, x_test, y_test):
-        self._check_computed_metrics(self._confidence_decision, x_test, y_test)
+    @property
+    def confidence_decision(self):
         return self._confidence_decision
-
-    def _check_computed_metrics(self, attribute, x_test, y_test):
-        if attribute is None:
-            self._compute_model_performance_predictor_metrics(x_test, y_test)
 
     def fit(self, x, y):
         """
@@ -337,7 +333,8 @@ class ErrorAnalyzer(object):
     def mpp_summary(self, x_test, y_test, output_dict=False):
         """ Print ErrorAnalyzer summary metrics """
 
-        self._check_computed_metrics(self._error_test_y_pred, x_test, y_test)
+        self._compute_model_performance_predictor_metrics(x_test, y_test)
+
         y_true = self._error_test_y
         y_pred = self._error_test_y_pred
 

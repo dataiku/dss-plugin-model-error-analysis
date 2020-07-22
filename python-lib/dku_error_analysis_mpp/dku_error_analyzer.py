@@ -67,22 +67,6 @@ class DkuErrorAnalyzer(ErrorAnalyzer):
             self._parse_tree()
         return self._features_dict
 
-    @property
-    def mpp_accuracy_score(self):
-        return super(DkuErrorAnalyzer, self).mpp_accuracy_score(self._test_x, self._test_y)
-
-    @property
-    def primary_model_predicted_accuracy(self):
-        return super(DkuErrorAnalyzer, self).primary_model_predicted_accuracy(self._test_x, self._test_y)
-
-    @property
-    def primary_model_true_accuracy(self):
-        return super(DkuErrorAnalyzer, self).primary_model_true_accuracy(self._test_x, self._test_y)
-
-    @property
-    def confidence_decision(self):
-        return super(DkuErrorAnalyzer, self).confidence_decision(self._test_x, self._test_y)
-
     def fit(self):
         """
         Trains a Decision Tree to discriminate between samples that are correctly predicted or wrongly predicted
