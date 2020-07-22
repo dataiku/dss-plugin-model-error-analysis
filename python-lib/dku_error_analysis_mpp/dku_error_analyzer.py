@@ -71,6 +71,16 @@ class DkuErrorAnalyzer(ErrorAnalyzer):
 
         super(DkuErrorAnalyzer, self).fit(self._train_x, self._train_y)
 
+    def _preprocess_dataframe(self, df):
+        """ Preprocess input DataFrame with primary model preprocessor """
+        x, _, _, _, _ = self._model_predictor.preprocessing.preprocess(
+            df,
+            with_target=True,
+            with_sample_weights=True)
+
+        y = np.array(df[self._target])
+        return x, y
+
     def _prepare_data_from_dku_saved_model(self):
         """ Split original test set from Dku saved model into train and test set for the error analyzer """
         np.random.seed(self._seed)
@@ -90,18 +100,8 @@ class DkuErrorAnalyzer(ErrorAnalyzer):
         train_df = pd.concat([self._train_x_df, self._train_y_df], axis=1)
         test_df = pd.concat([self._test_x_df, self._test_y_df], axis=1)
 
-        self._train_x, _, _, _, _ = self._model_predictor.preprocessing.preprocess(
-            train_df,
-            with_target=True,
-            with_sample_weights=True)
-
-        self._test_x, _, _, _, _ = self._model_predictor.preprocessing.preprocess(
-            test_df,
-            with_target=True,
-            with_sample_weights=True)
-
-        self._train_y = np.array(self._train_y_df)
-        self._test_y = np.array(self._test_y_df)
+        self._train_x, self._train_y = self._preprocess_dataframe(train_df)
+        self._test_x, self._test_y = self._preprocess_dataframe(test_df)
 
     def parse_tree(self):
         """ Parse Decision Tree and get features information used to display distributions """
@@ -144,7 +144,13 @@ class DkuErrorAnalyzer(ErrorAnalyzer):
 
         return path_to_node
 
-    def mpp_summary(self, output_dict=False):
+    def mpp_summary(self, dku_test_dataset=None, output_dict=False):
         """ print ErrorAnalyzer summary metrics """
-
-        return super(DkuErrorAnalyzer, self).mpp_summary(self._test_x, self._test_y, output_dict)
+        if dku_test_dataset is None:
+            return super(DkuErrorAnalyzer, self).mpp_summary(self._test_x, self._test_y, output_dict)
+        else:
+            test_df = dku_test_dataset.get_dataframe()
+            if self._target not in test_df:
+                raise ValueError('The provided dataset does not contain target "{}".'.format(self._target))
+            test_x, test_y = self._preprocess_dataframe(test_df)
+            return super(DkuErrorAnalyzer, self).mpp_summary(test_x, test_y, output_dict)
