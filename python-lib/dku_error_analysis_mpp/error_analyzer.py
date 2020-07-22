@@ -166,10 +166,6 @@ class ErrorAnalyzer(object):
         to primary_model_true_accuracy
         """
 
-        if np.array(y_test == self._test_y).all() and np.array(x_test == self._error_test_x).all():
-            # performances already computed on this test set
-            return
-
         self._error_test_x = x_test
         self._test_y = y_test
 
@@ -333,7 +329,11 @@ class ErrorAnalyzer(object):
     def mpp_summary(self, x_test, y_test, output_dict=False):
         """ Print ErrorAnalyzer summary metrics """
 
-        self._compute_model_performance_predictor_metrics(x_test, y_test)
+        new_test_set = np.array(y_test != self._test_y).any() and np.array(x_test != self._error_test_x).any()
+        metrics_to_compute = self._error_test_y_pred is None
+
+        if new_test_set or metrics_to_compute:
+            self._compute_model_performance_predictor_metrics(x_test, y_test)
 
         y_true = self._error_test_y
         y_pred = self._error_test_y_pred
