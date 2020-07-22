@@ -119,7 +119,7 @@ class ErrorAnalyzer(object):
         np.random.seed(self._seed)
 
         self._error_train_x = x
-        self._error_train_y = self._prepare_data_for_model_performance_predictor(x, y)
+        self._error_train_y = self._compute_primary_model_error(x, y)
 
         logger.info("Fitting the model performance predictor...")
 
@@ -134,7 +134,7 @@ class ErrorAnalyzer(object):
 
         logger.info('Grid search selected max_depth = {}'.format(gs_clf.best_params_['max_depth']))
 
-    def _prepare_data_for_model_performance_predictor(self, x, y):
+    def _compute_primary_model_error(self, x, y):
         """
         Computes the errors of the primary model predictions and samples with max n = ErrorAnalyzerConstants.MAX_NUM_ROW
         :return: an array with error target (correctly predicted vs wrongly predicted)
@@ -177,7 +177,7 @@ class ErrorAnalyzer(object):
         self._error_test_x = x_test
         self._test_y = y_test
 
-        self._error_test_y = self._prepare_data_for_model_performance_predictor(x_test, y_test)
+        self._error_test_y = self._compute_primary_model_error(x_test, y_test)
 
         y_true = self._error_test_y
         self._error_test_y_pred = self._error_clf.predict(self._error_test_x)
