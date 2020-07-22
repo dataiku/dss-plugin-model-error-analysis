@@ -27,6 +27,8 @@ def get_error_dt(model_handler):
     dku_error_analyzer = DkuErrorAnalyzer(model_accessor)
 
     dku_error_analyzer.fit()
+    if dku_error_analyzer.tree is None:
+        dku_error_analyzer.parse_tree()
     tree = dku_error_analyzer.tree
 
     if not dku_error_analyzer.confidence_decision:
