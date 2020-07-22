@@ -166,7 +166,7 @@ class ErrorAnalyzer(object):
         to primary_model_true_accuracy
         """
 
-        if (y_test == self._test_y).all() and (x_test == self._error_test_x).all():
+        if np.array(y_test == self._test_y).all() and np.array(x_test == self._error_test_x).all():
             # performances already computed on this test set
             return
 
