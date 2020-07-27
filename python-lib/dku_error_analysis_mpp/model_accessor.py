@@ -48,6 +48,9 @@ class ModelAccessor:
                 selected_features.append(feat)
         return selected_features
 
+    def get_target_map(self):
+        return self.model_handler.get_target_map()
+
     def predict(self, df):
         return self.get_predictor().predict(df, with_probas=False)
 
