@@ -24,7 +24,7 @@ class ErrorAnalyzer(object):
     The nodes of the decision tree are different segments of errors to be studied individually.
     """
 
-    def __init__(self, predictor, seed=65537, feature_names=None):
+    def __init__(self, predictor, feature_names=None, seed=65537):
 
         try:
             # TODO need to set the right attributes to check for each type of estimator
@@ -109,6 +109,8 @@ class ErrorAnalyzer(object):
         """
         Trains a Decision Tree to discriminate between samples that are correctly predicted or wrongly predicted
         (errors) by a primary model.
+
+        x must be a numpy array, ie. df[features] won't work, it must be df[features].values
         """
         logger.info("Preparing the model performance predictor...")
 
@@ -251,7 +253,7 @@ class ErrorAnalyzer(object):
 
         return ranked_error_nodes
 
-    def get_list_of_nodes(self, nodes):
+    def _get_list_of_nodes(self, nodes):
         """ Parse input string and provide the desired nodes indices """
         if not (isinstance(nodes, list) or isinstance(nodes, int)):
             if nodes not in ['all', 'all_errors']:
@@ -275,7 +277,7 @@ class ErrorAnalyzer(object):
 
         return leaf_nodes
 
-    def get_path_to_node(self, node_id):
+    def _get_path_to_node(self, node_id):
         """ Return path to node as a list of split steps from the nodes of the sklearn Tree object """
         feature_names = self._features_in_model_performance_predictor
 
@@ -307,7 +309,7 @@ class ErrorAnalyzer(object):
     def error_node_summary(self, nodes='all_errors', print_path_to_node=True):
         """ Return summary information regarding input nodes """
 
-        leaf_nodes = self.get_list_of_nodes(nodes)
+        leaf_nodes = self._get_list_of_nodes(nodes)
 
         y = self._error_train_y
         n_total_errors = y[y == ErrorAnalyzerConstants.WRONG_PREDICTION].shape[0]
@@ -322,7 +324,7 @@ class ErrorAnalyzer(object):
             print(' Global error: %.2f' % (float(n_errors) / n_total_errors))
             if print_path_to_node:
                 print(' Path to node:')
-                path_to_node = self.get_path_to_node(leaf)
+                path_to_node = self._get_path_to_node(leaf)
                 for step in path_to_node:
                     print('     ' + step)
 

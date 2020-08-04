@@ -5,7 +5,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-class ModelAccessor:
+class ModelAccessor(object):
 
     def __init__(self, model_handler):
         self.model_handler = model_handler
