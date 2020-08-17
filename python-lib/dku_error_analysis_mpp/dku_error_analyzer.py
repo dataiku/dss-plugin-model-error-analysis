@@ -42,7 +42,6 @@ class DkuErrorAnalyzer(ErrorAnalyzer):
         self._train_y_df = None
         self._test_y_df = None
 
-        self._error_df = None
         self._tree = None
         self._tree_parser = None
 
@@ -115,11 +114,10 @@ class DkuErrorAnalyzer(ErrorAnalyzer):
 
     def parse_tree(self):
         """ Parse Decision Tree and get features information used to display distributions """
-        self._error_df = self._train_x_df
-        self._error_df.loc[:, ErrorAnalyzerConstants.ERROR_COLUMN] = self.error_train_y
+        self._train_x_df.loc[:, ErrorAnalyzerConstants.ERROR_COLUMN] = self.error_train_y
 
         self._tree_parser = TreeParser(self._model_accessor.model_handler, self._error_clf)
-        self._tree = self._tree_parser.build_tree(self._error_df, self._features_in_model_performance_predictor)
+        self._tree = self._tree_parser.build_tree(self._train_x_df, self._features_in_model_performance_predictor)
         self._tree.parse_nodes(self._tree_parser,
                                self._features_in_model_performance_predictor,
                                self.error_train_x)
