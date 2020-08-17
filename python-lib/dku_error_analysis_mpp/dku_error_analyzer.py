@@ -126,10 +126,9 @@ class DkuErrorAnalyzer(ErrorAnalyzer):
     def _get_path_to_node(self, node_id):
         """ return path to node as a list of split steps from the nodes of the de-processed
         dku_error_analysis_decision_tree.tree.InteractiveTree object """
-        run_node_idx = node_id
+        cur_node = self._tree.get_node(node_id)
         path_to_node = collections.deque()
-        while self._tree.nodes[run_node_idx].feature:
-            cur_node = self._tree.nodes[run_node_idx]
+        while cur_node is not None and cur_node.id != 0:
             decision_rule = cur_node.feature
             if cur_node.get_type() == Node.TYPES.NUM:
                 if cur_node.beginning:
@@ -145,7 +144,7 @@ class DkuErrorAnalyzer(ErrorAnalyzer):
                     decision_rule += ' == '
                 decision_rule += cur_node.values[0]
             path_to_node.appendleft(decision_rule)
-            run_node_idx = self._tree.nodes[run_node_idx].parent_id
+            cur_node = self._tree.get_node(cur_node.parent_id)
 
         return path_to_node
 
