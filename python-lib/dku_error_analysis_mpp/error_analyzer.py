@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import numpy as np
+import collections
 from sklearn import tree
 from sklearn.model_selection import GridSearchCV
 from sklearn.base import is_regressor
@@ -280,22 +281,22 @@ class ErrorAnalyzer(object):
         threshold = self._error_clf.tree_.threshold
 
         cur_node_id = node_id
-        path_to_node = []
+        path_to_node = collections.deque()
         while cur_node_id > 0:
+            decision_rule = ''
             if cur_node_id in children_left:
-                sign = ' <= '
+                decision_rule += ' <= '
                 parent_id = list(children_left).index(cur_node_id)
             else:
-                sign = " > "
+                decision_rule += " > "
                 parent_id = list(children_right).index(cur_node_id)
 
             feat = feature[parent_id]
             thresh = threshold[parent_id]
 
-            step = str(feature_names[feat]) + sign + ("%.2f" % thresh)
-            path_to_node.append(step)
+            decision_rule = str(feature_names[feat]) + decision_rule + ("%.2f" % thresh)
+            path_to_node.appendleft(decision_rule)
             cur_node_id = parent_id
-        path_to_node = path_to_node[::-1]
 
         return path_to_node
 

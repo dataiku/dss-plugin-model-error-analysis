@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import numpy as np
 import pandas as pd
+import collections
 from sklearn.model_selection import train_test_split
 from dku_error_analysis_mpp.error_config import ErrorAnalyzerConstants
 from dku_error_analysis_tree_parsing.tree_parser import TreeParser
@@ -126,26 +127,25 @@ class DkuErrorAnalyzer(ErrorAnalyzer):
         """ return path to node as a list of split steps from the nodes of the de-processed
         dku_error_analysis_decision_tree.tree.InteractiveTree object """
         run_node_idx = node_id
-        path_to_node = []
+        path_to_node = collections.deque()
         while self._tree.nodes[run_node_idx].feature:
             cur_node = self._tree.nodes[run_node_idx]
-            feature = cur_node.feature
+            decision_rule = cur_node.feature
             if cur_node.get_type() == Node.TYPES.NUM:
                 if cur_node.beginning:
-                    sign = ' > '
-                    value = "%.2f" % cur_node.beginning
+                    decision_rule += ' > '
+                    decision_rule += '%.2f' % cur_node.beginning
                 else:
-                    sign = ' <= '
-                    value = "%.2f" % cur_node.end
+                    decision_rule += ' <= '
+                    decision_rule += '%.2f' % cur_node.end
             else:
                 if cur_node.others:
-                    sign = ' != '
+                    decision_rule += ' != '
                 else:
-                    sign = ' == '
-                value = cur_node.values[0]
-            path_to_node.append(feature + sign + value)
+                    decision_rule += ' == '
+                decision_rule += cur_node.values[0]
+            path_to_node.appendleft(decision_rule)
             run_node_idx = self._tree.nodes[run_node_idx].parent_id
-        path_to_node = path_to_node[::-1]
 
         return path_to_node
 
