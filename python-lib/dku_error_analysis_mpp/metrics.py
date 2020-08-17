@@ -28,31 +28,27 @@ def mpp_report(y_true, y_pred, output_dict=False):
     Parameters
     ----------
     y_true : 1d array-like
-        Ground truth values of wrong/correct predicitons of the MPP primary model. Expected values in
+        Ground truth values of wrong/correct predictions of the MPP primary model. Expected values in
         [ErrorAnalyzerConstants.WRONG_PREDICTION, ErrorAnalyzerConstants.CORRECT_PREDICTION].
     y_pred : 1d array-like
-        Estimated targets as returned by a Model Performance Predictor.
-        output_dict
+        Estimated targets as returned by a Model Performance Predictor. Expected values in
+        [ErrorAnalyzerConstants.WRONG_PREDICTION, ErrorAnalyzerConstants.CORRECT_PREDICTION].
     output_dict : bool (default = False)
         If True, return output as dict
     """
 
-    report_dict = dict()
-
     mpp_accuracy_score = compute_mpp_accuracy(y_true, y_pred)
-
     primary_model_predicted_accuracy = compute_primary_model_accuracy(y_pred)
-
     primary_model_true_accuracy = compute_primary_model_accuracy(y_true)
-
     fidelity, confidence_decision = compute_confidence_decision(primary_model_true_accuracy,
                                                                 primary_model_predicted_accuracy)
-
-    report_dict[ErrorAnalyzerConstants.MPP_ACCURACY] = mpp_accuracy_score
-    report_dict[ErrorAnalyzerConstants.PRIMARY_MODEL_TRUE_ACCURACY] = primary_model_true_accuracy
-    report_dict[ErrorAnalyzerConstants.PRIMARY_MODEL_PREDICTED_ACCURACY] = primary_model_predicted_accuracy
-
-    report_dict[ErrorAnalyzerConstants.CONFIDENCE_DECISION] = confidence_decision
+    if output_dict:
+        report_dict = dict()
+        report_dict[ErrorAnalyzerConstants.MPP_ACCURACY] = mpp_accuracy_score
+        report_dict[ErrorAnalyzerConstants.PRIMARY_MODEL_TRUE_ACCURACY] = primary_model_true_accuracy
+        report_dict[ErrorAnalyzerConstants.PRIMARY_MODEL_PREDICTED_ACCURACY] = primary_model_predicted_accuracy
+        report_dict[ErrorAnalyzerConstants.CONFIDENCE_DECISION] = confidence_decision
+        return report_dict
 
     report = 'The MPP was trained with accuracy %.2f%%.' % (mpp_accuracy_score * 100)
     report += '\n'
@@ -64,7 +60,6 @@ def mpp_report(y_true, y_pred, output_dict=False):
     report += 'The Fidelity of the MPP is %.2f%%.' % \
               (fidelity * 100)
     report += '\n'
-
     if not confidence_decision:
         report += 'Warning: the built MPP might not be representative of the primary model performances.'
         report += '\n'
@@ -74,7 +69,4 @@ def mpp_report(y_true, y_pred, output_dict=False):
         report += 'The MPP is considered representative of the primary model performances.'
         report += '\n'
 
-    if output_dict:
-        return report_dict
-    else:
-        return report
+    return report
