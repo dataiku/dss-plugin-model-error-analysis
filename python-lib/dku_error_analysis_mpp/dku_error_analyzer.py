@@ -45,7 +45,6 @@ class DkuErrorAnalyzer(ErrorAnalyzer):
         self._error_df = None
         self._tree = None
         self._tree_parser = None
-        self._features_dict = None
 
     @property
     def tree(self):
@@ -57,7 +56,7 @@ class DkuErrorAnalyzer(ErrorAnalyzer):
 
     @property
     def features_dict(self):
-        return self._features_dict
+        return self._model_accessor.get_per_feature()
 
     def fit(self):
         """
@@ -113,8 +112,6 @@ class DkuErrorAnalyzer(ErrorAnalyzer):
         self._tree.parse_nodes(self._tree_parser,
                                self._features_in_model_performance_predictor,
                                self.error_train_x)
-
-        self._features_dict = self._model_accessor.get_per_feature()
 
     def get_path_to_node(self, node_id):
         """ return path to node as a list of split steps from the nodes of the de-processed
