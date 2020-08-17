@@ -75,8 +75,8 @@ class DkuErrorAnalyzer(ErrorAnalyzer):
             with_target=True,
             with_sample_weights=True)
 
-        y_raw = np.array(df[self._target])
-        y = map(lambda y_raw: self._model_accessor.get_target_map().get(y_raw), y_raw)
+        y = np.array(df[self._target])
+
         return x, y
 
     def _prepare_data_from_dku_saved_model(self):
