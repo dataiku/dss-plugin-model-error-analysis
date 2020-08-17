@@ -49,17 +49,10 @@ class ErrorAnalyzer(object):
         self._confidence_decision = None
         self._report = None
 
-        self._tree = None
-        self._tree_parser = None
-
         self._error_train_leaf_id = None
         self._ranked_error_nodes = None
 
         self._seed = seed
-
-    @property
-    def tree(self):
-        return self._tree
 
     @property
     def error_train_x(self):
