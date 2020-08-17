@@ -18,14 +18,9 @@ def compute_mpp_accuracy(y_true, y_pred):
     return accuracy_score(y_true, y_pred)
 
 
-def compute_primary_model_true_accuracy(y_true):
-    n_test_samples = y_true.shape[0]
-    return float(np.count_nonzero(y_true == ErrorAnalyzerConstants.CORRECT_PREDICTION)) / n_test_samples
-
-
-def compute_primary_model_predicted_accuracy(y_pred):
-    n_test_samples = y_pred.shape[0]
-    return float(np.count_nonzero(y_pred == ErrorAnalyzerConstants.CORRECT_PREDICTION)) / n_test_samples
+def compute_primary_model_accuracy(y):
+    n_test_samples = y.shape[0]
+    return float(np.count_nonzero(y == ErrorAnalyzerConstants.CORRECT_PREDICTION)) / n_test_samples
 
 
 def mpp_report(y_true, y_pred, output_dict=False):
@@ -46,9 +41,9 @@ def mpp_report(y_true, y_pred, output_dict=False):
 
     mpp_accuracy_score = compute_mpp_accuracy(y_true, y_pred)
 
-    primary_model_predicted_accuracy = compute_primary_model_predicted_accuracy(y_pred)
+    primary_model_predicted_accuracy = compute_primary_model_accuracy(y_pred)
 
-    primary_model_true_accuracy = compute_primary_model_true_accuracy(y_true)
+    primary_model_true_accuracy = compute_primary_model_accuracy(y_true)
 
     fidelity, confidence_decision = compute_confidence_decision(primary_model_true_accuracy,
                                                                 primary_model_predicted_accuracy)
