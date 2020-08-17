@@ -30,7 +30,7 @@ class DkuErrorAnalyzer(ErrorAnalyzer):
         self._model_predictor = self._model_accessor.get_predictor()
         feature_names = self._model_predictor.get_features()
 
-        super(DkuErrorAnalyzer, self).__init__(self._model_accessor.get_clf(), seed, feature_names)
+        super(DkuErrorAnalyzer, self).__init__(self._model_accessor.get_clf(), feature_names, seed)
 
         self._train_x = None
         self._test_x = None
