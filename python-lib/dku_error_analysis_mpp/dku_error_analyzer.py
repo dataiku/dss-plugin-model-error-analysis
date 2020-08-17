@@ -47,8 +47,6 @@ class DkuErrorAnalyzer(ErrorAnalyzer):
         self._tree_parser = None
         self._features_dict = None
 
-        self._dku_error_visualizer = None
-
     @property
     def tree(self):
         return self._tree
