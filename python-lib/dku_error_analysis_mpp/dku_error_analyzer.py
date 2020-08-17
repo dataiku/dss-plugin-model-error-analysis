@@ -113,7 +113,7 @@ class DkuErrorAnalyzer(ErrorAnalyzer):
                                self._features_in_model_performance_predictor,
                                self.error_train_x)
 
-    def get_path_to_node(self, node_id):
+    def _get_path_to_node(self, node_id):
         """ return path to node as a list of split steps from the nodes of the de-processed
         dku_error_analysis_decision_tree.tree.InteractiveTree object """
         run_node_idx = node_id
