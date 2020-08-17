@@ -70,17 +70,18 @@ class DkuErrorAnalyzer(ErrorAnalyzer):
 
     def _preprocess_dataframe(self, df):
         """ Preprocess input DataFrame with primary model preprocessor """
-        x, _, _, _, _ = self._model_predictor.preprocessing.preprocess(
+        x, input_mf_index, _, _, _ = self._model_predictor.preprocessing.preprocess(
             df,
             with_target=True,
             with_sample_weights=True)
 
         y = np.array(df[self._target])
 
-        return x, y
+        return x, y, input_mf_index
 
     def _prepare_data_from_dku_saved_model(self):
-        """ Split original test set from Dku saved model into train and test set for the error analyzer """
+        """ Preprocess and split original test set from Dku saved model
+        into train and test set for the error analyzer """
         np.random.seed(self._seed)
 
         original_df = self._model_accessor.get_original_test_df(ErrorAnalyzerConstants.MAX_NUM_ROW)
@@ -88,23 +89,33 @@ class DkuErrorAnalyzer(ErrorAnalyzer):
         if self._target not in original_df:
             raise ValueError('The original dataset does not contain target "{}".'.format(self._target))
 
-        x_df = original_df.drop(self._target, axis=1)
-        y_df = original_df[self._target]
+        preprocessed_x, y, input_mf_index = self._preprocess_dataframe(original_df)
 
-        self._train_x_df, self._test_x_df, self._train_y_df, self._test_y_df = train_test_split(
+        x_df = pd.DataFrame(preprocessed_x, index=input_mf_index)
+        y_df = pd.Series(y, index=input_mf_index)
+
+        train_x_df, test_x_df, train_y_df, test_y_df = train_test_split(
             x_df, y_df, test_size=ErrorAnalyzerConstants.TEST_SIZE
         )
 
-        train_df = pd.concat([self._train_x_df, self._train_y_df], axis=1)
-        test_df = pd.concat([self._test_x_df, self._test_y_df], axis=1)
+        self._train_x = train_x_df.values
+        self._train_y = train_y_df.values
 
-        self._train_x, self._train_y = self._preprocess_dataframe(train_df)
-        self._test_x, self._test_y = self._preprocess_dataframe(test_df)
+        self._test_x = test_x_df.values
+        self._test_y = test_y_df.values
+
+        original_train_df = original_df.loc[train_x_df.index]
+        original_test_df = original_df.loc[test_x_df.index]
+
+        self._train_x_df = original_train_df.drop(self._target, axis=1)
+        self._train_y_df = original_train_df[self._target]
+
+        self._test_x_df = original_test_df.drop(self._target, axis=1)
+        self._test_y_df = original_test_df[self._target]
 
     def parse_tree(self):
         """ Parse Decision Tree and get features information used to display distributions """
-        modified_length = len(self.error_train_x)
-        self._error_df = self._train_x_df.head(modified_length)
+        self._error_df = self._train_x_df
         self._error_df.loc[:, ErrorAnalyzerConstants.ERROR_COLUMN] = self.error_train_y
 
         self._tree_parser = TreeParser(self._model_accessor.model_handler, self._error_clf)
@@ -148,5 +159,5 @@ class DkuErrorAnalyzer(ErrorAnalyzer):
             test_df = dku_test_dataset.get_dataframe()
             if self._target not in test_df:
                 raise ValueError('The provided dataset does not contain target "{}".'.format(self._target))
-            test_x, test_y = self._preprocess_dataframe(test_df)
+            test_x, test_y, _ = self._preprocess_dataframe(test_df)
             return super(DkuErrorAnalyzer, self).mpp_summary(test_x, test_y, output_dict)
