@@ -67,12 +67,17 @@ class DkuErrorAnalyzer(ErrorAnalyzer):
 
     def _preprocess_dataframe(self, df):
         """ Preprocess input DataFrame with primary model preprocessor """
+        with_target = self._target in df
+        y = None
+
         x, input_mf_index, _, _, _ = self._model_predictor.preprocessing.preprocess(
             df,
-            with_target=True,
+            with_target=with_target,
             with_sample_weights=True)
 
-        y = np.array(df[self._target])
+        if with_target:
+            # required to be after `preprocess` function which can modify df
+            y = np.array(df[self._target])
 
         return x, y, input_mf_index
 
@@ -150,3 +155,10 @@ class DkuErrorAnalyzer(ErrorAnalyzer):
                 raise ValueError('The provided dataset does not contain target "{}".'.format(self._target))
             test_x, test_y, _ = self._preprocess_dataframe(test_df)
             return super(DkuErrorAnalyzer, self).mpp_summary(test_x, test_y, output_dict)
+
+    def predict(self, dku_test_dataset):
+        """ Predict model performance on Dku dataset """
+        test_df = dku_test_dataset.get_dataframe()
+
+        test_x, _, _ = self._preprocess_dataframe(test_df)
+        return super(DkuErrorAnalyzer, self).predict(test_x)
