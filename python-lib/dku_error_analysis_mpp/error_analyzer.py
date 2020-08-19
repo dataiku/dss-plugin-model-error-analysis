@@ -46,6 +46,7 @@ class ErrorAnalyzer(object):
         self._features_in_model_performance_predictor = feature_names
 
         self._error_train_leaf_id = None
+        self._leaf_ids = None
         self._ranked_error_nodes = None
 
         self._seed = seed
@@ -69,10 +70,16 @@ class ErrorAnalyzer(object):
         return self._error_clf
 
     @property
-    def leaf_ids(self):
+    def train_leaf_ids(self):
         if self._error_train_leaf_id is None:
-            self._error_train_leaf_id = self._compute_leaf_ids()
+            self._error_train_leaf_id = self._compute_train_leaf_ids()
         return self._error_train_leaf_id
+
+    @property
+    def leaf_ids(self):
+        if self._leaf_ids is None:
+            self._leaf_ids = self._compute_leaf_ids()
+        return self._leaf_ids
 
     @property
     def ranked_error_nodes(self):
@@ -175,9 +182,13 @@ class ErrorAnalyzer(object):
 
         return error
 
-    def _compute_leaf_ids(self):
+    def _compute_train_leaf_ids(self):
         """ Compute indices of leaf nodes for the train set """
         return self._error_clf.apply(self._error_train_x)
+
+    def _compute_leaf_ids(self):
+        """ Get indices of leaf nodes """
+        return set(node_id for (node_id, feature_id) in enumerate(self._error_clf.tree_.feature) if feature_id < 0)
 
     def _compute_ranked_error_nodes(self):
         """ Select error nodes and rank them by importance, defined as: (n_errors - n_correct) - impurity.
@@ -186,11 +197,9 @@ class ErrorAnalyzer(object):
             [0, 5], while [0, 5] is ranked after [0, 6] and [1, 7]: [0, 7], [0, 6], [1, 7], [0, 5]."""
         error_leaf_nodes = []
         error_leaf_nodes_importance = []
-        leaf_ids = self._error_train_leaf_id
-        leaf_nodes = np.unique(leaf_ids)
         error_class_idx = np.where(self._error_clf.classes_ == ErrorAnalyzerConstants.WRONG_PREDICTION)[0]
         correct_class_idx = np.where(self._error_clf.classes_ == ErrorAnalyzerConstants.CORRECT_PREDICTION)[0]
-        for leaf in leaf_nodes:
+        for leaf in self.leaf_ids:
             decision = self._error_clf.tree_.value[leaf, :].argmax()
             if self._error_clf.classes_[decision] == ErrorAnalyzerConstants.WRONG_PREDICTION:
                 error_leaf_nodes.append(leaf)
@@ -204,29 +213,42 @@ class ErrorAnalyzer(object):
 
         return ranked_error_nodes
 
-    def _get_list_of_nodes(self, nodes):
-        """ Parse input string and provide the desired nodes indices """
-        if not (isinstance(nodes, list) or isinstance(nodes, int)):
-            if nodes not in ['all', 'all_errors']:
-                raise ValueError('The input nodes value is invalid. '
-                                 'Nodes should be a node index, a list of node indices, '
-                                 '"all" to show all nodes or "all_errors" to show all error nodes.')
+    def get_list_of_leaves(self, input_leaf_ids):
+        """
+             Parse input string and provide the desired nodes indices
+             Args:
+                 input_leaf_ids: int, set, or str
+                 The leaf ids to return
+                 * int: A single leaf id
+                 * set: A set of leaf ids
+                 * list: A list of leaf ids
+                 * str:
+                        - "all": All the leaf ids
+                        - "all_errors": All the leaf ids that classify the primary model prediction as wrong
 
-        if isinstance(nodes, int):
-            nodes = [nodes]
+             Return:
+                  A set of leaf ids
+        """
+        if input_leaf_ids == "all":
+            return self.leaf_ids
+        if input_leaf_ids == "all_errors":
+            return self.ranked_error_nodes
+        if isinstance(input_leaf_ids, int):
+            input_leaf_ids = {input_leaf_ids}
+        elif isinstance(input_leaf_ids, list):
+            input_leaf_ids = set(input_leaf_ids)
+        if isinstance(input_leaf_ids, set):
+            selected_leaves = input_leaf_ids & self.leaf_ids
+            n_leaves = len(selected_leaves)
+            if n_leaves == 0:
+                raise ValueError("The value of the parameter 'leaf_ids' is invalid: it should contain leaf ids.")
+            elif n_leaves < len(input_leaf_ids):
+                print("Some of the input ids do not belong to leaves. Only leaf ids are kept.")
+            return selected_leaves
 
-        leaf_ids = self.leaf_ids
-        leaf_nodes = np.unique(leaf_ids)
-        if nodes is not 'all':
-            if nodes is 'all_errors':
-                leaf_nodes = self.ranked_error_nodes
-            else:
-                leaf_nodes = set(nodes) & set(leaf_nodes)
-                if not bool(leaf_nodes):
-                    print("Selected nodes are not leaf nodes.")
-                    return
-
-        return leaf_nodes
+        raise ValueError("The value of the parameter 'leaf_ids' is invalid. It can be a leaf index,"
+                         "a set of leaf indices, 'all' to return all leaf ids or "
+                         "'all_errors' to return leaf ids that classify the primary prediction as wrong.")
 
     def _get_path_to_node(self, node_id):
         """ Return path to node as a list of split steps from the nodes of the sklearn Tree object """
@@ -260,7 +282,7 @@ class ErrorAnalyzer(object):
     def error_node_summary(self, nodes='all_errors', print_path_to_node=True):
         """ Return summary information regarding input nodes """
 
-        leaf_nodes = self._get_list_of_nodes(nodes)
+        leaf_nodes = self.get_list_of_leaves(input_leaf_ids=nodes)
 
         y = self._error_train_y
         n_total_errors = y[y == ErrorAnalyzerConstants.WRONG_PREDICTION].shape[0]

@@ -31,7 +31,6 @@ class ErrorVisualizer(object):
         self._error_clf = self._error_analyzer.model_performance_predictor
         self._error_train_x = self._error_analyzer.error_train_x
         self._error_train_y = self._error_analyzer.error_train_y
-        self._error_train_leaf_id = self._error_analyzer.leaf_ids
         self._ranked_error_nodes = self._error_analyzer.ranked_error_nodes
 
         self._features_in_model_performance_predictor = self._error_analyzer.model_performance_predictor_features
@@ -197,8 +196,7 @@ class ErrorVisualizer(object):
                                              show_class=False, figsize=(10, 5)):
         """ Return plot of error node feature distribution and compare to global baseline """
 
-        leaf_ids = self._error_train_leaf_id
-        leaf_nodes = self._error_analyzer._get_list_of_nodes(nodes)
+        leaf_nodes = self._error_analyzer.get_list_of_leaves(input_leaf_ids=nodes)
 
         error_class_idx = np.where(self._error_clf.classes_ == ErrorAnalyzerConstants.WRONG_PREDICTION)[0]
         correct_class_idx = np.where(self._error_clf.classes_ == ErrorAnalyzerConstants.CORRECT_PREDICTION)[0]
@@ -207,8 +205,8 @@ class ErrorVisualizer(object):
 
         if isinstance(self._error_analyzer, DkuErrorAnalyzer):
             ranked_features = self._tree_parser.rank_features_by_error_correlation(feature_names,
-                                                                                    max_number_features=top_k_features,
-                                                                                    include_non_split_features=True)
+                                                                                   max_number_features=top_k_features,
+                                                                                   include_non_split_features=True)
             feature_names = self._feature_names_deprocessed
 
             x, y = self._x_deprocessed, self._error_train_y
@@ -233,7 +231,7 @@ class ErrorVisualizer(object):
             n_errors = values[0, error_class_idx]
             n_corrects = values[0, correct_class_idx]
             print('Node %d: (%d correct predictions, %d wrong predictions)' % (leaf, n_corrects, n_errors))
-            node_indices = leaf_ids == leaf
+            node_indices = self._error_analyzer.train_leaf_ids == leaf
             y_node = y[node_indices]
             x_node = x[node_indices, :]
             x_error_node = x_node[y_node == ErrorAnalyzerConstants.WRONG_PREDICTION, :]
