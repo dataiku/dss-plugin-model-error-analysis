@@ -64,6 +64,8 @@ class ErrorAnalyzer(object):
 
     @property
     def model_performance_predictor(self):
+        if self._error_clf is None:
+            raise NotFittedError("You should fit a model performance predictor first")
         return self._error_clf
 
     @property
@@ -132,9 +134,7 @@ class ErrorAnalyzer(object):
 
     def predict(self, x):
         """ Predict model performance on samples """
-        if self._error_clf is None:
-            raise NotFittedError("You need to first fit the error model.")
-        return self._error_clf.predict(x)
+        return self.model_performance_predictor.predict(x)
 
     @staticmethod
     def _get_epsilon(difference, mode='rec'):
@@ -282,7 +282,7 @@ class ErrorAnalyzer(object):
     def mpp_summary(self, x_test, y_test, output_dict=False):
         """ Print ErrorAnalyzer summary metrics """
         y_true = self._compute_primary_model_error(x_test, y_test)
-        y_pred = self._error_clf.predict(x_test)
+        y_pred = self.model_performance_predictor.predict(x_test)
         return mpp_report(y_true, y_pred, output_dict)
 
 
