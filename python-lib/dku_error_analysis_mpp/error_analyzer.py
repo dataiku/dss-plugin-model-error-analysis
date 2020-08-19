@@ -288,18 +288,20 @@ class ErrorAnalyzer(object):
         n_total_errors = y[y == ErrorAnalyzerConstants.WRONG_PREDICTION].shape[0]
         error_class_idx = np.where(self._error_clf.classes_ == ErrorAnalyzerConstants.WRONG_PREDICTION)[0]
         correct_class_idx = np.where(self._error_clf.classes_ == ErrorAnalyzerConstants.CORRECT_PREDICTION)[0]
-        for leaf in leaf_nodes:
-            values = self._error_clf.tree_.value[leaf, :]
+        for leaf_id in leaf_nodes:
+            values = self._error_clf.tree_.value[leaf_id, :]
             n_errors = values[0, error_class_idx]
             n_corrects = values[0, correct_class_idx]
-            print('Node %d: (%d correct predictions, %d wrong predictions)' % (leaf, n_corrects, n_errors))
-            print(' Local error (Purity): %.2f' % (float(n_errors) / (n_corrects + n_errors)))
-            print(' Global error: %.2f' % (float(n_errors) / n_total_errors))
+            print("LEAF %d:" % leaf_id)
+            print("     Correct predictions: %d | Wrong predictions: %d | "
+                  "Local error (purity): %.2f | Global error: %.2f" %
+                  (n_corrects, n_errors, float(n_errors) / (n_corrects + n_errors), float(n_errors) / n_total_errors))
+
             if print_path_to_node:
-                print(' Path to node:')
-                path_to_node = self._get_path_to_node(leaf)
+                print('     Path to node:')
+                path_to_node = self._get_path_to_node(leaf_id)
                 for step in path_to_node:
-                    print('     ' + step)
+                    print('          ' + step)
 
     def mpp_summary(self, x_test, y_test, output_dict=False):
         """ Print ErrorAnalyzer summary metrics """
