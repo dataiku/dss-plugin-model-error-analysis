@@ -61,6 +61,10 @@ class ErrorAnalyzer(object):
 
     @property
     def model_performance_predictor_features(self):
+        if self._features_in_model_performance_predictor is None:
+            self._features_in_model_performance_predictor = ["feature#%s" % feature_index
+                                                             for feature_index in range(self._predictor.n_features_)]
+
         return self._features_in_model_performance_predictor
 
     @property
@@ -252,7 +256,7 @@ class ErrorAnalyzer(object):
 
     def _get_path_to_node(self, node_id):
         """ Return path to node as a list of split steps from the nodes of the sklearn Tree object """
-        feature_names = self._features_in_model_performance_predictor
+        feature_names = self.model_performance_predictor_features
 
         children_left = self._error_clf.tree_.children_left
         children_right = self._error_clf.tree_.children_right
