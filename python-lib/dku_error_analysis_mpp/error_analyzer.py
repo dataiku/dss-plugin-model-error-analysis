@@ -279,7 +279,7 @@ class ErrorAnalyzer(object):
 
         return path_to_node
 
-    def error_node_summary(self, nodes='all_errors', print_path_to_node=True):
+    def error_node_summary(self, nodes='all_errors', add_path_to_leaves=True, print_summary=False):
         """ Return summary information regarding input nodes """
 
         leaf_nodes = self.get_list_of_leaves(input_leaf_ids=nodes)
@@ -288,20 +288,41 @@ class ErrorAnalyzer(object):
         n_total_errors = y[y == ErrorAnalyzerConstants.WRONG_PREDICTION].shape[0]
         error_class_idx = np.where(self._error_clf.classes_ == ErrorAnalyzerConstants.WRONG_PREDICTION)[0]
         correct_class_idx = np.where(self._error_clf.classes_ == ErrorAnalyzerConstants.CORRECT_PREDICTION)[0]
+
+        leaves_summary = []
         for leaf_id in leaf_nodes:
             values = self._error_clf.tree_.value[leaf_id, :]
             n_errors = values[0, error_class_idx]
             n_corrects = values[0, correct_class_idx]
-            print("LEAF %d:" % leaf_id)
-            print("     Correct predictions: %d | Wrong predictions: %d | "
-                  "Local error (purity): %.2f | Global error: %.2f" %
-                  (n_corrects, n_errors, float(n_errors) / (n_corrects + n_errors), float(n_errors) / n_total_errors))
+            local_error = float(n_errors) / (n_corrects + n_errors)
+            global_error = float(n_errors) / n_total_errors
 
-            if print_path_to_node:
-                print('     Path to leaf:')
+            leaf_dict = {
+                "id": leaf_id,
+                "n_corrects": n_corrects,
+                "n_errors": n_errors,
+                "local_error": local_error,
+                "global_error": global_error
+            }
+
+            leaves_summary.append(leaf_dict)
+
+            if add_path_to_leaves:
                 path_to_node = self._get_path_to_node(leaf_id)
-                for (step_idx, step) in enumerate(path_to_node):
-                    print('     ' + '   ' * step_idx + step)
+                leaf_dict["path_to_leaf"] = path_to_node
+
+            if print_summary:
+                print("LEAF %d:" % leaf_id)
+                print("     Correct predictions: %d | Wrong predictions: %d | "
+                      "Local error (purity): %.2f | Global error: %.2f" %
+                      (n_corrects, n_errors, local_error, global_error))
+
+                if add_path_to_leaves:
+                    print('     Path to leaf:')
+                    for (step_idx, step) in enumerate(path_to_node):
+                        print('     ' + '   ' * step_idx + step)
+
+        return leaves_summary
 
     def mpp_summary(self, x_test, y_test, output_dict=False):
         """ Print ErrorAnalyzer summary metrics """
