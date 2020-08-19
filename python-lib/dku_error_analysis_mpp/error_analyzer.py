@@ -153,6 +153,8 @@ class ErrorAnalyzer(object):
 
     def predict(self, x):
         """ Predict model performance on samples """
+        if self._error_clf is None:
+            raise NotFittedError("You need to first fit the error model.")
         return self._error_clf.predict(x)
 
     def _compute_model_performance_predictor_metrics(self, x_test, y_test):
