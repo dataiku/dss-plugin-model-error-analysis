@@ -298,10 +298,10 @@ class ErrorAnalyzer(object):
                   (n_corrects, n_errors, float(n_errors) / (n_corrects + n_errors), float(n_errors) / n_total_errors))
 
             if print_path_to_node:
-                print('     Path to node:')
+                print('     Path to leaf:')
                 path_to_node = self._get_path_to_node(leaf_id)
-                for step in path_to_node:
-                    print('          ' + step)
+                for (step_idx, step) in enumerate(path_to_node):
+                    print('     ' + '   ' * step_idx + step)
 
     def mpp_summary(self, x_test, y_test, output_dict=False):
         """ Print ErrorAnalyzer summary metrics """
