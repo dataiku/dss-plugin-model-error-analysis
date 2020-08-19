@@ -9,6 +9,7 @@ from dataiku.core.dkujson import DKUJSONEncoder
 from dku_error_analysis_mpp.model_metadata import get_model_handler
 from dku_error_analysis_mpp.dku_error_analyzer import DkuErrorAnalyzer
 from dku_error_analysis_mpp.model_accessor import ModelAccessor
+from dku_error_analysis_mpp.error_config import ErrorAnalyzerConstants
 
 
 app.json_encoder = DKUJSONEncoder
@@ -30,9 +31,10 @@ def get_error_dt(model_handler):
     dku_error_analyzer.parse_tree()
     tree = dku_error_analyzer.tree
 
-    dku_error_analyzer.mpp_summary()
+    report_dict = dku_error_analyzer.mpp_summary(output_dict=True)
+    confidence_decision = report_dict[ErrorAnalyzerConstants.CONFIDENCE_DECISION]
 
-    if not dku_error_analyzer.confidence_decision:
+    if not confidence_decision:
         # TODO: add message in UI?
         LOGGER.warning("Warning: the built MPP might not be representative of the primary model performances.")
 

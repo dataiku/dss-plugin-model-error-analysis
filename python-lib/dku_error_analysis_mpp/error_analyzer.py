@@ -44,11 +44,6 @@ class ErrorAnalyzer(object):
         self._error_test_y_pred = None
         self._test_y = None
         self._features_in_model_performance_predictor = feature_names
-        self._mpp_accuracy_score = None
-        self._primary_model_predicted_accuracy = None
-        self._primary_model_true_accuracy = None
-        self._confidence_decision = None
-        self._report = None
 
         self._error_train_leaf_id = None
         self._ranked_error_nodes = None
@@ -82,22 +77,6 @@ class ErrorAnalyzer(object):
         if self._ranked_error_nodes is None:
             self._ranked_error_nodes = self._compute_ranked_error_nodes()
         return self._ranked_error_nodes
-
-    @property
-    def mpp_accuracy_score(self):
-        return self._mpp_accuracy_score
-
-    @property
-    def primary_model_predicted_accuracy(self):
-        return self._primary_model_predicted_accuracy
-
-    @property
-    def primary_model_true_accuracy(self):
-        return self._primary_model_true_accuracy
-
-    @property
-    def confidence_decision(self):
-        return self._confidence_decision
 
     def fit(self, x, y):
         """
@@ -156,30 +135,6 @@ class ErrorAnalyzer(object):
         if self._error_clf is None:
             raise NotFittedError("You need to first fit the error model.")
         return self._error_clf.predict(x)
-
-    def _compute_model_performance_predictor_metrics(self, x_test, y_test):
-        """
-        Compute MPP ability to predict primary model performance.
-        Ideally primary_model_predicted_accuracy should be equal
-        to primary_model_true_accuracy
-        """
-
-        self._error_test_x = x_test
-        self._test_y = y_test
-
-        self._error_test_y = self._compute_primary_model_error(x_test, y_test)
-
-        y_true = self._error_test_y
-        self._error_test_y_pred = self._error_clf.predict(self._error_test_x)
-        y_pred = self._error_test_y_pred
-
-        report_dict = mpp_report(y_true, y_pred, output_dict=True)
-
-        self._mpp_accuracy_score = report_dict[ErrorAnalyzerConstants.MPP_ACCURACY]
-        self._primary_model_true_accuracy = report_dict[ErrorAnalyzerConstants.PRIMARY_MODEL_TRUE_ACCURACY]
-        self._primary_model_predicted_accuracy = report_dict[ErrorAnalyzerConstants.PRIMARY_MODEL_PREDICTED_ACCURACY]
-
-        self._confidence_decision = report_dict[ErrorAnalyzerConstants.CONFIDENCE_DECISION]
 
     @staticmethod
     def _get_epsilon(difference, mode='rec'):
@@ -326,16 +281,8 @@ class ErrorAnalyzer(object):
 
     def mpp_summary(self, x_test, y_test, output_dict=False):
         """ Print ErrorAnalyzer summary metrics """
-
-        new_test_set = np.array(y_test != self._test_y).any() and np.array(x_test != self._error_test_x).any()
-        metrics_to_compute = self._error_test_y_pred is None
-
-        if new_test_set or metrics_to_compute:
-            self._compute_model_performance_predictor_metrics(x_test, y_test)
-
-        y_true = self._error_test_y
-        y_pred = self._error_test_y_pred
-
+        y_true = self._compute_primary_model_error(x_test, y_test)
+        y_pred = self._error_clf.predict(x_test)
         return mpp_report(y_true, y_pred, output_dict)
 
 
