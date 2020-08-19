@@ -190,7 +190,7 @@ class ErrorAnalyzer(object):
         """ Get indices of leaf nodes """
         return set(node_id for (node_id, feature_id) in enumerate(self._error_clf.tree_.feature) if feature_id < 0)
 
-    def _compute_ranked_error_nodes(self):
+    def _rank_leaf_nodes_by_class_difference(self):
         """ Select error nodes and rank them by importance, defined as: (n_errors - n_correct) - impurity.
             Specifically error nodes with the same difference (n_errors - n_correct) are clustered together and
             sorted by increasing impurity. For instance nodes [n_correct, n_errors]=[0, 7] is ranked before [0, 6] and
@@ -199,11 +199,11 @@ class ErrorAnalyzer(object):
         error_leaf_nodes_importance = []
         error_class_idx = np.where(self._error_clf.classes_ == ErrorAnalyzerConstants.WRONG_PREDICTION)[0]
         correct_class_idx = np.where(self._error_clf.classes_ == ErrorAnalyzerConstants.CORRECT_PREDICTION)[0]
-        for leaf_id in self.leaf_ids:
-            decision = self._error_clf.tree_.value[leaf_id, :].argmax()
+        for leaf in self.leaf_ids:
+            decision = self._error_clf.tree_.value[leaf, :].argmax()
             if self._error_clf.classes_[decision] == ErrorAnalyzerConstants.WRONG_PREDICTION:
-                error_leaf_nodes.append(leaf_id)
-                values = self._error_clf.tree_.value[leaf_id, :]
+                error_leaf_nodes.append(leaf)
+                values = self._error_clf.tree_.value[leaf, :]
                 n_errors = values[0, error_class_idx]
                 n_corrects = values[0, correct_class_idx]
                 leaf_impurity = float(n_corrects) / (n_errors + n_corrects)
@@ -212,6 +212,63 @@ class ErrorAnalyzer(object):
         ranked_error_nodes = [x for _, x in sorted(zip(error_leaf_nodes_importance, error_leaf_nodes))]
 
         return ranked_error_nodes
+
+    def _rank_leaf_nodes_by_purity(self):
+        """ Select error nodes and rank them by importance, defined by the purity and the class difference.
+                    Specifically error nodes with the same purity (n_errors / (n_errors + n_correct)) are clustered together and
+                    sorted by decreasing class difference. For instance node [n_correct, n_errors]=[0, 7] is ranked before
+                    [0, 6], which is ranked before [1, 7]: [0, 7], [0, 6], [1, 7]."""
+        error_leaf_nodes = []
+        error_leaf_nodes_purity = []
+        error_leaf_nodes_difference = []
+        error_class_idx = np.where(self._error_clf.classes_ == ErrorAnalyzerConstants.WRONG_PREDICTION)[0]
+        correct_class_idx = np.where(self._error_clf.classes_ == ErrorAnalyzerConstants.CORRECT_PREDICTION)[0]
+        for leaf_id in self.leaf_ids:
+            decision = self._error_clf.tree_.value[leaf_id, :].argmax()
+            if self._error_clf.classes_[decision] == ErrorAnalyzerConstants.WRONG_PREDICTION:
+                values = self._error_clf.tree_.value[leaf_id, :]
+                n_errors = int(values[0, error_class_idx])
+                n_corrects = int(values[0, correct_class_idx])
+
+                leaf_purity = float(n_errors) / (n_errors + n_corrects)
+                leaf_class_difference = n_errors - n_corrects  # always positive
+
+                error_leaf_nodes.append(leaf_id)
+                error_leaf_nodes_purity.append(leaf_purity)
+                error_leaf_nodes_difference.append(leaf_class_difference)
+
+        step = ErrorAnalyzerConstants.PURITY_QUANTIZATION_PRECISION
+        n_levels = int(1. / step)
+        purity_levels = np.linspace(step, 1., n_levels)[::-1]
+
+        leaf_nodes_cluster_id = np.array([np.where(purity >= np.array(purity_levels))[0][0]
+                                          for purity in error_leaf_nodes_purity])
+
+        error_leaf_nodes = np.array(error_leaf_nodes)
+        error_leaf_nodes_difference = np.array(error_leaf_nodes_difference)
+
+        ranked_error_nodes = []
+        for cluster_id in range(n_levels):
+            cluster_leaf_ids = leaf_nodes_cluster_id == cluster_id
+            if not cluster_leaf_ids.any():
+                continue
+            cluster_leaves = error_leaf_nodes[cluster_leaf_ids]
+            cluster_leaves_difference = error_leaf_nodes_difference[cluster_leaf_ids]
+            sorted_idx = np.argsort(cluster_leaves_difference)[::-1]
+            ranked_cluster_leaves = list(cluster_leaves[sorted_idx])
+            ranked_error_nodes.extend(ranked_cluster_leaves)
+
+        return ranked_error_nodes
+
+    def _compute_ranked_error_nodes(self, rank_by='purity'):
+        """ Select error nodes and rank them by importance."""
+
+        if rank_by == 'purity':
+            return self._rank_leaf_nodes_by_purity()
+        elif rank_by == 'class_difference':
+            return self._rank_leaf_nodes_by_class_difference()
+        else:
+            raise NotImplementedError("Input argument 'rank_by' is invalid. Should be 'purity' or 'class_difference'")
 
     def get_list_of_leaves(self, input_leaf_ids):
         """

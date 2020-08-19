@@ -25,3 +25,5 @@ class ErrorAnalyzerConstants(object):
     PRIMARY_MODEL_TRUE_ACCURACY = 'primary_model_true_accuracy'
     PRIMARY_MODEL_PREDICTED_ACCURACY = 'primary_model_predicted_accuracy'
     CONFIDENCE_DECISION = 'confidence_decision'
+
+    PURITY_QUANTIZATION_PRECISION = 0.01
