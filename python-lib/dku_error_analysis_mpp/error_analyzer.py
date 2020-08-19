@@ -199,11 +199,11 @@ class ErrorAnalyzer(object):
         error_leaf_nodes_importance = []
         error_class_idx = np.where(self._error_clf.classes_ == ErrorAnalyzerConstants.WRONG_PREDICTION)[0]
         correct_class_idx = np.where(self._error_clf.classes_ == ErrorAnalyzerConstants.CORRECT_PREDICTION)[0]
-        for leaf in self.leaf_ids:
-            decision = self._error_clf.tree_.value[leaf, :].argmax()
+        for leaf_id in self.leaf_ids:
+            decision = self._error_clf.tree_.value[leaf_id, :].argmax()
             if self._error_clf.classes_[decision] == ErrorAnalyzerConstants.WRONG_PREDICTION:
-                error_leaf_nodes.append(leaf)
-                values = self._error_clf.tree_.value[leaf, :]
+                error_leaf_nodes.append(leaf_id)
+                values = self._error_clf.tree_.value[leaf_id, :]
                 n_errors = values[0, error_class_idx]
                 n_corrects = values[0, correct_class_idx]
                 leaf_impurity = float(n_corrects) / (n_errors + n_corrects)
