@@ -39,10 +39,6 @@ class ErrorAnalyzer(object):
         self._error_clf = None
         self._error_train_x = None
         self._error_train_y = None
-        self._error_test_x = None
-        self._error_test_y = None
-        self._error_test_y_pred = None
-        self._test_y = None
         self._features_in_model_performance_predictor = feature_names
 
         self._error_train_leaf_id = None
