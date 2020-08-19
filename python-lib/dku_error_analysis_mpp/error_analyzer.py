@@ -98,8 +98,7 @@ class ErrorAnalyzer(object):
 
         np.random.seed(self._seed)
 
-        self._error_train_x = x
-        self._error_train_y = self._compute_primary_model_error(x, y)
+        self._error_train_x, self._error_train_y = self._compute_primary_model_error(x, y)
 
         logger.info("Fitting the model performance predictor...")
 
@@ -138,7 +137,7 @@ class ErrorAnalyzer(object):
 
         error_y = self._get_errors(y, y_pred)
 
-        return error_y
+        return x, error_y
 
     def predict(self, x):
         """ Predict model performance on samples """
@@ -327,7 +326,7 @@ class ErrorAnalyzer(object):
 
     def mpp_summary(self, x_test, y_test, output_dict=False):
         """ Print ErrorAnalyzer summary metrics """
-        y_true = self._compute_primary_model_error(x_test, y_test)
+        x_test, y_true = self._compute_primary_model_error(x_test, y_test)
         y_pred = self.model_performance_predictor.predict(x_test)
         return mpp_report(y_true, y_pred, output_dict)
 
