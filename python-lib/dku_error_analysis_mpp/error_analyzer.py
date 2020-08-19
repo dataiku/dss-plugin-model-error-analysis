@@ -127,11 +127,12 @@ class ErrorAnalyzer(object):
                 'The original dataset is too small ({} rows) to have stable result, it needs to have at least '
                 '{} rows'.format(len(x), ErrorAnalyzerConstants.MIN_NUM_ROWS))
 
-        logger.info("Rebalancing data:")
-        number_of_rows = min(x.shape[0], ErrorAnalyzerConstants.MAX_NUM_ROW)
-        logger.info(" - original dataset had %s rows. Selecting the first %s." % (x.shape[0], number_of_rows))
+        if x.shape[0] > ErrorAnalyzerConstants.MAX_NUM_ROW:
+            logger.info("Rebalancing data:")
+            logger.info(" - original dataset had %s rows. Selecting the first %s." %
+                        (x.shape[0], ErrorAnalyzerConstants.MAX_NUM_ROW))
 
-        x = x[:number_of_rows, :]
+            x = x[:ErrorAnalyzerConstants.MAX_NUM_ROW, :]
 
         y_pred = self._predictor.predict(x)
 
