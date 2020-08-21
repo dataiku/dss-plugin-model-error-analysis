@@ -43,7 +43,6 @@ class ErrorAnalyzer(object):
 
         self._error_train_leaf_id = None
         self._leaf_ids = None
-        self._ranked_error_nodes = None
 
         self._seed = seed
 
@@ -80,12 +79,6 @@ class ErrorAnalyzer(object):
         if self._leaf_ids is None:
             self._leaf_ids = self._compute_leaf_ids()
         return self._leaf_ids
-
-    @property
-    def ranked_error_nodes(self):
-        if self._ranked_error_nodes is None:
-            self._ranked_error_nodes = self._compute_ranked_error_nodes()
-        return self._ranked_error_nodes
 
     def fit(self, x, y):
         """
@@ -289,7 +282,7 @@ class ErrorAnalyzer(object):
         if input_leaf_ids == "all":
             return self.leaf_ids
         if input_leaf_ids == "all_errors":
-            return self.ranked_error_nodes
+            return self.leaf_ids #temporary
         if isinstance(input_leaf_ids, int):
             input_leaf_ids = {input_leaf_ids}
         elif isinstance(input_leaf_ids, list):

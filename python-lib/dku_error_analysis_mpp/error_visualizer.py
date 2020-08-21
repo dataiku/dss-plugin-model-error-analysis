@@ -31,7 +31,6 @@ class ErrorVisualizer(object):
         self._error_clf = self._error_analyzer.model_performance_predictor
         self._error_train_x = self._error_analyzer.error_train_x
         self._error_train_y = self._error_analyzer.error_train_y
-        self._ranked_error_nodes = self._error_analyzer.ranked_error_nodes
 
         self._features_in_model_performance_predictor = self._error_analyzer.model_performance_predictor_features
 
