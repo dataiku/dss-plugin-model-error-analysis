@@ -195,7 +195,7 @@ class ErrorVisualizer(object):
                                              show_class=False, figsize=(10, 5)):
         """ Return plot of error node feature distribution and compare to global baseline """
 
-        leaf_nodes = self._error_analyzer.get_list_of_leaves(input_leaf_ids=nodes)
+        leaf_nodes = self._error_analyzer.get_ranked_leaf_ids(input_leaf_ids=nodes)
 
         error_class_idx = np.where(self._error_clf.classes_ == ErrorAnalyzerConstants.WRONG_PREDICTION)[0]
         correct_class_idx = np.where(self._error_clf.classes_ == ErrorAnalyzerConstants.CORRECT_PREDICTION)[0]
@@ -241,8 +241,6 @@ class ErrorVisualizer(object):
                 plt.figure(figsize=figsize)
 
                 f_name = feature_names[f_id]
-
-                print(f_name)
 
                 f_global = x[:, f_id]
                 f_node = x_node[:, f_id]

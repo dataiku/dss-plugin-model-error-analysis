@@ -44,6 +44,10 @@ class ErrorAnalyzer(object):
         self._error_train_leaf_id = None
         self._leaf_ids = None
 
+        self._impurity = None
+        self._quantized_impurity = None
+        self._difference = None
+
         self._seed = seed
 
     @property
@@ -71,13 +75,30 @@ class ErrorAnalyzer(object):
     @property
     def train_leaf_ids(self):
         if self._error_train_leaf_id is None:
-            self._error_train_leaf_id = self._compute_train_leaf_ids()
+            self._compute_train_leaf_ids()
         return self._error_train_leaf_id
 
     @property
+    def impurity(self):
+        if self._impurity is None:
+            self._compute_ranking_arrays()
+        return self._impurity
+
+    @property
+    def quantized_impurity(self):
+        if self._quantized_impurity is None:
+            self._compute_ranking_arrays()
+        return self._quantized_impurity
+
+    @property
+    def difference(self):
+        if self._difference is None:
+            self._compute_ranking_arrays()
+        return self._difference
+    @property
     def leaf_ids(self):
         if self._leaf_ids is None:
-            self._leaf_ids = self._compute_leaf_ids()
+            self._compute_leaf_ids()
         return self._leaf_ids
 
     def fit(self, x, y):
@@ -177,126 +198,75 @@ class ErrorAnalyzer(object):
 
     def _compute_train_leaf_ids(self):
         """ Compute indices of leaf nodes for the train set """
-        return self._error_clf.apply(self._error_train_x)
+        self._error_train_leaf_id = self._error_clf.apply(self._error_train_x)
 
     def _compute_leaf_ids(self):
-        """ Get indices of leaf nodes """
-        return set(node_id for (node_id, feature_id) in enumerate(self._error_clf.tree_.feature) if feature_id < 0)
+        """ Compute indices of leaf nodes """
+        self._leaf_ids = np.where(self._error_clf.tree_.feature < 0)[0]
 
-    def _rank_leaf_nodes_by_class_difference(self):
-        """ Select error nodes and rank them by importance, defined as: (n_errors - n_correct) - impurity.
-            Specifically error nodes with the same difference (n_errors - n_correct) are clustered together and
-            sorted by increasing impurity. For instance nodes [n_correct, n_errors]=[0, 7] is ranked before [0, 6] and
-            [0, 5], while [0, 5] is ranked after [0, 6] and [1, 7]: [0, 7], [0, 6], [1, 7], [0, 5]."""
-        error_leaf_nodes = []
-        error_leaf_nodes_importance = []
+    def _compute_ranking_arrays(self):
+        """ Compute ranking array """
         error_class_idx = np.where(self._error_clf.classes_ == ErrorAnalyzerConstants.WRONG_PREDICTION)[0]
         correct_class_idx = np.where(self._error_clf.classes_ == ErrorAnalyzerConstants.CORRECT_PREDICTION)[0]
-        for leaf in self.leaf_ids:
-            decision = self._error_clf.tree_.value[leaf, :].argmax()
-            if self._error_clf.classes_[decision] == ErrorAnalyzerConstants.WRONG_PREDICTION:
-                error_leaf_nodes.append(leaf)
-                values = self._error_clf.tree_.value[leaf, :]
-                n_errors = values[0, error_class_idx]
-                n_corrects = values[0, correct_class_idx]
-                leaf_impurity = float(n_corrects) / (n_errors + n_corrects)
-                n_difference = n_corrects - n_errors  # always negative
-                error_leaf_nodes_importance.append(n_difference + leaf_impurity)
-        ranked_error_nodes = [x for _, x in sorted(zip(error_leaf_nodes_importance, error_leaf_nodes))]
 
-        return ranked_error_nodes
+        wrongly_predicted_samples = self._error_clf.tree_.value[self.leaf_ids, 0, error_class_idx]
+        correctly_predicted_samples = self._error_clf.tree_.value[self.leaf_ids, 0, correct_class_idx]
 
-    def _rank_leaf_nodes_by_purity(self):
-        """ Select error nodes and rank them by importance, defined by the purity and the class difference.
-                    Specifically error nodes with the same purity (n_errors / (n_errors + n_correct)) are clustered together and
-                    sorted by decreasing class difference. For instance node [n_correct, n_errors]=[0, 7] is ranked before
-                    [0, 6], which is ranked before [1, 7]: [0, 7], [0, 6], [1, 7]."""
-        error_leaf_nodes = []
-        error_leaf_nodes_purity = []
-        error_leaf_nodes_difference = []
-        error_class_idx = np.where(self._error_clf.classes_ == ErrorAnalyzerConstants.WRONG_PREDICTION)[0]
-        correct_class_idx = np.where(self._error_clf.classes_ == ErrorAnalyzerConstants.CORRECT_PREDICTION)[0]
-        for leaf_id in self.leaf_ids:
-            decision = self._error_clf.tree_.value[leaf_id, :].argmax()
-            if self._error_clf.classes_[decision] == ErrorAnalyzerConstants.WRONG_PREDICTION:
-                values = self._error_clf.tree_.value[leaf_id, :]
-                n_errors = int(values[0, error_class_idx])
-                n_corrects = int(values[0, correct_class_idx])
+        self._impurity = correctly_predicted_samples / (wrongly_predicted_samples + correctly_predicted_samples)
+        nr_steps = int(1/ErrorAnalyzerConstants.PURITY_QUANTIZATION_PRECISION) + 1
+        purity_bins = np.linspace(0, 1., nr_steps)
+        self._quantized_impurity = np.digitize(self._impurity, purity_bins)
+        self._difference = correctly_predicted_samples - wrongly_predicted_samples #only negative numbers
 
-                leaf_purity = float(n_errors) / (n_errors + n_corrects)
-                leaf_class_difference = n_errors - n_corrects  # always positive
-
-                error_leaf_nodes.append(leaf_id)
-                error_leaf_nodes_purity.append(leaf_purity)
-                error_leaf_nodes_difference.append(leaf_class_difference)
-
-        step = ErrorAnalyzerConstants.PURITY_QUANTIZATION_PRECISION
-        n_levels = int(1. / step)
-        purity_levels = np.linspace(step, 1., n_levels)[::-1]
-
-        leaf_nodes_cluster_id = np.array([np.where(purity >= np.array(purity_levels))[0][0]
-                                          for purity in error_leaf_nodes_purity])
-
-        error_leaf_nodes = np.array(error_leaf_nodes)
-        error_leaf_nodes_difference = np.array(error_leaf_nodes_difference)
-
-        ranked_error_nodes = []
-        for cluster_id in range(n_levels):
-            cluster_leaf_ids = leaf_nodes_cluster_id == cluster_id
-            if not cluster_leaf_ids.any():
-                continue
-            cluster_leaves = error_leaf_nodes[cluster_leaf_ids]
-            cluster_leaves_difference = error_leaf_nodes_difference[cluster_leaf_ids]
-            sorted_idx = np.argsort(cluster_leaves_difference)[::-1]
-            ranked_cluster_leaves = list(cluster_leaves[sorted_idx])
-            ranked_error_nodes.extend(ranked_cluster_leaves)
-
-        return ranked_error_nodes
-
-    def _compute_ranked_error_nodes(self, rank_by='purity'):
+    def get_ranked_leaf_ids(self, input_leaf_ids, rank_by='purity'):
         """ Select error nodes and rank them by importance."""
-
+        leaf_selector = self._get_leaf_ids(input_leaf_ids)
+        selected_leaves = self.leaf_ids[leaf_selector]
         if rank_by == 'purity':
-            return self._rank_leaf_nodes_by_purity()
+            if leaf_selector is None:
+                sorted_ids = np.lexsort((self.difference, self.quantized_impurity))
+            else:
+                sorted_ids = np.lexsort((self.difference[leaf_selector], self.quantized_impurity[leaf_selector]))
         elif rank_by == 'class_difference':
-            return self._rank_leaf_nodes_by_class_difference()
+            if leaf_selector is None:
+                sorted_ids = np.lexsort((self.impurity, self.difference))
+            else:
+                sorted_ids = np.lexsort((self.impurity[leaf_selector], self.difference[leaf_selector]))
         else:
             raise NotImplementedError("Input argument 'rank_by' is invalid. Should be 'purity' or 'class_difference'")
+        return selected_leaves.take(sorted_ids)
 
-    def get_list_of_leaves(self, input_leaf_ids):
+    def _get_leaf_ids(self, input_leaf_ids):
         """
-             Parse input string and provide the desired nodes indices
-             Args:
-                 input_leaf_ids: int, set, or str
-                 The leaf ids to return
-                 * int: A single leaf id
-                 * set: A set of leaf ids
-                 * list: A list of leaf ids
-                 * str:
-                        - "all": All the leaf ids
-                        - "all_errors": All the leaf ids that classify the primary model prediction as wrong
+            Provide the desired nodes indices
+            Args:
+                input_leaf_ids: int, str, or array-like
+                The leaf ids to return
+                * int: A single leaf id
+                * array-like: A array of leaf ids
+                * str:
+                    - "all": All the leaf ids
+                    - "all_errors": All the leaf ids that classify the primary model prediction as wrong
 
-             Return:
-                  A set of leaf ids
+            Return:
+                A set of leaf ids
         """
         if input_leaf_ids == "all":
-            return self.leaf_ids
+            return None
         if input_leaf_ids == "all_errors":
-            return self.leaf_ids #temporary
-        if isinstance(input_leaf_ids, int):
-            input_leaf_ids = {input_leaf_ids}
-        elif isinstance(input_leaf_ids, list):
-            input_leaf_ids = set(input_leaf_ids)
-        if isinstance(input_leaf_ids, set):
-            selected_leaves = input_leaf_ids & self.leaf_ids
-            n_leaves = len(selected_leaves)
-            if n_leaves == 0:
-                raise ValueError("The value of the parameter 'leaf_ids' is invalid: it should contain leaf ids.")
-            elif n_leaves < len(input_leaf_ids):
-                print("Some of the input ids do not belong to leaves. Only leaf ids are kept.")
-            return selected_leaves
+            error_class_idx = np.where(self._error_clf.classes_ == ErrorAnalyzerConstants.WRONG_PREDICTION)[0]
+            error_node_ids = np.where(self._error_clf.tree_.value[:,0,:].argmax(axis=1) == error_class_idx)[0]
 
-        raise ValueError("The value of the parameter 'leaf_ids' is invalid. It can be a leaf index,"
+            return np.in1d(self.leaf_ids, error_node_ids)
+        if isinstance(input_leaf_ids, int):
+            input_leaf_ids = [input_leaf_ids]
+        try:
+            leaf_selector = np.intersect1d(self.leaf_ids, input_leaf_ids)
+            if len(leaf_selector) < len(input_leaf_ids):
+                print("Some of the input ids do not belong to leaves. Only leaf ids are kept.")
+            return leaf_selector
+        except:
+            raise ValueError("The value of the parameter 'leaf_ids' is invalid. It can be a leaf index,"
                          "a set of leaf indices, 'all' to return all leaf ids or "
                          "'all_errors' to return leaf ids that classify the primary prediction as wrong.")
 
@@ -329,10 +299,11 @@ class ErrorAnalyzer(object):
 
         return path_to_node
 
+    #TODO: rewrite this method using the ranking arrays
     def error_node_summary(self, nodes='all_errors', add_path_to_leaves=True, print_summary=False):
         """ Return summary information regarding input nodes """
 
-        leaf_nodes = self.get_list_of_leaves(input_leaf_ids=nodes)
+        leaf_nodes = self.get_ranked_leaf_ids(input_leaf_ids=nodes)
 
         y = self._error_train_y
         n_total_errors = y[y == ErrorAnalyzerConstants.WRONG_PREDICTION].shape[0]
@@ -379,9 +350,3 @@ class ErrorAnalyzer(object):
         x_test, y_true = self._compute_primary_model_error(x_test, y_test)
         y_pred = self.model_performance_predictor.predict(x_test)
         return mpp_report(y_true, y_pred, output_dict)
-
-
-
-
-
-
