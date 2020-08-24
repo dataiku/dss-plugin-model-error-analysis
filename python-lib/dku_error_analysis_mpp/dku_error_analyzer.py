@@ -139,7 +139,7 @@ class DkuErrorAnalyzer(ErrorAnalyzer):
                     decision_rule += ' not in '
                 else:
                     decision_rule += ' in '
-                decision_rule += cur_node.values
+                decision_rule += ' '.join([str(value) for value in cur_node.values])
             path_to_node.appendleft(decision_rule)
             cur_node = self._tree.get_node(cur_node.parent_id)
 
