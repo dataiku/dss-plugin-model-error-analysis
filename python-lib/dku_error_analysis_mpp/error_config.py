@@ -27,3 +27,5 @@ class ErrorAnalyzerConstants(object):
     CONFIDENCE_DECISION = 'confidence_decision'
 
     PURITY_QUANTIZATION_PRECISION = 0.01
+
+    CATEGORICAL_OTHERS = 'Others'

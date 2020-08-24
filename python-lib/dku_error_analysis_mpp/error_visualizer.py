@@ -46,12 +46,6 @@ class ErrorVisualizer(object):
 
             self._features_dict = self._error_analyzer.features_dict
 
-            self._x_deprocessed = None
-            self._feature_names_deprocessed = None
-            self._value_mapping = None
-
-            self.prepare_features_for_plot()
-
     def plot_error_tree(self, size=None):
         """ Plot the graph of the decision tree """
 
@@ -122,44 +116,6 @@ class ErrorVisualizer(object):
         else:
             return preprocessed_feature, None
 
-    def prepare_features_for_plot(self):
-        """ Undo the preprocessing of features to plot distributions in DkuErrorAnalyzer """
-
-        rescalers = self._tree_parser.rescalers
-        scalings = {rescaler.in_col: rescaler for rescaler in rescalers}
-
-        feature_list = self._features_in_model_performance_predictor
-
-        x = self._error_train_x
-
-        feature_list_undo = [self.read_feature(feature_name)[0] for feature_name in feature_list]
-        feature_list_undo = list(dict.fromkeys(feature_list_undo))
-
-        n_features_undo = len(feature_list_undo)
-        x_deprocessed = np.zeros((x.shape[0], n_features_undo))
-        value_mapping = dict.fromkeys(list(range(n_features_undo)), [])
-
-        for f_id, feature_name in enumerate(feature_list):
-            feature_name_undo, feature_value = self.read_feature(feature_name)
-            f_id_undo = feature_list_undo.index(feature_name_undo)
-
-            if self._features_dict.get(feature_name_undo).get("type") == "NUMERIC":
-                x_deprocessed[:, f_id_undo] = _denormalize_feature_value(scalings, feature_name, x[:, f_id])
-            else:
-                samples_indices = np.where(x[:, f_id] == 1)
-                if samples_indices is not None:
-                    if len(feature_value) > 1:
-                        feature_value = 'Others'
-                    else:
-                        feature_value = feature_value[0]
-                    value_mapping[f_id_undo].append(feature_value)
-                    samples_indices = samples_indices[0]
-                    x_deprocessed[samples_indices, f_id_undo] = len(value_mapping[f_id_undo]) - 1
-
-        self._x_deprocessed = x_deprocessed
-        self._feature_names_deprocessed = feature_list_undo
-        self._value_mapping = value_mapping
-
     @staticmethod
     def plot_hist(data, bins, labels, colors, alpha, histtype='bar'):
         n_samples = 0
@@ -203,12 +159,33 @@ class ErrorVisualizer(object):
         feature_names = self._features_in_model_performance_predictor
 
         if isinstance(self._error_analyzer, DkuErrorAnalyzer):
+            # cannot use self._tree.ranked_features as their number is always MAX_MOST_IMPORTANT_FEATURES(3)
+            # while we want to use the input top_k_features
             ranked_features = self._tree_parser.rank_features_by_error_correlation(feature_names,
                                                                                    max_number_features=top_k_features,
                                                                                    include_non_split_features=True)
-            feature_names = self._feature_names_deprocessed
 
-            x, y = self._x_deprocessed, self._error_train_y
+            feature_list_unprocessed = [self.read_feature(feature_name)[0] for feature_name in feature_names]
+            seen = set()
+            feature_names = [x for x in feature_list_unprocessed if not (x in seen or seen.add(x))]
+
+            feature_valid_values = dict()
+            for feature_name, param in self._tree_parser.preprocessed_feature_mapping.iteritems():
+                unprocessed_name = self.read_feature(feature_name)[0]
+                if unprocessed_name not in feature_valid_values:
+                    feature_valid_values[unprocessed_name] = list()
+                if len(param.value) == 1 and not isinstance(param.value[0], float):
+                    feature_valid_values[unprocessed_name].append(param.value[0])
+
+            for unprocessed_name in feature_valid_values:
+                feature_valid_values[unprocessed_name].append(ErrorAnalyzerConstants.CATEGORICAL_OTHERS)
+
+            x_unprocessed_df = self._error_analyzer.error_df.loc[:,
+                                                                 self._error_analyzer.error_df.columns !=
+                                                                 ErrorAnalyzerConstants.ERROR_COLUMN]
+
+            x, y = x_unprocessed_df[feature_names].values, self._error_train_y
+
         else:
             ranked_features = self.rank_features_by_error_correlation(feature_names,
                                                                       top_k_features=top_k_features,
@@ -251,17 +228,26 @@ class ErrorVisualizer(object):
                 f_error_node = x_error_node[:, f_id]
 
                 f_values = np.unique(x[:, f_id])
-                bins = np.linspace(np.min(f_values), np.max(f_values))
 
                 if isinstance(self._error_analyzer, DkuErrorAnalyzer):
                     if self._features_dict.get(f_name).get("type") != "NUMERIC":
-                        labels = self._value_mapping[f_id]
+                        labels = feature_valid_values[f_name]
                         n_labels = len(labels)
                         bins = np.linspace(0, n_labels - 1, n_labels)
-                        ax = plt.gca()
-                        ax.set_xticks(bins)
-                        ax.set_xticklabels(labels)
                         plt.xticks(rotation=90)
+
+                        map_invalid_values = np.vectorize(
+                            lambda value: ErrorAnalyzerConstants.CATEGORICAL_OTHERS if value not in labels else value)
+                        f_global = map_invalid_values(f_global)
+                        f_node = map_invalid_values(f_node)
+                        f_correct_global = map_invalid_values(f_correct_global)
+                        f_error_global = map_invalid_values(f_error_global)
+                        f_correct_node = map_invalid_values(f_correct_node)
+                        f_error_node = map_invalid_values(f_error_node)
+                    else:
+                        bins = np.linspace(np.min(f_values), np.max(f_values))
+                else:
+                    bins = np.linspace(np.min(f_values), np.max(f_values))
 
                 if compare_to_global:
                     if show_class:
