@@ -136,10 +136,10 @@ class DkuErrorAnalyzer(ErrorAnalyzer):
                     decision_rule += '%.2f' % cur_node.end
             else:
                 if cur_node.others:
-                    decision_rule += ' != '
+                    decision_rule += ' not in '
                 else:
-                    decision_rule += ' == '
-                decision_rule += cur_node.values[0]
+                    decision_rule += ' in '
+                decision_rule += cur_node.values
             path_to_node.appendleft(decision_rule)
             cur_node = self._tree.get_node(cur_node.parent_id)
 
