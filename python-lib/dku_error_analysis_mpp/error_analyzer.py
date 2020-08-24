@@ -261,7 +261,7 @@ class ErrorAnalyzer(object):
         if isinstance(input_leaf_ids, int):
             input_leaf_ids = [input_leaf_ids]
         try:
-            leaf_selector = np.intersect1d(self.leaf_ids, input_leaf_ids)
+            _, leaf_selector, _ = np.intersect1d(self.leaf_ids, input_leaf_ids, return_indices=True)
             if len(leaf_selector) < len(input_leaf_ids):
                 print("Some of the input ids do not belong to leaves. Only leaf ids are kept.")
             return leaf_selector
