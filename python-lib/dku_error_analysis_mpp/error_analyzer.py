@@ -216,7 +216,7 @@ class ErrorAnalyzer(object):
         nr_steps = int(1/ErrorAnalyzerConstants.PURITY_QUANTIZATION_PRECISION) + 1
         purity_bins = np.linspace(0, 1., nr_steps)
         self._quantized_impurity = np.digitize(self._impurity, purity_bins)
-        self._difference = correctly_predicted_samples - wrongly_predicted_samples #only negative numbers
+        self._difference = correctly_predicted_samples - wrongly_predicted_samples  # only negative numbers
 
     def get_ranked_leaf_ids(self, input_leaf_ids, rank_by='purity'):
         """ Select error nodes and rank them by importance."""
@@ -249,13 +249,13 @@ class ErrorAnalyzer(object):
                     - "all_errors": All the leaf ids that classify the primary model prediction as wrong
 
             Return:
-                A set of leaf ids
+                A boolean or integer array as a selector of leaf ids
         """
         if input_leaf_ids == "all":
             return None
         if input_leaf_ids == "all_errors":
             error_class_idx = np.where(self._error_clf.classes_ == ErrorAnalyzerConstants.WRONG_PREDICTION)[0]
-            error_node_ids = np.where(self._error_clf.tree_.value[:,0,:].argmax(axis=1) == error_class_idx)[0]
+            error_node_ids = np.where(self._error_clf.tree_.value[:, 0, :].argmax(axis=1) == error_class_idx)[0]
 
             return np.in1d(self.leaf_ids, error_node_ids)
         if isinstance(input_leaf_ids, int):
@@ -265,10 +265,10 @@ class ErrorAnalyzer(object):
             if len(leaf_selector) < len(input_leaf_ids):
                 print("Some of the input ids do not belong to leaves. Only leaf ids are kept.")
             return leaf_selector
-        except:
+        except Exception:
             raise ValueError("The value of the parameter 'leaf_ids' is invalid. It can be a leaf index,"
-                         "a set of leaf indices, 'all' to return all leaf ids or "
-                         "'all_errors' to return leaf ids that classify the primary prediction as wrong.")
+                             "a set of leaf indices, 'all' to return all leaf ids or "
+                             "'all_errors' to return leaf ids that classify the primary prediction as wrong.")
 
     def _get_path_to_node(self, node_id):
         """ Return path to node as a list of split steps from the nodes of the sklearn Tree object """
