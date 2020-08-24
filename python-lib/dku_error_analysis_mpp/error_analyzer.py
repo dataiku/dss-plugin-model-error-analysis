@@ -204,7 +204,7 @@ class ErrorAnalyzer(object):
         """ Compute indices of leaf nodes """
         self._leaf_ids = np.where(self._error_clf.tree_.feature < 0)[0]
 
-    def _compute_ranking_arrays(self):
+    def _compute_ranking_arrays(self, n_purity_levels=ErrorAnalyzerConstants.NUMBER_PURITY_LEVELS):
         """ Compute ranking array """
         error_class_idx = np.where(self._error_clf.classes_ == ErrorAnalyzerConstants.WRONG_PREDICTION)[0]
         correct_class_idx = np.where(self._error_clf.classes_ == ErrorAnalyzerConstants.CORRECT_PREDICTION)[0]
@@ -213,8 +213,8 @@ class ErrorAnalyzer(object):
         correctly_predicted_samples = self._error_clf.tree_.value[self.leaf_ids, 0, correct_class_idx]
 
         self._impurity = correctly_predicted_samples / (wrongly_predicted_samples + correctly_predicted_samples)
-        nr_steps = int(1/ErrorAnalyzerConstants.PURITY_QUANTIZATION_PRECISION) + 1
-        purity_bins = np.linspace(0, 1., nr_steps)
+
+        purity_bins = np.linspace(0, 1., n_purity_levels)
         self._quantized_impurity = np.digitize(self._impurity, purity_bins)
         self._difference = correctly_predicted_samples - wrongly_predicted_samples  # only negative numbers
 
@@ -260,12 +260,12 @@ class ErrorAnalyzer(object):
             return np.in1d(self.leaf_ids, error_node_ids)
         if isinstance(input_leaf_ids, int):
             input_leaf_ids = [input_leaf_ids]
-        try:
+        if isinstance(input_leaf_ids, list):
             _, leaf_selector, _ = np.intersect1d(self.leaf_ids, input_leaf_ids, return_indices=True)
             if len(leaf_selector) < len(input_leaf_ids):
                 print("Some of the input ids do not belong to leaves. Only leaf ids are kept.")
             return leaf_selector
-        except Exception:
+        else:
             raise ValueError("The value of the parameter 'leaf_ids' is invalid. It can be a leaf index,"
                              "a set of leaf indices, 'all' to return all leaf ids or "
                              "'all_errors' to return leaf ids that classify the primary prediction as wrong.")
