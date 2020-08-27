@@ -204,6 +204,11 @@ class ErrorAnalyzer(object):
         """ Compute indices of leaf nodes """
         self._leaf_ids = np.where(self._error_clf.tree_.feature < 0)[0]
 
+    def _get_error_leaves(self):
+        error_class_idx = np.where(self._error_clf.classes_ == ErrorAnalyzerConstants.WRONG_PREDICTION)[0]
+        error_node_ids = np.where(self._error_clf.tree_.value[:, 0, :].argmax(axis=1) == error_class_idx)[0]
+        return np.in1d(self.leaf_ids, error_node_ids)
+
     def _compute_ranking_arrays(self, n_purity_levels=ErrorAnalyzerConstants.NUMBER_PURITY_LEVELS):
         """ Compute ranking array """
         error_class_idx = np.where(self._error_clf.classes_ == ErrorAnalyzerConstants.WRONG_PREDICTION)[0]
@@ -249,26 +254,28 @@ class ErrorAnalyzer(object):
                     - "all_errors": All the leaf ids that classify the primary model prediction as wrong
 
             Return:
-                A boolean or integer array as a selector of leaf ids
+                A boolean array as a selector of leaf ids
         """
-        if input_leaf_ids == "all":
-            return None
-        if input_leaf_ids == "all_errors":
-            error_class_idx = np.where(self._error_clf.classes_ == ErrorAnalyzerConstants.WRONG_PREDICTION)[0]
-            error_node_ids = np.where(self._error_clf.tree_.value[:, 0, :].argmax(axis=1) == error_class_idx)[0]
+        invalid_input_msg = "The value of the parameter 'leaf_ids' is invalid. It can be a leaf index, " \
+                            "a set of leaf indices, 'all' to return all leaf ids or 'all_errors' to return " \
+                            "leaf ids that classify the primary prediction as wrong."
 
-            return np.in1d(self.leaf_ids, error_node_ids)
+        if isinstance(input_leaf_ids, str):
+            if input_leaf_ids == "all":
+                return None
+            if input_leaf_ids == "all_errors":
+                return self._get_error_leaves()
+            raise ValueError(invalid_input_msg)
+
         if isinstance(input_leaf_ids, int):
             input_leaf_ids = [input_leaf_ids]
-        if isinstance(input_leaf_ids, list):
-            _, leaf_selector, _ = np.intersect1d(self.leaf_ids, input_leaf_ids, return_indices=True)
-            if len(leaf_selector) < len(input_leaf_ids):
+        try:
+            leaf_selector = np.in1d(self.leaf_ids, input_leaf_ids)
+            if np.count_nonzero(leaf_selector) < len(input_leaf_ids):
                 print("Some of the input ids do not belong to leaves. Only leaf ids are kept.")
             return leaf_selector
-        else:
-            raise ValueError("The value of the parameter 'leaf_ids' is invalid. It can be a leaf index,"
-                             "a set of leaf indices, 'all' to return all leaf ids or "
-                             "'all_errors' to return leaf ids that classify the primary prediction as wrong.")
+        except Exception:
+            raise ValueError(invalid_input_msg)
 
     def _get_path_to_node(self, node_id):
         """ Return path to node as a list of split steps from the nodes of the sklearn Tree object """
