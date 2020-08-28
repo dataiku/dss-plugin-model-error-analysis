@@ -223,59 +223,51 @@ class ErrorAnalyzer(object):
         self._quantized_impurity = np.digitize(self._impurity, purity_bins)
         self._difference = correctly_predicted_samples - wrongly_predicted_samples  # only negative numbers
 
-    def get_ranked_leaf_ids(self, input_leaf_ids, rank_by='purity'):
+    def get_ranked_leaf_ids(self, leaf_selector, rank_by='purity'):
         """ Select error nodes and rank them by importance."""
-        leaf_selector = self._get_leaf_ids(input_leaf_ids)
-        selected_leaves = self.leaf_ids[leaf_selector]
+        apply_leaf_selector = lambda array: self._apply_leaf_selector(array, leaf_selector)
+        selected_leaves = apply_leaf_selector(self.leaf_ids)
+        if not selected_leaves:
+            return selected_leaves
         if rank_by == 'purity':
-            if leaf_selector is None:
-                sorted_ids = np.lexsort((self.difference, self.quantized_impurity))
-            else:
-                sorted_ids = np.lexsort((self.difference[leaf_selector], self.quantized_impurity[leaf_selector]))
+            sorted_ids = np.lexsort((apply_leaf_selector(self.difference), apply_leaf_selector(self.quantized_impurity)))
         elif rank_by == 'class_difference':
-            if leaf_selector is None:
-                sorted_ids = np.lexsort((self.impurity, self.difference))
-            else:
-                sorted_ids = np.lexsort((self.impurity[leaf_selector], self.difference[leaf_selector]))
+            sorted_ids = np.lexsort((apply_leaf_selector(self.impurity), apply_leaf_selector(self.difference)))
         else:
             raise NotImplementedError("Input argument 'rank_by' is invalid. Should be 'purity' or 'class_difference'")
         return selected_leaves.take(sorted_ids)
 
-    def _get_leaf_ids(self, input_leaf_ids):
+    def _apply_leaf_selector(self, array, leaf_selector):
         """
-            Provide the desired nodes indices
+            Select the rows of the provided array based on the leaf selector
             Args:
-                input_leaf_ids: int, str, or array-like
-                The leaf ids to return
-                * int: A single leaf id
-                * array-like: A array of leaf ids
-                * str:
-                    - "all": All the leaf ids
-                    - "all_errors": All the leaf ids that classify the primary model prediction as wrong
+                array: numpy array of shape (1, number of leaves)
+                An array of which we only want to keep some rows
+
+                leaf_selector: int, str, or array-like
+                How to select the rows of the array
+                  * int: Only keep the row corresponding to this leaf id
+                  * array-like: Only keep the rows corresponding to these leaf ids
+                  * str:
+                    - "all": Keep the whole array
+                    - "all_errors": Keep the rows with indices corresponding to the leaf ids classifying the primary model prediction as wrong
 
             Return:
                 A boolean array as a selector of leaf ids
         """
-        invalid_input_msg = "The value of the parameter 'leaf_ids' is invalid. It can be a leaf index, " \
-                            "a set of leaf indices, 'all' to return all leaf ids or 'all_errors' to return " \
-                            "leaf ids that classify the primary prediction as wrong."
+        if isinstance(leaf_selector, str):
+            if leaf_selector == "all":
+                return array
+            if leaf_selector == "all_errors":
+                return array[self._get_error_leaves()]
 
-        if isinstance(input_leaf_ids, str):
-            if input_leaf_ids == "all":
-                return None
-            if input_leaf_ids == "all_errors":
-                return self._get_error_leaves()
-            raise ValueError(invalid_input_msg)
-
-        if isinstance(input_leaf_ids, int):
-            input_leaf_ids = [input_leaf_ids]
-        try:
-            leaf_selector = np.in1d(self.leaf_ids, input_leaf_ids)
-            if np.count_nonzero(leaf_selector) < len(input_leaf_ids):
-                print("Some of the input ids do not belong to leaves. Only leaf ids are kept.")
-            return leaf_selector
-        except Exception:
-            raise ValueError(invalid_input_msg)
+        leaf_selector = np.in1d(self.leaf_ids, np.array(leaf_selector))
+        nr_kept_rows = np.count_nonzero(leaf_selector)
+        if nr_kept_rows == 0:
+            print("None of the ids provided correspond to a leaf id.")
+        elif nr_kept_rows < len(leaf_selector):
+            print("Some of the ids provided do not belong to leaves. Only leaf ids are kept.")
+        return array[leaf_selector]
 
     def _get_path_to_node(self, node_id):
         """ Return path to node as a list of split steps from the nodes of the sklearn Tree object """
@@ -307,10 +299,10 @@ class ErrorAnalyzer(object):
         return path_to_node
 
     #TODO: rewrite this method using the ranking arrays
-    def error_node_summary(self, nodes='all_errors', add_path_to_leaves=True, print_summary=False):
+    def error_node_summary(self, leaf_selector='all_errors', add_path_to_leaves=True, print_summary=False):
         """ Return summary information regarding input nodes """
 
-        leaf_nodes = self.get_ranked_leaf_ids(input_leaf_ids=nodes)
+        leaf_nodes = self.get_ranked_leaf_ids(leaf_selector=leaf_selector)
 
         y = self._error_train_y
         n_total_errors = y[y == ErrorAnalyzerConstants.WRONG_PREDICTION].shape[0]

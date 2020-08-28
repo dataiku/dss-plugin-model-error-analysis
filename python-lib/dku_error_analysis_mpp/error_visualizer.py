@@ -147,11 +147,11 @@ class ErrorVisualizer(object):
                         return ranked_features
         return ranked_features
 
-    def plot_error_node_feature_distribution(self, nodes='all_errors', top_k_features=3, compare_to_global=True,
+    def plot_error_node_feature_distribution(self, leaf_selector='all_errors', top_k_features=3, compare_to_global=True,
                                              show_class=False, figsize=(10, 5)):
         """ Return plot of error node feature distribution and compare to global baseline """
 
-        leaf_nodes = self._error_analyzer.get_ranked_leaf_ids(input_leaf_ids=nodes)
+        leaf_nodes = self._error_analyzer.get_ranked_leaf_ids(leaf_selector=leaf_selector)
 
         error_class_idx = np.where(self._error_clf.classes_ == ErrorAnalyzerConstants.WRONG_PREDICTION)[0]
         correct_class_idx = np.where(self._error_clf.classes_ == ErrorAnalyzerConstants.CORRECT_PREDICTION)[0]
