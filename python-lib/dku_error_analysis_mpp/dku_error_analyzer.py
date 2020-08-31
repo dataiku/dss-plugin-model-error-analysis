@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import collections
 from sklearn.model_selection import train_test_split
-from dku_error_analysis_mpp.error_config import ErrorAnalyzerConstants
+from dku_error_analysis_utils import ErrorAnalyzerConstants
 from dku_error_analysis_tree_parsing.tree_parser import TreeParser
 from dku_error_analysis_decision_tree.node import Node
 from dku_error_analysis_mpp.error_analyzer import ErrorAnalyzer

@@ -7,8 +7,7 @@ from sklearn.base import is_regressor
 from sklearn.utils.validation import check_is_fitted
 from sklearn.exceptions import NotFittedError
 from dku_error_analysis_mpp.kneed import KneeLocator
-from dku_error_analysis_utils import not_enough_data
-from dku_error_analysis_mpp.error_config import ErrorAnalyzerConstants
+from dku_error_analysis_utils import not_enough_data, ErrorAnalyzerConstants
 from dku_error_analysis_mpp.metrics import mpp_report
 
 import logging
@@ -95,6 +94,7 @@ class ErrorAnalyzer(object):
         if self._difference is None:
             self._compute_ranking_arrays()
         return self._difference
+
     @property
     def leaf_ids(self):
         if self._leaf_ids is None:

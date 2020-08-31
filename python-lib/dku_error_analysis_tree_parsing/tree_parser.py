@@ -4,7 +4,7 @@ from dku_error_analysis_decision_tree.tree import InteractiveTree
 from dataiku.doctor.preprocessing.dataframe_preprocessing import RescalingProcessor2, QuantileBinSeries, UnfoldVectorProcessor, BinarizeSeries, \
     FastSparseDummifyProcessor, ImpactCodingStep, FlagMissingValue2, TextCountVectorizerProcessor, TextHashingVectorizerWithSVDProcessor, \
     TextHashingVectorizerProcessor, TextTFIDFVectorizerProcessor
-from dku_error_analysis_mpp.error_config import ErrorAnalyzerConstants
+from dku_error_analysis_utils import ErrorAnalyzerConstants
 
 MAX_MOST_IMPORTANT_FEATURES = 3
 

@@ -6,7 +6,7 @@ from sklearn import tree
 import matplotlib
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
-from dku_error_analysis_mpp.error_config import ErrorAnalyzerConstants
+from dku_error_analysis_utils import ErrorAnalyzerConstants
 from dku_error_analysis_mpp.error_analyzer import ErrorAnalyzer
 from dku_error_analysis_mpp.dku_error_analyzer import DkuErrorAnalyzer
 from dku_error_analysis_decision_tree.node import Node

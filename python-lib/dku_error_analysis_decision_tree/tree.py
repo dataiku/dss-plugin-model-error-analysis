@@ -1,11 +1,8 @@
 from dku_error_analysis_decision_tree.node import Node, NumericalNode, CategoricalNode
-from dku_error_analysis_utils import safe_str
+from dku_error_analysis_utils import safe_str, ErrorAnalyzerConstants
 import pandas as pd
 from collections import deque
 from dku_error_analysis_tree_parsing.depreprocessor import descale_numerical_thresholds
-
-from dku_error_analysis_mpp.error_config import ErrorAnalyzerConstants
-
 
 class InteractiveTree(object):
     """

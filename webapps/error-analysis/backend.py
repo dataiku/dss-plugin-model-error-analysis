@@ -6,10 +6,10 @@ import dataiku
 from dataiku.customwebapp import get_webapp_config
 from dataiku.core.dkujson import DKUJSONEncoder
 
-from dku_error_analysis_mpp.model_metadata import get_model_handler
+from dku_error_analysis_model_parser.model_metadata import get_model_handler
+from dku_error_analysis_model_parser.model_accessor import ModelAccessor
 from dku_error_analysis_mpp.dku_error_analyzer import DkuErrorAnalyzer
-from dku_error_analysis_mpp.model_accessor import ModelAccessor
-from dku_error_analysis_mpp.error_config import ErrorAnalyzerConstants
+from dku_error_analysis_utils import ErrorAnalyzerConstants
 
 
 app.json_encoder = DKUJSONEncoder
