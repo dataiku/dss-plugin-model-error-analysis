@@ -99,7 +99,7 @@ class TreeParser(object):
 
     def build_tree(self, df, feature_list, target=ErrorAnalyzerConstants.ERROR_COLUMN):
         features = {}
-        for name, settings in self.model_handler.get_preproc_handler().collector_data.get('per_feature').iteritems():
+        for name, settings in self.model_handler.get_preproc_handler().collector_data.get('per_feature').items():
             avg = settings.get('stats').get('average')
             if avg is not None: #TODO AGU: add cases where missing is not replaced by mean
                 features[name] = {
