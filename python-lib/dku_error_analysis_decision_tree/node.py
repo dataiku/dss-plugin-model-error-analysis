@@ -1,4 +1,5 @@
 from math import isnan
+from dku_error_analysis_utils import get_rgb_with_alpha, ErrorAnalyzerConstants
 
 class Node(object):
     """
@@ -47,6 +48,20 @@ class Node(object):
     def jsonify(self):
         return dict(self.__dict__)
 
+    def print_decision_rule(self):
+        raise NotImplementedError
+
+    def to_dot_string(self):
+        dot_str = '{0} [label="node #{0}\n'.format(self.id)
+        if self.parent_id >= 0:
+            dot_str += self.print_decision_rule() + "\n"
+        dot_str += 'global error = {:.3f}\nsamples = {}\n'.format(self.global_error, self.samples[0])
+        for prediction_class, proba in self.probabilities:
+            dot_str += '{}: {:.3%}\n'.format(prediction_class, proba)
+        node_color = ErrorAnalyzerConstants.ERROR_TREE_COLORS[self.prediction]
+        dot_str += 'prediction = {}", fillcolor="{}"] ;'.format(self.prediction, get_rgb_with_alpha(node_color, self.probabilities[0][1]))
+        return dot_str
+
 
 class CategoricalNode(Node):
     def __init__(self, node_id, parent_id, feature, values, others=False):
@@ -74,6 +89,12 @@ class CategoricalNode(Node):
             pass
         return jsonified_dict
 
+    def print_decision_rule(self):
+        single_value = len(self.values) == 1
+        if single_value:
+            return self.feature + ' is' + ( ' not ' if self.others else '') + self.values[0]
+        return self.feature + ( ' not ' if self.others else '') + ' in ['  + u', '.join(self.values) + "]"
+
 
 class NumericalNode(Node):
     def __init__(self, node_id, parent_id, feature, beginning=None, end=None):
@@ -100,3 +121,11 @@ class NumericalNode(Node):
         elif self.end is None:
             jsonified_dict.pop("end")
         return jsonified_dict
+
+    def print_decision_rule(self):
+        decision_rule = self.feature
+        if self.beginning:
+            decision_rule = '{:.2f} < {}'.format(self.beginning, self.feature)            
+        if self.end:
+            decision_rule = '{} <= {:.2f}'.format(decision_rule, self.end)
+        return decision_rule

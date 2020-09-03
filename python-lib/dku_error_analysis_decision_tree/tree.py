@@ -39,6 +39,23 @@ class InteractiveTree(object):
         self.ranked_features = ranked_features
         self.df = df
         self.bins = {}
+        self.leaves = set()
+
+    def to_dot_string(self):
+        dot_str = 'digraph Tree {\nnode [shape=box, style="filled, rounded", color="black", fontname=helvetica] ;\n'
+        dot_str += 'edge [fontname=helvetica] ;\ngraph [ranksep=equally, splines=polyline] ;\n'
+        ids = deque()
+        ids.append(0)
+
+        while ids:
+            node = self.get_node(ids.popleft())
+            dot_str += node.to_dot_string() + "\n"
+            if node.parent_id >= 0:
+                dot_str += '{} -> {} ;\n'.format(node.parent_id, node.id)
+            ids += node.children_ids
+        dot_str += '{rank=same ; '+ '; '.join(map(safe_str, self.leaves)) + '} ;\n'
+        dot_str += "}"
+        return dot_str
 
     def parse_nodes(self, tree_parser, feature_list, preprocessed_x):
         error_model_tree = tree_parser.error_model.tree_
@@ -68,8 +85,12 @@ class InteractiveTree(object):
 
             if children_left[left_child_id] > 0:
                 ids.append(left_child_id)
+            else:
+                self.leaves.add(left_child_id)
             if children_left[right_child_id] > 0:
                 ids.append(right_child_id)
+            else:
+                self.leaves.add(right_child_id)
 
     def set_node_info(self, node):
         nr_errors = self.df[self.df[self.target] == ErrorAnalyzerConstants.WRONG_PREDICTION].shape[0]
@@ -143,7 +164,7 @@ class InteractiveTree(object):
             node_id = node.parent_id
         return df
 
-    def get_stats(self, i, col):
+    def get_stats(self, i, col, nr_bins=10):
         node = self.get_node(i)
         filtered_df = self.get_filtered_df(node, self.df)
         column = filtered_df[col]
@@ -152,14 +173,14 @@ class InteractiveTree(object):
             mean = self.features[col]["mean"]
             bin_labels = self.bins.get(col)
             if bin_labels is None:
-                bins, bin_labels = pd.cut(column.fillna(mean), bins=min(10, column.nunique()), include_lowest=True, right=False, retbins=True)
+                bins, bin_labels = pd.cut(column.fillna(mean), bins=min(nr_bins, column.nunique()), include_lowest=True, right=False, retbins=True)
                 self.bins[col] = bin_labels
             else:
                 bins = pd.cut(column.fillna(mean), bin_labels, right=False)
-            return self.get_stats_numerical_node(column, target_column, mean, bins)
-        return self.get_stats_categorical_node(column, target_column)
+            return self.get_stats_numerical_node(column, target_column, bins)
+        return self.get_stats_categorical_node(column, target_column, nr_bins)
 
-    def get_stats_numerical_node(self, column, target_column, mean, bins):
+    def get_stats_numerical_node(self, column, target_column, bins):
         stats = []
         if not column.empty:
             full_count = column.shape[0]
@@ -174,7 +195,7 @@ class InteractiveTree(object):
                                 "count": count/float(full_count)})
         return stats
 
-    def get_stats_categorical_node(self, column, target_column):
+    def get_stats_categorical_node(self, column, target_column, nr_bins):
         stats = []
         if not column.empty:
             full_count = column.shape[0]
@@ -186,6 +207,6 @@ class InteractiveTree(object):
                 stats.append({"value": value,
                                 "target_distrib": target_distrib[value].to_dict(),
                                 "count": col_distrib[value]/float(full_count)})
-                if len(stats) == 10:
+                if len(stats) == nr_bins:
                     return stats
         return stats

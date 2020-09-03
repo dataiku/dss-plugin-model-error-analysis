@@ -45,3 +45,8 @@ class ErrorAnalyzerConstants(object):
     NUMBER_PURITY_LEVELS = 10
 
     CATEGORICAL_OTHERS = 'Others'
+
+def get_rgb_with_alpha(color_hex, alpha):
+    rgb_color = lambda i: int(color_hex[i:i + 2], 16)
+    color_rgb = [int(round(alpha * rgb_color(i) + (1 - alpha) * 255, 0)) for i in (1,3,5)]
+    return '#{:02x}{:02x}{:02x}'.format(*color_rgb)

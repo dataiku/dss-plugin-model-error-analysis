@@ -130,22 +130,7 @@ class DkuErrorAnalyzer(ErrorAnalyzer):
         cur_node = self._tree.get_node(node_id)
         path_to_node = collections.deque()
         while cur_node is not None and cur_node.id != 0:
-            decision_rule = cur_node.feature
-            if cur_node.get_type() == Node.TYPES.NUM:
-                if cur_node.beginning:
-                    decision_rule += ' > '
-                    decision_rule += '%.2f' % cur_node.beginning
-                else:
-                    decision_rule += ' <= '
-                    decision_rule += '%.2f' % cur_node.end
-            else:
-                is_single_value = len(cur_node.values) == 1
-                if cur_node.others:
-                    decision_rule += ' is not ' if is_single_value else ' not in '
-                else:
-                    decision_rule += ' is ' if is_single_value else ' in '
-                decision_rule += ' '.join([value for value in cur_node.values])
-            path_to_node.appendleft(decision_rule)
+            path_to_node.appendleft(cur_node.print_decision_rule())
             cur_node = self._tree.get_node(cur_node.parent_id)
 
         return path_to_node

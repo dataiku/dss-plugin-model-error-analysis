@@ -198,24 +198,24 @@ class ErrorAnalyzer(object):
 
     def _compute_train_leaf_ids(self):
         """ Compute indices of leaf nodes for the train set """
-        self._error_train_leaf_id = self._error_clf.apply(self._error_train_x)
+        self._error_train_leaf_id = self.model_performance_predictor.apply(self._error_train_x)
 
     def _compute_leaf_ids(self):
         """ Compute indices of leaf nodes """
-        self._leaf_ids = np.where(self._error_clf.tree_.feature < 0)[0]
+        self._leaf_ids = np.where(self.model_performance_predictor.tree_.feature < 0)[0]
 
     def _get_error_leaves(self):
-        error_class_idx = np.where(self._error_clf.classes_ == ErrorAnalyzerConstants.WRONG_PREDICTION)[0]
-        error_node_ids = np.where(self._error_clf.tree_.value[:, 0, :].argmax(axis=1) == error_class_idx)[0]
+        error_class_idx = np.where(self.model_performance_predictor.classes_ == ErrorAnalyzerConstants.WRONG_PREDICTION)[0]
+        error_node_ids = np.where(self.model_performance_predictor.tree_.value[:, 0, :].argmax(axis=1) == error_class_idx)[0]
         return np.in1d(self.leaf_ids, error_node_ids)
 
     def _compute_ranking_arrays(self, n_purity_levels=ErrorAnalyzerConstants.NUMBER_PURITY_LEVELS):
         """ Compute ranking array """
-        error_class_idx = np.where(self._error_clf.classes_ == ErrorAnalyzerConstants.WRONG_PREDICTION)[0]
-        correct_class_idx = np.where(self._error_clf.classes_ == ErrorAnalyzerConstants.CORRECT_PREDICTION)[0]
+        error_class_idx = np.where(self.model_performance_predictor.classes_ == ErrorAnalyzerConstants.WRONG_PREDICTION)[0]
+        correct_class_idx = np.where(self.model_performance_predictor.classes_ == ErrorAnalyzerConstants.CORRECT_PREDICTION)[0]
 
-        wrongly_predicted_samples = self._error_clf.tree_.value[self.leaf_ids, 0, error_class_idx]
-        correctly_predicted_samples = self._error_clf.tree_.value[self.leaf_ids, 0, correct_class_idx]
+        wrongly_predicted_samples = self.model_performance_predictor.tree_.value[self.leaf_ids, 0, error_class_idx]
+        correctly_predicted_samples = self.model_performance_predictor.tree_.value[self.leaf_ids, 0, correct_class_idx]
 
         self._impurity = correctly_predicted_samples / (wrongly_predicted_samples + correctly_predicted_samples)
 
@@ -261,11 +261,12 @@ class ErrorAnalyzer(object):
             if leaf_selector == "all_errors":
                 return array[self._get_error_leaves()]
 
-        leaf_selector = np.in1d(self.leaf_ids, np.array(leaf_selector))
-        nr_kept_rows = np.count_nonzero(leaf_selector)
-        if nr_kept_rows == 0:
+        leaf_selector_as_array = np.array(leaf_selector)
+        leaf_selector = np.in1d(self.leaf_ids, leaf_selector_as_array)
+        nr_kept_leaves = np.count_nonzero(leaf_selector)
+        if nr_kept_leaves == 0:
             print("None of the ids provided correspond to a leaf id.")
-        elif nr_kept_rows < len(leaf_selector):
+        elif nr_kept_leaves < leaf_selector_as_array.size:
             print("Some of the ids provided do not belong to leaves. Only leaf ids are kept.")
         return array[leaf_selector]
 
@@ -273,10 +274,10 @@ class ErrorAnalyzer(object):
         """ Return path to node as a list of split steps from the nodes of the sklearn Tree object """
         feature_names = self.model_performance_predictor_features
 
-        children_left = self._error_clf.tree_.children_left
-        children_right = self._error_clf.tree_.children_right
-        feature = self._error_clf.tree_.feature
-        threshold = self._error_clf.tree_.threshold
+        children_left = self.model_performance_predictor.tree_.children_left
+        children_right = self.model_performance_predictor.tree_.children_right
+        feature = self.model_performance_predictor.tree_.feature
+        threshold = self.model_performance_predictor.tree_.threshold
 
         cur_node_id = node_id
         path_to_node = collections.deque()
@@ -306,12 +307,12 @@ class ErrorAnalyzer(object):
 
         y = self._error_train_y
         n_total_errors = y[y == ErrorAnalyzerConstants.WRONG_PREDICTION].shape[0]
-        error_class_idx = np.where(self._error_clf.classes_ == ErrorAnalyzerConstants.WRONG_PREDICTION)[0]
-        correct_class_idx = np.where(self._error_clf.classes_ == ErrorAnalyzerConstants.CORRECT_PREDICTION)[0]
+        error_class_idx = np.where(self.model_performance_predictor.classes_ == ErrorAnalyzerConstants.WRONG_PREDICTION)[0]
+        correct_class_idx = np.where(self.model_performance_predictor.classes_ == ErrorAnalyzerConstants.CORRECT_PREDICTION)[0]
 
         leaves_summary = []
         for leaf_id in leaf_nodes:
-            values = self._error_clf.tree_.value[leaf_id, :]
+            values = self.model_performance_predictor.tree_.value[leaf_id, :]
             n_errors = values[0, error_class_idx]
             n_corrects = values[0, correct_class_idx]
             local_error = float(n_errors) / (n_corrects + n_errors)
