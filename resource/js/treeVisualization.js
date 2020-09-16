@@ -199,7 +199,7 @@ app.service("TreeInteractions", function($timeout, $http, $compile, Format) {
     }
 
     const addVizTooltips = function(scope) {
-        d3.selectAll(".node").append("g")
+        d3.selectAll(".node-container").append("g")
         .attr("transform", "translate(100, -10)")
         .attr("tooltip", "tree")
         .attr("id", d => "tooltip-" + d.id)
@@ -240,7 +240,7 @@ app.service("TreeInteractions", function($timeout, $http, $compile, Format) {
           d.y = d.depth * 180;
         });
 
-        const node = svg.selectAll("g.node")
+        const node = svg.selectAll("g.node-container")
         .data(nodes, d => d.id);
 
         // update pre-existing nodes
@@ -256,7 +256,7 @@ app.service("TreeInteractions", function($timeout, $http, $compile, Format) {
 
         // add new nodes
         const nodeEnter = node.enter().append("g")
-        .attr("class", "node")
+        .classed("node-container", true)
         .attr("id", d => "node-" + d.id)
         .attr("transform", function(d) {
             return "translate(" + d.x + "," + d.y + ")";
@@ -265,7 +265,7 @@ app.service("TreeInteractions", function($timeout, $http, $compile, Format) {
         nodeEnter.append("rect")
         .attr("height", side)
         .attr("width", side)
-        .style("fill", function(d) {return scope.colors[d.prediction] || "black"})
+        .attr("fill", function(d) {return scope.colors[d.prediction] || "black"})
         .on("click", function(d) {
             if (scope.selectedNode && scope.selectedNode.id == d.id) {return;}
             $timeout(select(d.id, scope));
@@ -296,14 +296,6 @@ app.service("TreeInteractions", function($timeout, $http, $compile, Format) {
         .attr("x", side / 2)
         .attr("y", side + 15)
         .text(d => Format.ellipsis(scope.treeData[d.children_ids[0]].feature, 20));
-
-        /*nodeEnter.filter(d => d.label)
-        .append("text")
-        .attr("class", "label-node")
-        .attr("text-anchor","middle")
-        .attr("x", side / 2)
-        .attr("y", side + 15)
-        .text(d => Format.ellipsis(d.label, 30));*/
 
         var link = svg.selectAll(".link")
         .data(links, d => d.target.id);

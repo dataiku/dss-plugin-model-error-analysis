@@ -31,17 +31,19 @@ spinner {
     height: 100%;
 }
 
-.create {
-    display: flex;
-    height: 100%;
-    width: 100%;
-    justify-content: center;
-}
-
-#start-button-div {
-    display: flex;
-    justify-content: center;
-}
+.spinner-container {
+    position: relative;
+    top: 50%;
+    left: 50%;
+    z-index: 1000000;
+    margin: -30px 0 0 -30px;
+    border-radius: 30px;
+    background: rgba(0,0,0,0.5);
+    color: var(--white);
+    display: inline-block;
+    width: 60px;
+    height: 60px;
+ }
 
 .panel {
     height: 540px;
@@ -49,20 +51,6 @@ spinner {
     display: flex;
     flex-direction: column;
     justify-content: space-evenly;
-}
-
-.radio-buttons {
-    align-self: center;
-    width: 60%;
-    display: flex;
-    justify-content: space-evenly;
-    align-items: center;
-}
-
-.name-section {
-    margin-right: 5%;
-    width: 25%;
-    text-align: right;
 }
 
 .subpanel {
@@ -110,41 +98,6 @@ select {
     height: 5%;
 }
 
-#start-button-div > .button {
-    background-color: var(--blue-lighten-1);
-    color: var(--white);
-}
-
-#start-button-div > .button:disabled {
-    background-color: var(--blue-lighten-4);
-}
-
-#start-button-div > .button:enabled:focus {
-    background-color: var(--blue-darken-2);
-}
-
-#start-button-div > .button:enabled:hover {
-    background-color: var(--blue);
-}
-
-#start-button-div > .button:enabled:hover:active {
-    background-color: var(--blue-darken-2);
-}
-
-.spinner-container {
-   position: relative;
-   top: 50%;
-   left: 50%;
-   z-index: 1000000;
-   margin: -30px 0 0 -30px;
-   border-radius: 30px;
-   background: rgba(0,0,0,0.5);
-   color: var(--white);
-   display: inline-block;
-   width: 60px;
-   height: 60px;
-}
-
 .button-div {
     display: flex;
     justify-content: space-between;
@@ -185,29 +138,11 @@ select {
     color: var(--grey-lighten-6);
 }
 
-.button-save {
-    border-color: var(--blue);
-    color : var(--blue);
-}
-
-.button-save:hover:enabled {
-    background-color: var(--blue);
-}
-
-.button-save:disabled {
-    border-color: var(--blue-lighten-4);
-    color: var(--blue-lighten-4);
-}
-
 .tree-visualization {
     width: calc(100% - 400px);
     height: 100%;
     position: relative;
     border-right: 1px solid var(--grey-lighten-5);
-}
-
-.full-screen {
-    width: 100%;
 }
 
 .toolbar-header {
@@ -269,14 +204,6 @@ select {
 
 .icons-div > img:hover, .icons-div > ul:hover {
     opacity: .7;
-}
-
-.icons-div > .icon-remove {
-    color: var(--error-red);
-}
-
-.icons-div > .icon-remove:hover {
-    color: #F0B8C0;
 }
 
 .icons-toggle > .icon {
@@ -375,24 +302,6 @@ select {
     display: flex;
     justify-content: space-between;
     align-items: center;
-}
-
-.autosplit {
-    text-transform: uppercase;
-    border-right: 1px solid var(--grey-lighten-5);
-    padding-right: 15px;
-    margin-right: 10px;
-    color: var(--blue);
-    cursor: pointer;
-}
-
-.autosplit-enabled:hover {
-    color: var(--blue-lighten-4);
-}
-
-.autosplit-disabled {
-    color: var(--grey-lighten-5);
-    cursor: not-allowed;
 }
 
 .edit-row-sub {
@@ -550,35 +459,6 @@ div[histogram] {
     align-items: baseline;
 }
 
-.label {
-    color: var(--grey-lighten-4);
-    cursor: pointer;
-    display: flex;
-    justify-content: space-around;
-    width: 90%;
-    align-items: baseline;
-}
-
-.label > .text {
-    text-align: right;
-}
-
-.label:hover {
-    color: var(--grey-lighten-5);
-}
-
-[name="labelForm"] {
-    display: flex;
-    align-items: center;
-    width: 80%;
-}
-
-[name="label-edit"] {
-    margin-left: 5%;
-    margin-right: 2%;
-    width: 80%;
-}
-
 .template {
     position:relative;
     min-width : 200px;
@@ -664,6 +544,7 @@ div[histogram] {
 .section-edit {
     margin-bottom: 30px;
 }
+
 .section-tall {
     max-height: 100px;
 }
@@ -870,7 +751,7 @@ path.selected, path.hovered {
     stroke-opacity: 1;
 }
 
-.node > rect {
+.node-container > rect {
     cursor: pointer;
 }
 
@@ -884,6 +765,22 @@ path.selected, path.hovered {
 
 .axis text {
     font-size: 9px;
+}
+
+.histogram__bar:hover {
+    opacity: .7;
+}
+
+.histogram__bar_global {
+    mask: url(#hatch-mask);
+}
+
+.x-axis__text {
+    text-anchor: middle;
+}
+
+.y-axis__text {
+    text-anchor: end;
 }
 
 /*TOOLTIPS*/
