@@ -157,7 +157,7 @@ class InteractiveTree(object):
         while node_id > 0:
             node = self.get_node(node_id)
             if node.get_type() == Node.TYPES.NUM:
-                #TODO: change with ch49216
+                # TODO: change with ch49216
                 df = node.apply_filter(df, self.features.get(node.feature, {"mean": None})["mean"])
             else:
                 df = node.apply_filter(df)
@@ -181,7 +181,11 @@ class InteractiveTree(object):
         return self.get_stats_categorical_node(column, target_column, nr_bins)
 
     def get_stats_numerical_node(self, column, target_column, bins):
-        stats = []
+        stats = {"bin_edge": [],
+            "target_distrib": {ErrorAnalyzerConstants.WRONG_PREDICTION: [], ErrorAnalyzerConstants.CORRECT_PREDICTION: []},
+            "mid": [],
+            "count": []
+        }
         if not column.empty:
             full_count = column.shape[0]
             target_grouped = target_column.groupby(bins) #could be simplified but well no time :)
@@ -189,14 +193,21 @@ class InteractiveTree(object):
             target_distrib = target_distrib / full_count
             col_distrib = target_grouped.count()
             for interval, count in col_distrib.items():
-                stats.append({"value": safe_str(interval),
-                                "target_distrib": target_distrib[interval].to_dict() if count > 0 else {},
-                                "mid": interval.mid,
-                                "count": count/float(full_count)})
+                target_distrib_dict = target_distrib[interval].to_dict() if count > 0 else {}
+                stats["target_distrib"][ErrorAnalyzerConstants.WRONG_PREDICTION].append(target_distrib_dict.get(ErrorAnalyzerConstants.WRONG_PREDICTION, 0))
+                stats["target_distrib"][ErrorAnalyzerConstants.CORRECT_PREDICTION].append(target_distrib_dict.get(ErrorAnalyzerConstants.CORRECT_PREDICTION, 0))
+                stats["count"].append(count/float(full_count))
+                stats["mid"].append(interval.mid)
+                if len(stats["bin_edge"]) == 0:
+                    stats["bin_edge"].append(interval.left)
+                stats["bin_edge"].append(interval.right)
         return stats
 
     def get_stats_categorical_node(self, column, target_column, nr_bins):
-        stats = []
+        stats = {"bin_value": [],
+            "target_distrib": {ErrorAnalyzerConstants.WRONG_PREDICTION: [], ErrorAnalyzerConstants.CORRECT_PREDICTION: []},
+            "count": []
+        }
         if not column.empty:
             full_count = column.shape[0]
             target_grouped = target_column.groupby(column.fillna("No values").apply(safe_str))
@@ -204,9 +215,11 @@ class InteractiveTree(object):
             target_distrib = target_distrib / full_count
             col_distrib = target_grouped.count().sort_values(ascending=False)
             for value in col_distrib.index:
-                stats.append({"value": value,
-                                "target_distrib": target_distrib[value].to_dict(),
-                                "count": col_distrib[value]/float(full_count)})
-                if len(stats) == nr_bins:
+                target_distrib_dict = target_distrib[value].to_dict()
+                stats["target_distrib"][ErrorAnalyzerConstants.WRONG_PREDICTION].append(target_distrib_dict.get(ErrorAnalyzerConstants.WRONG_PREDICTION, 0))
+                stats["target_distrib"][ErrorAnalyzerConstants.CORRECT_PREDICTION].append(target_distrib_dict.get(ErrorAnalyzerConstants.CORRECT_PREDICTION, 0))
+                stats["count"].append(col_distrib[value]/float(full_count))
+                stats["bin_value"].append(value)
+                if len(stats["bin_value"]) == nr_bins:
                     return stats
         return stats

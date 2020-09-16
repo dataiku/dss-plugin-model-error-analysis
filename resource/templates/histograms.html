@@ -18,10 +18,10 @@
             </div>
         </div>
 
-        <div class="histogram-placeholder histogram-placeholder-empty" ng-if="histData[feature].length == 0">
+        <div class="histogram-placeholder histogram-placeholder-empty" ng-if="histData[feature].count.length == 0">
             <em>No values</em>
         </div>
-        <div histogram="{{feature}}" class="histogram-placeholder" ng-if="histData[feature].length > 0">
+        <div histogram="{{feature}}" class="histogram-placeholder" ng-if="histData[feature].count.length > 0">
             <div class="histogram-svg"></div>
         </div>
     </div>

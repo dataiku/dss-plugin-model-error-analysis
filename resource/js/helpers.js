@@ -157,21 +157,26 @@ app.directive('tooltip', function() {
             }
 
             if (attr.tooltip == "histogram") {
+                const binIndex = parseInt(attr.binIndex);
                 let histData;
                 if (attr.wholeData) {
                     $scope.dataOrigin = "Whole data";
-                    histData = $scope.histDataWholeSet[attr.feature][attr.binIndex];
+                    histData = $scope.histDataWholeSet[attr.feature];
                 } else {
                     $scope.dataOrigin = "Subset data (at this node)"
-                    histData = $scope.histData[attr.feature][attr.binIndex];
+                    histData = $scope.histData[attr.feature];
                 }
-                $scope.probabilities = Object.entries(histData.target_distrib);
+                $scope.probabilities = Object.entries(histData.target_distrib).map(_ => [_[0], _[1][binIndex]]);
                 $scope.probabilities.sort(function(a, b) {
                     return b[1] - a[1];
                 });
-                $scope.probabilities = $scope.probabilities.slice(0, 5).map(_ => [_[0], _[1] / histData.count]);
-                $scope.samples = [$scope.toFixedIfNeeded(histData.count, 2, true)];
-                $scope.binName = histData.value;
+                $scope.probabilities = $scope.probabilities.slice(0, 5).map(_ => [_[0], _[1] / histData.count[binIndex]]);
+                $scope.samples = [$scope.toFixedIfNeeded(histData.count[binIndex], 2, true)];
+                if (histData.bin_value) {
+                    $scope.binName = histData.bin_value[binIndex];
+                } else {
+                    $scope.binName = `[${histData.bin_edge[binIndex]}, ${histData.bin_edge[binIndex+1]})`;
+                }
 
                 d3.select(element[0].children[0])
                 .attr("width", 190)
