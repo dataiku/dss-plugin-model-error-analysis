@@ -35,7 +35,7 @@ def get_error_dt(model_handler):
     confidence_decision = report_dict[ErrorAnalyzerConstants.CONFIDENCE_DECISION]
 
     if not confidence_decision:
-        # TODO: add message in UI?
+        # TODO: add message in UI (ch49209)
         LOGGER.warning("Warning: the built MPP might not be representative of the primary model performances.")
 
     return tree
@@ -46,7 +46,7 @@ def load():
         model_handler = get_model_handler(dataiku.Model(MODEL_ID), VERSION_ID)
         tree = get_error_dt(model_handler)
         TREE.append(tree)
-        return jsonify(nodes=tree.jsonify_nodes(), target_values=tree.target_values, features=tree.features, rankedFeatures=tree.ranked_features)
+        return jsonify(nodes=tree.jsonify_nodes(), target_values=tree.target_values, features=tree.features, rankedFeatures=tree.ranked_features[:ErrorAnalyzerConstants.TOP_K_FEATURES])
     except:
         LOGGER.error(traceback.format_exc())
         return traceback.format_exc(), 500
@@ -56,7 +56,7 @@ def get_stats_node(node_id):
     try:
         tree = TREE[0]
         result = {}
-        for feat in tree.ranked_features:
+        for feat in tree.ranked_features[:ErrorAnalyzerConstants.TOP_K_FEATURES]:
             result[feat] = tree.get_stats(node_id, feat)
         return jsonify(result)
     except:

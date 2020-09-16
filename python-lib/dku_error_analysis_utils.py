@@ -1,4 +1,5 @@
 import sys
+import numpy as np
 
 def safe_str(val):
     if sys.version_info > (3, 0):
@@ -17,9 +18,16 @@ def not_enough_data(df, min_len=1):
     :return:
     """
     return len(df) < min_len
+
+def rank_features_by_error_correlation(feature_importances, include_only_split_features=True):
+    sorted_feature_indices = np.argsort(- feature_importances)
+    if include_only_split_features:
+        cut = np.where(feature_importances==0)[0][0]
+        sorted_feature_indices[:cut]
+    return sorted_feature_indices
+
 class ErrorAnalyzerConstants(object):
     
-    PREDICTION_COLUMN = 'prediction'
     ERROR_COLUMN = '__dku_error__'
     WRONG_PREDICTION = "Wrong prediction"
     CORRECT_PREDICTION = "Correct prediction"
@@ -33,7 +41,7 @@ class ErrorAnalyzerConstants(object):
     CRITERION = 'entropy'
     NUMBER_EPSILON_VALUES = 50
 
-    ERROR_TREE_COLORS = {CORRECT_PREDICTION: '#ed6547', WRONG_PREDICTION: '#fdc765'}
+    ERROR_TREE_COLORS = {CORRECT_PREDICTION: '#538BC8', WRONG_PREDICTION: '#EC6547'}
 
     TOP_K_FEATURES = 3
 
@@ -43,10 +51,3 @@ class ErrorAnalyzerConstants(object):
     CONFIDENCE_DECISION = 'confidence_decision'
 
     NUMBER_PURITY_LEVELS = 10
-
-    CATEGORICAL_OTHERS = 'Others'
-
-def get_rgb_with_alpha(color_hex, alpha):
-    rgb_color = lambda i: int(color_hex[i:i + 2], 16)
-    color_rgb = [int(round(alpha * rgb_color(i) + (1 - alpha) * 255, 0)) for i in (1,3,5)]
-    return '#{:02x}{:02x}{:02x}'.format(*color_rgb)

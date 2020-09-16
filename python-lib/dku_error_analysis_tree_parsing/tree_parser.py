@@ -4,9 +4,8 @@ from dku_error_analysis_decision_tree.tree import InteractiveTree
 from dataiku.doctor.preprocessing.dataframe_preprocessing import RescalingProcessor2, QuantileBinSeries, UnfoldVectorProcessor, BinarizeSeries, \
     FastSparseDummifyProcessor, ImpactCodingStep, FlagMissingValue2, TextCountVectorizerProcessor, TextHashingVectorizerWithSVDProcessor, \
     TextHashingVectorizerProcessor, TextTFIDFVectorizerProcessor
-from dku_error_analysis_utils import ErrorAnalyzerConstants
+from dku_error_analysis_utils import ErrorAnalyzerConstants, rank_features_by_error_correlation
 
-MAX_MOST_IMPORTANT_FEATURES = 3
 
 class TreeParser(object):
     class SplitParameters(object):
@@ -101,27 +100,13 @@ class TreeParser(object):
         features = {}
         for name, settings in self.model_handler.get_preproc_handler().collector_data.get('per_feature').items():
             avg = settings.get('stats').get('average')
-            if avg is not None: #TODO AGU: add cases where missing is not replaced by mean
+            if avg is not None: # TODO AGU: add cases where missing is not replaced by mean (ch49216)
                 features[name] = {
                     'mean':  avg
                 }
-        ranked_features = self.rank_features_by_error_correlation(feature_list)
-        tree = InteractiveTree(df, target, ranked_features, features)
+        ranked_feature_ids = rank_features_by_error_correlation(self.error_model.feature_importances_)
+        unpreprocess_feature_name = lambda feature_idx: self.get_split_parameters(feature_list[feature_idx]).feature
+        ranked_features = list(map(unpreprocess_feature_name, ranked_feature_ids))
+        _, unique_ids = np.unique(ranked_features, return_index=True)
+        tree = InteractiveTree(df, target, ranked_features[unique_ids], features)
         return tree
-
-    # Rank features according to their correlation with the model performance
-    def rank_features_by_error_correlation(self, feature_list,
-                                            max_number_features=MAX_MOST_IMPORTANT_FEATURES,
-                                            include_non_split_features=False):
-        sorted_feature_indices = np.argsort(- self.error_model.feature_importances_)
-        ranked_features = []
-        for feature_idx in sorted_feature_indices:
-            feature_importance = - self.error_model.feature_importances_[feature_idx]
-            if feature_importance != 0 or include_non_split_features:
-                preprocessed_name = feature_list[feature_idx]
-                feature = self.get_split_parameters(preprocessed_name).feature
-                if feature not in ranked_features:
-                    ranked_features.append(feature)
-                    if len(ranked_features) == max_number_features:
-                        return ranked_features
-        return ranked_features
