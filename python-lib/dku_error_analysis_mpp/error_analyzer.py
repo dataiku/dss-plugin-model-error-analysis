@@ -227,7 +227,7 @@ class ErrorAnalyzer(object):
         """ Select error nodes and rank them by importance."""
         apply_leaf_selector = lambda array: self._apply_leaf_selector(array, leaf_selector)
         selected_leaves = apply_leaf_selector(self.leaf_ids)
-        if not selected_leaves:
+        if selected_leaves.size == 0:
             return selected_leaves
         if rank_by == 'purity':
             sorted_ids = np.lexsort((apply_leaf_selector(self.difference), apply_leaf_selector(self.quantized_impurity)))

@@ -69,21 +69,16 @@ class DkuErrorAnalyzer(ErrorAnalyzer):
 
         super(DkuErrorAnalyzer, self).fit(self._train_x, self._train_y)
 
-    def _preprocess_dataframe(self, df):
+    def _preprocess_dataframe(self, df, with_target=True):
         """ Preprocess input DataFrame with primary model preprocessor """
-        with_target = self._target in df
-        y = None
-
-        x, input_mf_index, _, _, _ = self._model_predictor.preprocessing.preprocess(
-            df,
-            with_target=with_target,
-            with_sample_weights=True)
-
+        if with_target and self._target not in df:
+            raise ValueError('The dataset does not contain target "{}".'.format(self._target))
         if with_target:
-            # required to be after `preprocess` function which can modify df
-            y = np.array(df[self._target])
-
-        return x, y, input_mf_index
+            x, input_mf_index, _, y = self._model_predictor.preprocessing.preprocess(
+                df,
+                with_target=True)
+            return x, y, input_mf_index
+        return self._model_predictor.preprocessing.preprocess(df)
 
     def _prepare_data_from_dku_saved_model(self):
         """ Preprocess and split original test set from Dku saved model
@@ -91,9 +86,6 @@ class DkuErrorAnalyzer(ErrorAnalyzer):
         np.random.seed(self._seed)
 
         original_df = self._model_accessor.get_original_test_df(ErrorAnalyzerConstants.MAX_NUM_ROW)
-
-        if self._target not in original_df:
-            raise ValueError('The original dataset does not contain target "{}".'.format(self._target))
 
         preprocessed_x, y, input_mf_index = self._preprocess_dataframe(original_df)
 
@@ -141,8 +133,6 @@ class DkuErrorAnalyzer(ErrorAnalyzer):
             return super(DkuErrorAnalyzer, self).mpp_summary(self._test_x, self._test_y, output_dict)
         else:
             test_df = dku_test_dataset.get_dataframe()
-            if self._target not in test_df:
-                raise ValueError('The provided dataset does not contain target "{}".'.format(self._target))
             test_x, test_y, _ = self._preprocess_dataframe(test_df)
             return super(DkuErrorAnalyzer, self).mpp_summary(test_x, test_y, output_dict)
 
@@ -150,5 +140,6 @@ class DkuErrorAnalyzer(ErrorAnalyzer):
         """ Predict model performance on Dku dataset """
         test_df = dku_test_dataset.get_dataframe()
 
-        test_x, _, _ = self._preprocess_dataframe(test_df)
+        test_x = self._preprocess_dataframe(test_df, with_target=False)
+
         return super(DkuErrorAnalyzer, self).predict(test_x)
