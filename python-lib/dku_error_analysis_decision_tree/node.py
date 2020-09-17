@@ -59,11 +59,11 @@ class Node(object):
         for prediction_class, proba in self.probabilities:
             dot_str += '{}: {:.3%}\n'.format(prediction_class, proba)
         node_color = ErrorAnalyzerConstants.ERROR_TREE_COLORS[self.prediction]
-        if len(self.probabilities) == 0:
+        if len(self.probabilities) == 1:
             alpha = 255
         else:
             alpha = int(255 * (self.probabilities[0][1] - self.probabilities[1][1]) / (1 - self.probabilities[1][1]))
-        dot_str += 'prediction = {}", fillcolor="{}{:02x}"] ;'.format(self.prediction, node_color, alpha)
+        dot_str += '{}", fillcolor="{}{:02x}"] ;'.format(self.prediction, node_color, alpha)
         return dot_str
 
 
@@ -96,7 +96,7 @@ class CategoricalNode(Node):
     def print_decision_rule(self):
         single_value = len(self.values) == 1
         if single_value:
-            return self.feature + ' is' + ( ' not ' if self.others else '') + safe_str(self.values[0])
+            return self.feature + ' is ' + ( 'not ' if self.others else '') + safe_str(self.values[0])
         return self.feature + ( ' not ' if self.others else '') + ' in ['  + u', '.join(self.values) + "]"
 
 

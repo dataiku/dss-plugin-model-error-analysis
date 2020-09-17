@@ -149,7 +149,7 @@ app.directive("histogram", function (Format, $compile) {
                         });
                         data.push(bar);
                     });
-                    values.bin_value.forEach(function(bin_value, idx) {
+                    values.bin_value.forEach(function(bin_value, idx) { // TODO
                         const bar = [];
                         let y0 = 0;
                         predArray.forEach(function(prediction) {

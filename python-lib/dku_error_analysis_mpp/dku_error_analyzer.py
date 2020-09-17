@@ -45,6 +45,8 @@ class DkuErrorAnalyzer(ErrorAnalyzer):
 
     @property
     def tree(self):
+        if self._tree is None:
+            self.parse_tree()
         return self._tree
 
     @property
@@ -78,7 +80,7 @@ class DkuErrorAnalyzer(ErrorAnalyzer):
                 df,
                 with_target=True)
             return x, y, input_mf_index
-        return self._model_predictor.preprocessing.preprocess(df)
+        return self._model_predictor.preprocessing.preprocess(df)[0]
 
     def _prepare_data_from_dku_saved_model(self):
         """ Preprocess and split original test set from Dku saved model
@@ -119,11 +121,11 @@ class DkuErrorAnalyzer(ErrorAnalyzer):
     def _get_path_to_node(self, node_id):
         """ return path to node as a list of split steps from the nodes of the de-processed
         dku_error_analysis_decision_tree.tree.InteractiveTree object """
-        cur_node = self._tree.get_node(node_id)
+        cur_node = self.tree.get_node(node_id)
         path_to_node = collections.deque()
         while cur_node is not None and cur_node.id != 0:
             path_to_node.appendleft(cur_node.print_decision_rule())
-            cur_node = self._tree.get_node(cur_node.parent_id)
+            cur_node = self.tree.get_node(cur_node.parent_id)
 
         return path_to_node
 
@@ -134,7 +136,7 @@ class DkuErrorAnalyzer(ErrorAnalyzer):
         else:
             test_df = dku_test_dataset.get_dataframe()
             test_x, test_y, _ = self._preprocess_dataframe(test_df)
-            return super(DkuErrorAnalyzer, self).mpp_summary(test_x, test_y, output_dict)
+            return super(DkuErrorAnalyzer, self).mpp_summary(test_x, test_y.values, output_dict)
 
     def predict(self, dku_test_dataset):
         """ Predict model performance on Dku dataset """

@@ -108,5 +108,5 @@ class TreeParser(object):
         unpreprocess_feature_name = lambda feature_idx: self.get_split_parameters(feature_list[feature_idx]).feature
         ranked_features = list(map(unpreprocess_feature_name, ranked_feature_ids))
         _, unique_ids = np.unique(ranked_features, return_index=True)
-        tree = InteractiveTree(df, target, ranked_features[unique_ids], features)
+        tree = InteractiveTree(df, target, [ranked_features[idx] for idx in unique_ids], features)
         return tree

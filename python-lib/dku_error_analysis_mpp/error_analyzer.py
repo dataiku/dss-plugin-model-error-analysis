@@ -7,7 +7,7 @@ from sklearn.base import is_regressor
 from sklearn.utils.validation import check_is_fitted
 from sklearn.exceptions import NotFittedError
 from dku_error_analysis_mpp.kneed import KneeLocator
-from dku_error_analysis_utils import not_enough_data, ErrorAnalyzerConstants
+from dku_error_analysis_utils import check_enough_data, ErrorAnalyzerConstants
 from dku_error_analysis_mpp.metrics import mpp_report
 
 import logging
@@ -61,7 +61,7 @@ class ErrorAnalyzer(object):
     def model_performance_predictor_features(self):
         if self._features_in_model_performance_predictor is None:
             self._features_in_model_performance_predictor = ["feature#%s" % feature_index
-                                                             for feature_index in range(self._predictor.n_features_)]
+                                                             for feature_index in range(self._error_clf.n_features_)]
 
         return self._features_in_model_performance_predictor
 
@@ -101,7 +101,7 @@ class ErrorAnalyzer(object):
             self._compute_leaf_ids()
         return self._leaf_ids
 
-    def fit(self, x, y):
+    def fit(self, x, y, max_nr_rows=ErrorAnalyzerConstants.MAX_NUM_ROW):
         """
         Trains a Decision Tree to discriminate between samples that are correctly predicted or wrongly predicted
         (errors) by a primary model.
@@ -112,7 +112,7 @@ class ErrorAnalyzer(object):
 
         np.random.seed(self._seed)
 
-        self._error_train_x, self._error_train_y = self._compute_primary_model_error(x, y)
+        self._error_train_x, self._error_train_y = self._compute_primary_model_error(x, y, max_nr_rows)
 
         logger.info("Fitting the model performance predictor...")
 
@@ -127,25 +127,21 @@ class ErrorAnalyzer(object):
 
         logger.info('Grid search selected max_depth = {}'.format(gs_clf.best_params_['max_depth']))
 
-    def _compute_primary_model_error(self, x, y):
+    def _compute_primary_model_error(self, x, y, max_nr_rows):
         """
-        Computes the errors of the primary model predictions and samples with max n = ErrorAnalyzerConstants.MAX_NUM_ROW
+        Computes the errors of the primary model predictions and samples
         :return: an array with error target (correctly predicted vs wrongly predicted)
         """
 
         logger.info('Prepare data with model for model performance predictor')
 
-        if not_enough_data(x, min_len=ErrorAnalyzerConstants.MIN_NUM_ROWS):
-            raise ValueError(
-                'The original dataset is too small ({} rows) to have stable result, it needs to have at least '
-                '{} rows'.format(len(x), ErrorAnalyzerConstants.MIN_NUM_ROWS))
+        check_enough_data(x, min_len=ErrorAnalyzerConstants.MIN_NUM_ROWS)
 
-        if x.shape[0] > ErrorAnalyzerConstants.MAX_NUM_ROW:
-            logger.info("Rebalancing data:")
-            logger.info(" - original dataset had %s rows. Selecting the first %s." %
-                        (x.shape[0], ErrorAnalyzerConstants.MAX_NUM_ROW))
+        if x.shape[0] > max_nr_rows:
+            logger.info("Rebalancing data: original dataset had {} rows, selecting the first {}.".format(x.shape[0], max_nr_rows))
 
-            x = x[:ErrorAnalyzerConstants.MAX_NUM_ROW, :]
+            x = x[:max_nr_rows, :]
+            y = y[:max_nr_rows]
 
         y_pred = self._predictor.predict(x)
 
@@ -300,7 +296,7 @@ class ErrorAnalyzer(object):
         return path_to_node
 
     #TODO: rewrite this method using the ranking arrays
-    def error_node_summary(self, leaf_selector='all_errors', add_path_to_leaves=True, print_summary=False):
+    def error_node_summary(self, leaf_selector='all_errors', add_path_to_leaves=False, print_summary=False):
         """ Return summary information regarding input nodes """
 
         leaf_nodes = self.get_ranked_leaf_ids(leaf_selector=leaf_selector)
@@ -345,8 +341,8 @@ class ErrorAnalyzer(object):
 
         return leaves_summary
 
-    def mpp_summary(self, x_test, y_test, output_dict=False):
+    def mpp_summary(self, x_test, y_test, nr_max_rows=ErrorAnalyzerConstants.MAX_NUM_ROW, output_dict=False):
         """ Print ErrorAnalyzer summary metrics """
-        x_test, y_true = self._compute_primary_model_error(x_test, y_test)
+        x_test, y_true = self._compute_primary_model_error(x_test, y_test, nr_max_rows)
         y_pred = self.model_performance_predictor.predict(x_test)
         return mpp_report(y_true, y_pred, output_dict)

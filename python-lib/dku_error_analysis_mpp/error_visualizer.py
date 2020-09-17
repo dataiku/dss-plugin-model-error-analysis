@@ -32,7 +32,7 @@ class _BaseErrorVisualizer(object):
     @staticmethod
     def _plot_histograms(hist_data, label, **params):
         bottom = None
-        for class_value, bar_heights in hist_data:
+        for class_value, bar_heights in hist_data.items():
             plt.bar(height=bar_heights,
                     label="{} ({})".format(class_value, label),
                     color=ErrorAnalyzerConstants.ERROR_TREE_COLORS[class_value],
@@ -76,7 +76,6 @@ class ErrorVisualizer(_BaseErrorVisualizer):
     def __init__(self, error_analyzer):
         super(ErrorVisualizer, self).__init__(error_analyzer)
 
-        #self._error_analyzer = error_analyzer
         self._error_clf = error_analyzer.model_performance_predictor
         self._error_train_x = error_analyzer.error_train_x
         self._error_train_y = error_analyzer.error_train_y
@@ -101,7 +100,7 @@ class ErrorVisualizer(_BaseErrorVisualizer):
         correct_class_idx = 1 - error_class_idx
 
         ranked_feature_ids = rank_features_by_error_correlation(self._error_clf.feature_importances_,
-                                                                include_non_split_features=True)
+                                                                include_only_split_features=False)
         if top_k_features > 0:
             ranked_feature_ids = ranked_feature_ids[:top_k_features]
         x, y = self._error_train_x[:,ranked_feature_ids], self._error_train_y
@@ -115,6 +114,8 @@ class ErrorVisualizer(_BaseErrorVisualizer):
         for leaf in leaf_nodes:
             leaf_sample_ids = self._train_leaf_ids == leaf
             proba_wrong_leaf, proba_correct_leaf = nr_wrong[leaf]/len(leaf_sample_ids), nr_correct[leaf]/len(leaf_sample_ids)
+            print(self._error_clf.tree_.value, self._error_clf.tree_.value.shape)
+            print(self._error_clf.tree_.value[:,0, error_class_idx], error_class_idx)
             print('Leaf {} (Wrong prediction: {:.3f}, Correct prediction: {:.3f})'.format(leaf, proba_wrong_leaf, proba_correct_leaf))
 
             for i, feature_idx in enumerate(ranked_feature_ids):
@@ -162,10 +163,6 @@ class DkuErrorVisualizer(_BaseErrorVisualizer):
             raise NotImplementedError('You need to input a DkuErrorAnalyzer object.')
 
         super(DkuErrorVisualizer, self).__init__(error_analyzer)
-        
-        #self._error_analyzer = error_analyzer
-        if error_analyzer.tree is None:
-            error_analyzer.parse_tree()
 
         self._tree = error_analyzer.tree
         self._tree_parser = error_analyzer.tree_parser
@@ -180,7 +177,7 @@ class DkuErrorVisualizer(_BaseErrorVisualizer):
         """ Return plot of error node feature distribution and compare to global baseline """
 
         leaf_nodes = self.get_ranked_leaf_ids(leaf_selector, rank_leaves_by)
-        ranked_features = self._tree.ranked_features
+        ranked_features = self._tree.ranked_features[:top_k_features]
         if show_global:
             if not show_class:
                 root_prediction = self._tree.get_node(0).prediction

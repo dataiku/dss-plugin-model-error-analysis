@@ -8,7 +8,7 @@ def safe_str(val):
         return val.encode("utf-8")
     return str(val)
 
-def not_enough_data(df, min_len=1):
+def check_enough_data(df, min_len):
     """
     Compare length of dataframe to minimum lenght of the test data.
     Used in the relevance of the measure.
@@ -17,7 +17,10 @@ def not_enough_data(df, min_len=1):
     :param min_len:
     :return:
     """
-    return len(df) < min_len
+    if df.shape[0] < min_len:
+        raise ValueError(
+                'The original dataset is too small ({} rows) to have stable result, '
+                'it needs to have at least {} rows'.format(df.shape[0], min_len))
 
 def rank_features_by_error_correlation(feature_importances, include_only_split_features=True):
     sorted_feature_indices = np.argsort(- feature_importances)
