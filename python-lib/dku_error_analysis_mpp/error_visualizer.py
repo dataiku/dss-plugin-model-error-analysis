@@ -114,8 +114,6 @@ class ErrorVisualizer(_BaseErrorVisualizer):
         for leaf in leaf_nodes:
             leaf_sample_ids = self._train_leaf_ids == leaf
             proba_wrong_leaf, proba_correct_leaf = nr_wrong[leaf]/len(leaf_sample_ids), nr_correct[leaf]/len(leaf_sample_ids)
-            print(self._error_clf.tree_.value, self._error_clf.tree_.value.shape)
-            print(self._error_clf.tree_.value[:,0, error_class_idx], error_class_idx)
             print('Leaf {} (Wrong prediction: {:.3f}, Correct prediction: {:.3f})'.format(leaf, proba_wrong_leaf, proba_correct_leaf))
 
             for i, feature_idx in enumerate(ranked_feature_ids):
