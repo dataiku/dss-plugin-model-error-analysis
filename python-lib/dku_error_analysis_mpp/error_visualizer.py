@@ -56,7 +56,7 @@ class _BaseErrorVisualizer(object):
 
     @staticmethod
     def _plot_feature_distribution(x_ticks, feature_is_numerical, leaf_data, root_data=None):
-        width, x = 1, x_ticks
+        width, x = 1.0, x_ticks
         if root_data is not None:
             width /= 2
             if feature_is_numerical:
@@ -96,7 +96,7 @@ class ErrorVisualizer(_BaseErrorVisualizer):
                                             show_global=True, show_class=False, rank_leaves_by="purity", nr_bins=10, figsize=(15, 10)):
         """ Return plot of error node feature distribution and compare to global baseline """
 
-        error_class_idx = np.where(self._error_clf.classes_ == ErrorAnalyzerConstants.WRONG_PREDICTION)[0]
+        error_class_idx = np.where(self._error_clf.classes_ == ErrorAnalyzerConstants.WRONG_PREDICTION)[0][0]
         correct_class_idx = 1 - error_class_idx
 
         ranked_feature_ids = rank_features_by_error_correlation(self._error_clf.feature_importances_,
@@ -113,12 +113,13 @@ class ErrorVisualizer(_BaseErrorVisualizer):
         leaf_nodes = self.get_ranked_leaf_ids(leaf_selector, rank_leaves_by)
         for leaf in leaf_nodes:
             leaf_sample_ids = self._train_leaf_ids == leaf
-            proba_wrong_leaf, proba_correct_leaf = nr_wrong[leaf]/len(leaf_sample_ids), nr_correct[leaf]/len(leaf_sample_ids)
+            nr_leaf_samples = np.count_nonzero(leaf_sample_ids)
+            proba_wrong_leaf, proba_correct_leaf = nr_wrong[leaf]/nr_leaf_samples, nr_correct[leaf]/nr_leaf_samples
             print('Leaf {} (Wrong prediction: {:.3f}, Correct prediction: {:.3f})'.format(leaf, proba_wrong_leaf, proba_correct_leaf))
 
             for i, feature_idx in enumerate(ranked_feature_ids):
                 feature_name = self._features_in_model_performance_predictor[feature_idx]
-                bins = np.linspace(min_values[feature_idx], max_values(feature_idx), nr_bins)
+                bins = np.linspace(min_values[i], max_values(i), nr_bins)
                 if feature_name not in digitized_columns:
                     feature_column = x[:,i]
                     digitized_columns[feature_name] = np.digitize(feature_column, bins=bins)

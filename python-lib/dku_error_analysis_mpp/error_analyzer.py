@@ -201,14 +201,14 @@ class ErrorAnalyzer(object):
         self._leaf_ids = np.where(self.model_performance_predictor.tree_.feature < 0)[0]
 
     def _get_error_leaves(self):
-        error_class_idx = np.where(self.model_performance_predictor.classes_ == ErrorAnalyzerConstants.WRONG_PREDICTION)[0]
+        error_class_idx = np.where(self.model_performance_predictor.classes_ == ErrorAnalyzerConstants.WRONG_PREDICTION)[0][0]
         error_node_ids = np.where(self.model_performance_predictor.tree_.value[:, 0, :].argmax(axis=1) == error_class_idx)[0]
         return np.in1d(self.leaf_ids, error_node_ids)
 
     def _compute_ranking_arrays(self, n_purity_levels=ErrorAnalyzerConstants.NUMBER_PURITY_LEVELS):
         """ Compute ranking array """
-        error_class_idx = np.where(self.model_performance_predictor.classes_ == ErrorAnalyzerConstants.WRONG_PREDICTION)[0]
-        correct_class_idx = np.where(self.model_performance_predictor.classes_ == ErrorAnalyzerConstants.CORRECT_PREDICTION)[0]
+        error_class_idx = np.where(self.model_performance_predictor.classes_ == ErrorAnalyzerConstants.WRONG_PREDICTION)[0][0]
+        correct_class_idx = 1 - error_class_idx
 
         wrongly_predicted_samples = self.model_performance_predictor.tree_.value[self.leaf_ids, 0, error_class_idx]
         correctly_predicted_samples = self.model_performance_predictor.tree_.value[self.leaf_ids, 0, correct_class_idx]
@@ -221,7 +221,7 @@ class ErrorAnalyzer(object):
 
     def get_ranked_leaf_ids(self, leaf_selector, rank_by='purity'):
         """ Select error nodes and rank them by importance."""
-        apply_leaf_selector = lambda array: self._apply_leaf_selector(array, leaf_selector)
+        apply_leaf_selector = lambda array: self._get_leaf_selector(leaf_selector)
         selected_leaves = apply_leaf_selector(self.leaf_ids)
         if selected_leaves.size == 0:
             return selected_leaves
@@ -233,13 +233,10 @@ class ErrorAnalyzer(object):
             raise NotImplementedError("Input argument 'rank_by' is invalid. Should be 'purity' or 'class_difference'")
         return selected_leaves.take(sorted_ids)
 
-    def _apply_leaf_selector(self, array, leaf_selector):
+    def _get_leaf_selector(self, leaf_selector):
         """
-            Select the rows of the provided array based on the leaf selector
+            Return a function that select rows of provided arrays. Arrays must be of shape (1, number of leaves)
             Args:
-                array: numpy array of shape (1, number of leaves)
-                An array of which we only want to keep some rows
-
                 leaf_selector: int, str, or array-like
                 How to select the rows of the array
                   * int: Only keep the row corresponding to this leaf id
@@ -249,13 +246,16 @@ class ErrorAnalyzer(object):
                     - "all_errors": Keep the rows with indices corresponding to the leaf ids classifying the primary model prediction as wrong
 
             Return:
-                A boolean array as a selector of leaf ids
+                A function with one argument array as a selector of leaf ids
+                Args:
+                    array: numpy array of shape (1, number of leaves)
+                    An array of which we only want to keep some rows
         """
         if isinstance(leaf_selector, str):
             if leaf_selector == "all":
-                return array
+                return lambda array: array
             if leaf_selector == "all_errors":
-                return array[self._get_error_leaves()]
+                return lambda array: array[self._get_error_leaves()]
 
         leaf_selector_as_array = np.array(leaf_selector)
         leaf_selector = np.in1d(self.leaf_ids, leaf_selector_as_array)
@@ -264,7 +264,7 @@ class ErrorAnalyzer(object):
             print("None of the ids provided correspond to a leaf id.")
         elif nr_kept_leaves < leaf_selector_as_array.size:
             print("Some of the ids provided do not belong to leaves. Only leaf ids are kept.")
-        return array[leaf_selector]
+        return lambda array: array[leaf_selector]
 
     def _get_path_to_node(self, node_id):
         """ Return path to node as a list of split steps from the nodes of the sklearn Tree object """
@@ -303,8 +303,8 @@ class ErrorAnalyzer(object):
 
         y = self._error_train_y
         n_total_errors = y[y == ErrorAnalyzerConstants.WRONG_PREDICTION].shape[0]
-        error_class_idx = np.where(self.model_performance_predictor.classes_ == ErrorAnalyzerConstants.WRONG_PREDICTION)[0]
-        correct_class_idx = np.where(self.model_performance_predictor.classes_ == ErrorAnalyzerConstants.CORRECT_PREDICTION)[0]
+        error_class_idx = np.where(self.model_performance_predictor.classes_ == ErrorAnalyzerConstants.WRONG_PREDICTION)[0][0]
+        correct_class_idx = 1 - error_class_idx
 
         leaves_summary = []
         for leaf_id in leaf_nodes:

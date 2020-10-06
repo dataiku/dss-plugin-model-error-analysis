@@ -132,11 +132,11 @@ class DkuErrorAnalyzer(ErrorAnalyzer):
     def mpp_summary(self, dku_test_dataset=None, output_dict=False):
         """ print ErrorAnalyzer summary metrics """
         if dku_test_dataset is None:
-            return super(DkuErrorAnalyzer, self).mpp_summary(self._test_x, self._test_y, output_dict)
+            return super(DkuErrorAnalyzer, self).mpp_summary(self._test_x, self._test_y, output_dict=output_dict=)
         else:
             test_df = dku_test_dataset.get_dataframe()
             test_x, test_y, _ = self._preprocess_dataframe(test_df)
-            return super(DkuErrorAnalyzer, self).mpp_summary(test_x, test_y.values, output_dict)
+            return super(DkuErrorAnalyzer, self).mpp_summary(test_x, test_y.values, output_dict=output_dict)
 
     def predict(self, dku_test_dataset):
         """ Predict model performance on Dku dataset """
