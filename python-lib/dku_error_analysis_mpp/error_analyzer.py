@@ -221,7 +221,7 @@ class ErrorAnalyzer(object):
 
     def get_ranked_leaf_ids(self, leaf_selector, rank_by='purity'):
         """ Select error nodes and rank them by importance."""
-        apply_leaf_selector = lambda array: self._get_leaf_selector(leaf_selector)
+        apply_leaf_selector = self._get_leaf_selector(leaf_selector)
         selected_leaves = apply_leaf_selector(self.leaf_ids)
         if selected_leaves.size == 0:
             return selected_leaves
