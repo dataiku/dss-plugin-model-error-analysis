@@ -119,10 +119,10 @@ class ErrorVisualizer(_BaseErrorVisualizer):
 
             for i, feature_idx in enumerate(ranked_feature_ids):
                 feature_name = self._features_in_model_performance_predictor[feature_idx]
-                bins = np.linspace(min_values[i], max_values(i), nr_bins)
+                bins = np.linspace(min_values[i], max_values(i), nr_bins + 1)
                 if feature_name not in digitized_columns:
                     feature_column = x[:,i]
-                    digitized_columns[feature_name] = np.digitize(feature_column, bins=bins)
+                    digitized_columns[feature_name] = np.histogram(feature_column, bins=bins, density=True)
                 digitized_feature_column = digitized_columns[feature_name]
                 if show_global:
                     root_hist_data = {}
