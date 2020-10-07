@@ -107,7 +107,7 @@ class ErrorVisualizer(_BaseErrorVisualizer):
         min_values, max_values = x.min(axis=0), x.max(axis=0)
 
         global_error_sample_ids = y == ErrorAnalyzerConstants.WRONG_PREDICTION
-        digitized_columns = {}
+        histogram_columns = {}
         nr_wrong, nr_correct = self._error_clf.tree_.value[:, 0, error_class_idx], self._error_clf.tree_.value[:, 0, correct_class_idx]            
 
         leaf_nodes = self.get_ranked_leaf_ids(leaf_selector, rank_leaves_by)
@@ -120,30 +120,30 @@ class ErrorVisualizer(_BaseErrorVisualizer):
             for i, feature_idx in enumerate(ranked_feature_ids):
                 feature_name = self._features_in_model_performance_predictor[feature_idx]
                 bins = np.linspace(min_values[i], max_values(i), nr_bins + 1)
-                if feature_name not in digitized_columns:
+                if feature_name not in histogram_columns:
                     feature_column = x[:,i]
-                    digitized_columns[feature_name] = np.histogram(feature_column, bins=bins, density=True)
-                digitized_feature_column = digitized_columns[feature_name]
+                    histogram_columns[feature_name] = np.histogram(feature_column, bins=bins, density=True)
+                histogram_column = histogram_columns[feature_name]
                 if show_global:
                     root_hist_data = {}
                     if show_class:
                         root_hist_data = {
-                            ErrorAnalyzerConstants.WRONG_PREDICTION: digitized_feature_column[global_error_sample_ids],
-                            ErrorAnalyzerConstants.CORRECT_PREDICTION: digitized_feature_column[~global_error_sample_ids]
+                            ErrorAnalyzerConstants.WRONG_PREDICTION: histogram_column[global_error_sample_ids],
+                            ErrorAnalyzerConstants.CORRECT_PREDICTION: histogram_column[~global_error_sample_ids]
                         }
                     else:
                         root_prediction = ErrorAnalyzerConstants.CORRECT_PREDICTION if nr_correct[0] > nr_wrong[0] else ErrorAnalyzerConstants.WRONG_PREDICTION
-                        root_hist_data = {root_prediction: digitized_feature_column}
+                        root_hist_data = {root_prediction: histogram_column}
 
                 leaf_hist_data = {}
                 if show_class:
                     leaf_hist_data = {
-                        ErrorAnalyzerConstants.WRONG_PREDICTION: digitized_feature_column[leaf_sample_ids & global_error_sample_ids],
-                        ErrorAnalyzerConstants.CORRECT_PREDICTION: digitized_feature_column[leaf_sample_ids & ~global_error_sample_ids]
+                        ErrorAnalyzerConstants.WRONG_PREDICTION: histogram_column[leaf_sample_ids & global_error_sample_ids],
+                        ErrorAnalyzerConstants.CORRECT_PREDICTION: histogram_column[leaf_sample_ids & ~global_error_sample_ids]
                     }
                 else:
                     leaf_prediction = ErrorAnalyzerConstants.CORRECT_PREDICTION if proba_correct_leaf > proba_wrong_leaf else ErrorAnalyzerConstants.WRONG_PREDICTION
-                    leaf_hist_data = {leaf_prediction: digitized_feature_column[leaf_sample_ids]}
+                    leaf_hist_data = {leaf_prediction: histogram_column[leaf_sample_ids]}
 
                 feature_is_numerical = True # TODO: change this once we have unprocessing done for sklearn models
                 x_ticks = _BaseErrorVisualizer._add_new_plot(figsize, bins, feature_name, leaf)
