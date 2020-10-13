@@ -25,13 +25,6 @@ class ErrorAnalyzer(object):
     """
 
     def __init__(self, predictor, feature_names=None, seed=65537):
-
-        try:
-            # TODO need to set the right attributes to check for each type of estimator
-            check_is_fitted(predictor, ["coef_", "estimator_", "estimators_"], all_or_any=np.any)
-        except NotFittedError:
-            raise NotFittedError('you need to input a fitted model.')
-
         self._predictor = predictor
         self._is_regression = is_regressor(self._predictor)
 
