@@ -119,7 +119,7 @@ class ErrorVisualizer(_BaseErrorVisualizer):
 
             for i, feature_idx in enumerate(ranked_feature_ids):
                 feature_name = self._features_in_model_performance_predictor[feature_idx]
-                bins = np.linspace(min_values[i], max_values(i), nr_bins + 1)
+                bins = np.linspace(min_values[i], max_values[i], nr_bins + 1)
                 if feature_name not in histogram_columns:
                     feature_column = x[:,i]
                     histogram_columns[feature_name] = np.histogram(feature_column, bins=bins, density=True)
