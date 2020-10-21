@@ -38,6 +38,7 @@ class InteractiveTree(object):
         self.nodes = {}
         self.ranked_features = ranked_features
         self.df = df
+        self.bins = {}
         self.leaves = set()
 
     def to_dot_string(self):
@@ -169,10 +170,16 @@ class InteractiveTree(object):
         column = filtered_df[col]
         target_column = filtered_df[self.target]
         if col in self.features:
-            return self.get_stats_numerical_node(column, col, target_column, nr_bins)
+            bins = self.bins.get(col)
+            if bins is None:
+                mean = self.features[col]["mean"]
+                bins, bin_edges = pd.cut(self.df[col].fillna(mean), bins=min(nr_bins, self.df[col].nunique()), retbins=True, include_lowest=True, right=False)
+                if i > 0:
+                    bins = pd.cut(column.fillna(mean), bins=bin_edges, right=False)
+            return self.get_stats_numerical_node(column, target_column, bins)
         return self.get_stats_categorical_node(column, target_column, nr_bins)
 
-    def get_stats_numerical_node(self, column, col, target_column, nr_bins):
+    def get_stats_numerical_node(self, column, target_column, bins):
         stats = {
             "bin_edge": [],
             "target_distrib": {ErrorAnalyzerConstants.WRONG_PREDICTION: [], ErrorAnalyzerConstants.CORRECT_PREDICTION: []},
@@ -180,12 +187,9 @@ class InteractiveTree(object):
             "count": []
         }
         if not column.empty:
-            mean = self.features[col]["mean"]
-            bins = pd.cut(self.df[col].fillna(mean), bins=min(nr_bins, column.nunique()), include_lowest=True, right=False)
-
-            full_count = column.shape[0]
-            target_grouped = target_column.groupby(bins) #could be simplified but well no time :)
+            target_grouped = target_column.groupby(bins)
             target_distrib = target_grouped.apply(lambda x: x.value_counts())
+            full_count = column.shape[0]
             target_distrib = target_distrib / full_count
             col_distrib = target_grouped.count()
             for interval, count in col_distrib.items():

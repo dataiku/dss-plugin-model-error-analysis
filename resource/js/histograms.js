@@ -85,8 +85,6 @@ app.directive("histogram", function (Format, $compile) {
             }
 
             function update() {
-                const data = [];
-                const dataWhole = [];
                 let predArray;
                 if ($scope.selectedNode.probabilities[0][0] == "Wrong prediction") {
                     predArray = ["Wrong prediction", "Correct prediction"]
@@ -96,8 +94,9 @@ app.directive("histogram", function (Format, $compile) {
 
                 const values = $scope.histData[feature];
                 const valuesWhole = $scope.histDataWholeSet[feature];
+                const data = [];
+                const dataWhole = [];
                 if (feature in $scope.features) {
-                    const values = $scope.histData[feature];
                     values.mid.forEach(function(mid, idx) {
                         const bar = [];
                         let y0 = 0;
@@ -114,7 +113,7 @@ app.directive("histogram", function (Format, $compile) {
                         });
                         data.push(bar);
                     });
-                    valuesWhole.mid.map(function(mid, idx) {
+                    valuesWhole.mid.forEach(function(mid, idx) {
                         const bar = [];
                         let y0 = 0;
                         predArray.forEach(function(prediction) {
@@ -191,13 +190,13 @@ app.directive("histogram", function (Format, $compile) {
                     .attr("dy", ".71em");
 
                 // Create groups for each series, rects for each segment
-                let groups = histSvg.selectAll("g.bar")
+                const groups = histSvg.selectAll("g.bar")
                 .data(data)
                 .enter()
                 .append("g")
                 .classed("histogram__bar", true);
 
-                let groupsWhole = histSvg.selectAll("g.bar")
+                const groupsWhole = histSvg.selectAll("g.bar")
                 .data(dataWhole)
                 .enter()
                 .append("g")
