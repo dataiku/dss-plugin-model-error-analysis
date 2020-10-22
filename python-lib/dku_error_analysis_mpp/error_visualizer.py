@@ -50,7 +50,6 @@ class _BaseErrorVisualizer(object):
         plt.gca().set_xticklabels(labels=bins)
         plt.xlabel('{}'.format(feature_name))
         plt.ylabel('Proportion of samples')
-        plt.legend()
         plt.title('Distribution of {} in leaf {}'.format(feature_name, leaf_id))
 
         return x_ticks
@@ -67,6 +66,7 @@ class _BaseErrorVisualizer(object):
             x = x_ticks[:-1]
         _BaseErrorVisualizer._plot_histograms(leaf_data, label="leaf data", x=x, width=width)
 
+        plt.legend()
         plt.pause(0.05)
 
 class ErrorVisualizer(_BaseErrorVisualizer):
