@@ -119,7 +119,7 @@ class ErrorVisualizer(_BaseErrorVisualizer):
 
             for i, feature_idx in enumerate(ranked_feature_ids):
                 feature_name = self._features_in_model_performance_predictor[feature_idx]
-                bins = np.linspace(min_values[i], max_values[i], nr_bins + 1)
+                bins = np.round(np.linspace(min_values[i], max_values[i], nr_bins + 1), 2)
                 feature_column = x[:,i]
                 if show_global:
                     if show_class:
@@ -142,7 +142,6 @@ class ErrorVisualizer(_BaseErrorVisualizer):
                     leaf_hist_data = {leaf_prediction: np.histogram(feature_column[leaf_sample_ids], bins=bins, density=True)[0]}
 
                 feature_is_numerical = True # TODO: change this once we have unprocessing done for sklearn models
-                bins = np.round(bins, 2)
                 x_ticks = _BaseErrorVisualizer._add_new_plot(figsize, bins, feature_name, leaf)
                 _BaseErrorVisualizer._plot_feature_distribution(x_ticks, feature_is_numerical, leaf_hist_data, root_hist_data if show_global else None)
 
