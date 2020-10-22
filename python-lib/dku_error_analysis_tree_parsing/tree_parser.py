@@ -113,6 +113,6 @@ class TreeParser(object):
                 seen_values.add(unprocessed_name)
             return accumulated_list
 
-        ranked_features = list(reduce(get_unique_ranked_features, ranked_feature_ids),[])
+        ranked_features = list(reduce(get_unique_ranked_features, ranked_feature_ids, []))
         tree = InteractiveTree(df, target, ranked_features, features)
         return tree
