@@ -142,6 +142,7 @@ class ErrorVisualizer(_BaseErrorVisualizer):
                     leaf_hist_data = {leaf_prediction: np.histogram(feature_column[leaf_sample_ids], bins=bins, density=True)[0]}
 
                 feature_is_numerical = True # TODO: change this once we have unprocessing done for sklearn models
+                bins = np.round(bins, 2)
                 x_ticks = _BaseErrorVisualizer._add_new_plot(figsize, bins, feature_name, leaf)
                 _BaseErrorVisualizer._plot_feature_distribution(x_ticks, feature_is_numerical, leaf_hist_data, root_hist_data if show_global else None)
 
