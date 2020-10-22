@@ -46,7 +46,8 @@ class _BaseErrorVisualizer(object):
     def _add_new_plot(figsize, bins, feature_name, leaf_id):
         x_ticks = range(len(bins))
         plt.figure(figsize=figsize)
-        plt.xticks(x_ticks, labels=bins)
+        plt.xticks(x_ticks)
+        plt.gca().set_xticklabels(labels=bins)
         plt.xlabel('{}'.format(feature_name))
         plt.ylabel('Proportion of samples')
         plt.legend()
