@@ -101,7 +101,7 @@ class ErrorVisualizer(_BaseErrorVisualizer):
         correct_class_idx = 1 - error_class_idx
 
         ranked_feature_ids = rank_features_by_error_correlation(self._error_clf.feature_importances_)
-        if not ranked_feature_ids: # should not happen
+        if ranked_feature_ids.size == 0: # should not happen
             return
         if top_k_features > 0:
             ranked_feature_ids = ranked_feature_ids[:top_k_features]
@@ -174,7 +174,7 @@ class DkuErrorVisualizer(_BaseErrorVisualizer):
 
         leaf_nodes = self.get_ranked_leaf_ids(leaf_selector, rank_leaves_by)
         ranked_features = self._tree.ranked_features[:top_k_features]
-        if not ranked_features: # should not happen
+        if ranked_features.size == 0: # should not happen
             return
         if show_global:
             if not show_class:
