@@ -108,7 +108,7 @@ class TreeParser(object):
         ranked_feature_ids = rank_features_by_error_correlation(self.error_model.feature_importances_)
         def get_unique_ranked_features(accumulated_list, current_value, seen_values=set()):
             unprocessed_name = self.get_split_parameters(feature_list[current_value]).feature
-            if current_value not in seen_values:
+            if unprocessed_name not in seen_values:
                 accumulated_list.append(unprocessed_name)
                 seen_values.add(unprocessed_name)
             return accumulated_list

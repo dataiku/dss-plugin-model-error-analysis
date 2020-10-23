@@ -22,12 +22,10 @@ def check_enough_data(df, min_len):
                 'The original dataset is too small ({} rows) to have stable result, '
                 'it needs to have at least {} rows'.format(df.shape[0], min_len))
 
-def rank_features_by_error_correlation(feature_importances, include_only_split_features=True):
+def rank_features_by_error_correlation(feature_importances):
     sorted_feature_indices = np.argsort(- feature_importances)
-    if include_only_split_features:
-        cut = np.where(feature_importances!=0)
-        if cut is not None:
-            sorted_feature_indices = sorted_feature_indices[:cut[0][0]]
+    cut = len(np.where(feature_importances!=0)[0])
+    sorted_feature_indices = sorted_feature_indices[:cut]
     return sorted_feature_indices
 
 class ErrorAnalyzerConstants(object):

@@ -100,8 +100,9 @@ class ErrorVisualizer(_BaseErrorVisualizer):
         error_class_idx = np.where(self._error_clf.classes_ == ErrorAnalyzerConstants.WRONG_PREDICTION)[0][0]
         correct_class_idx = 1 - error_class_idx
 
-        ranked_feature_ids = rank_features_by_error_correlation(self._error_clf.feature_importances_,
-                                                                include_only_split_features=False)
+        ranked_feature_ids = rank_features_by_error_correlation(self._error_clf.feature_importances_)
+        if not ranked_feature_ids: # should not happen
+            return
         if top_k_features > 0:
             ranked_feature_ids = ranked_feature_ids[:top_k_features]
         x, y = self._error_train_x[:,ranked_feature_ids], self._error_train_y
@@ -173,6 +174,8 @@ class DkuErrorVisualizer(_BaseErrorVisualizer):
 
         leaf_nodes = self.get_ranked_leaf_ids(leaf_selector, rank_leaves_by)
         ranked_features = self._tree.ranked_features[:top_k_features]
+        if not ranked_features: # should not happen
+            return
         if show_global:
             if not show_class:
                 root_prediction = self._tree.get_node(0).prediction
