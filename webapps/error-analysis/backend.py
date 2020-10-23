@@ -1,5 +1,4 @@
 import traceback
-import json
 import logging
 from flask import jsonify
 import dataiku
@@ -7,11 +6,10 @@ import dataiku
 from dataiku.customwebapp import get_webapp_config
 from dataiku.core.dkujson import DKUJSONEncoder
 
-from dku_error_analysis_tree_parsing.tree_parser import TreeParser
-from dku_error_analysis_utils import safe_str
-from dku_error_analysis_mpp.model_metadata import get_model_handler
-from dku_error_analysis_mpp.error_analyzer import ErrorAnalyzer
-from dku_error_analysis_mpp.model_accessor import ModelAccessor
+from dku_error_analysis_model_parser.model_metadata import get_model_handler
+from dku_error_analysis_model_parser.model_accessor import ModelAccessor
+from dku_error_analysis_mpp.dku_error_analyzer import DkuErrorAnalyzer
+from dku_error_analysis_utils import ErrorAnalyzerConstants
 
 
 app.json_encoder = DKUJSONEncoder
@@ -27,26 +25,28 @@ TREE = []
 
 def get_error_dt(model_handler):
     model_accessor = ModelAccessor(model_handler)
-    error_analyzer = ErrorAnalyzer(model_accessor)
+    dku_error_analyzer = DkuErrorAnalyzer(model_accessor)
 
-    error_analyzer.fit()
-    error_clf = error_analyzer.get_model_performance_predictor()
-    test_df = error_analyzer.get_model_performance_predictor_test_df()
-    feature_names = error_analyzer.get_model_performance_predictor_features()
-    preprocessed_x = error_analyzer.get_preprocessed_array()
+    dku_error_analyzer.fit()
+    dku_error_analyzer.parse_tree()
+    tree = dku_error_analyzer.tree
 
-    return error_clf, test_df, preprocessed_x, feature_names
+    report_dict = dku_error_analyzer.mpp_summary(output_dict=True)
+    confidence_decision = report_dict[ErrorAnalyzerConstants.CONFIDENCE_DECISION]
+
+    if not confidence_decision:
+        # TODO: add message in UI (ch49209)
+        LOGGER.warning("Warning: the built MPP might not be representative of the primary model performances.")
+
+    return tree
 
 @app.route("/load", methods=["GET"])
 def load():
     try:
         model_handler = get_model_handler(dataiku.Model(MODEL_ID), VERSION_ID)
-        clf, test_df, preprocessed_x, features = get_error_dt(model_handler)
-        tree_parser = TreeParser(model_handler, clf)
-        tree = tree_parser.build_tree(test_df, features)
-        tree.parse_nodes(tree_parser, features, preprocessed_x)
+        tree = get_error_dt(model_handler)
         TREE.append(tree)
-        return jsonify(nodes=tree.jsonify_nodes(), target_values=tree.target_values, features=tree.features, rankedFeatures=tree.ranked_features)
+        return jsonify(nodes=tree.jsonify_nodes(), target_values=tree.target_values, features=tree.features, rankedFeatures=tree.ranked_features[:ErrorAnalyzerConstants.TOP_K_FEATURES])
     except:
         LOGGER.error(traceback.format_exc())
         return traceback.format_exc(), 500
@@ -56,7 +56,7 @@ def get_stats_node(node_id):
     try:
         tree = TREE[0]
         result = {}
-        for feat in tree.ranked_features:
+        for feat in tree.ranked_features[:ErrorAnalyzerConstants.TOP_K_FEATURES]:
             result[feat] = tree.get_stats(node_id, feat)
         return jsonify(result)
     except:

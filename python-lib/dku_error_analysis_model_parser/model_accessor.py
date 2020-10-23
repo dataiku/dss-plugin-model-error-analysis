@@ -4,7 +4,8 @@
 import logging
 logger = logging.getLogger(__name__)
 
-class ModelAccessor:
+
+class ModelAccessor(object):
 
     def __init__(self, model_handler):
         self.model_handler = model_handler
@@ -47,5 +48,11 @@ class ModelAccessor:
                 selected_features.append(feat)
         return selected_features
 
+    def get_target_map(self):
+        return self.model_handler.get_target_map()
+
     def predict(self, df):
         return self.get_predictor().predict(df, with_probas=False)
+
+    def get_clf(self):
+        return self.model_handler.get_clf()

@@ -1,10 +1,8 @@
 from dku_error_analysis_decision_tree.node import Node, NumericalNode, CategoricalNode
-from dku_error_analysis_utils import safe_str
+from dku_error_analysis_utils import safe_str, ErrorAnalyzerConstants
 import pandas as pd
 from collections import deque
 from dku_error_analysis_tree_parsing.depreprocessor import descale_numerical_thresholds
-
-from dku_error_analysis_mpp.error_analyzer import WRONG_PREDICTION
 
 class InteractiveTree(object):
     """
@@ -41,6 +39,23 @@ class InteractiveTree(object):
         self.ranked_features = ranked_features
         self.df = df
         self.bins = {}
+        self.leaves = set()
+
+    def to_dot_string(self):
+        dot_str = 'digraph Tree {\nnode [shape=box, style="filled, rounded", color="black", fontname=helvetica] ;\n'
+        dot_str += 'edge [fontname=helvetica] ;\ngraph [ranksep=equally, splines=polyline] ;\n'
+        ids = deque()
+        ids.append(0)
+
+        while ids:
+            node = self.get_node(ids.popleft())
+            dot_str += node.to_dot_string() + "\n"
+            if node.parent_id >= 0:
+                dot_str += '{} -> {} ;\n'.format(node.parent_id, node.id)
+            ids += node.children_ids
+        dot_str += '{rank=same ; '+ '; '.join(map(safe_str, self.leaves)) + '} ;\n'
+        dot_str += "}"
+        return dot_str
 
     def parse_nodes(self, tree_parser, feature_list, preprocessed_x):
         error_model_tree = tree_parser.error_model.tree_
@@ -70,15 +85,19 @@ class InteractiveTree(object):
 
             if children_left[left_child_id] > 0:
                 ids.append(left_child_id)
+            else:
+                self.leaves.add(left_child_id)
             if children_left[right_child_id] > 0:
                 ids.append(right_child_id)
+            else:
+                self.leaves.add(right_child_id)
 
     def set_node_info(self, node):
-        nr_errors = self.df[self.df[self.target] == WRONG_PREDICTION].shape[0]
+        nr_errors = self.df[self.df[self.target] == ErrorAnalyzerConstants.WRONG_PREDICTION].shape[0]
         filtered_df = self.get_filtered_df(node, self.df)
         probabilities = filtered_df[self.target].value_counts()
-        if WRONG_PREDICTION in probabilities:
-            error = probabilities[WRONG_PREDICTION] / float(nr_errors)
+        if ErrorAnalyzerConstants.WRONG_PREDICTION in probabilities:
+            error = probabilities[ErrorAnalyzerConstants.WRONG_PREDICTION] / float(nr_errors)
         else:
             error = 0
         samples = filtered_df.shape[0]
@@ -138,46 +157,58 @@ class InteractiveTree(object):
         while node_id > 0:
             node = self.get_node(node_id)
             if node.get_type() == Node.TYPES.NUM:
-                #TODO: change with ch49216
+                # TODO: change with ch49216
                 df = node.apply_filter(df, self.features.get(node.feature, {"mean": None})["mean"])
             else:
                 df = node.apply_filter(df)
             node_id = node.parent_id
         return df
 
-    def get_stats(self, i, col):
+    def get_stats(self, i, col, nr_bins=10):
         node = self.get_node(i)
         filtered_df = self.get_filtered_df(node, self.df)
         column = filtered_df[col]
         target_column = filtered_df[self.target]
         if col in self.features:
-            mean = self.features[col]["mean"]
-            bin_labels = self.bins.get(col)
-            if bin_labels is None:
-                bins, bin_labels = pd.cut(column.fillna(mean), bins=min(10, column.nunique()), include_lowest=True, right=False, retbins=True)
-                self.bins[col] = bin_labels
-            else:
-                bins = pd.cut(column.fillna(mean), bin_labels, right=False)
-            return self.get_stats_numerical_node(column, target_column, mean, bins)
-        return self.get_stats_categorical_node(column, target_column)
+            bins = self.bins.get(col)
+            if bins is None:
+                mean = self.features[col]["mean"]
+                bins, bin_edges = pd.cut(self.df[col].fillna(mean), bins=min(nr_bins, self.df[col].nunique()), retbins=True, include_lowest=True, right=False)
+                if i > 0:
+                    bins = pd.cut(column.fillna(mean), bins=bin_edges, right=False)
+            return self.get_stats_numerical_node(column, target_column, bins)
+        return self.get_stats_categorical_node(column, target_column, nr_bins)
 
-    def get_stats_numerical_node(self, column, target_column, mean, bins):
-        stats = []
+    def get_stats_numerical_node(self, column, target_column, bins):
+        stats = {
+            "bin_edge": [],
+            "target_distrib": {ErrorAnalyzerConstants.WRONG_PREDICTION: [], ErrorAnalyzerConstants.CORRECT_PREDICTION: []},
+            "mid": [],
+            "count": []
+        }
         if not column.empty:
-            full_count = column.shape[0]
-            target_grouped = target_column.groupby(bins) #could be simplified but well no time :)
+            target_grouped = target_column.groupby(bins)
             target_distrib = target_grouped.apply(lambda x: x.value_counts())
+            full_count = column.shape[0]
             target_distrib = target_distrib / full_count
             col_distrib = target_grouped.count()
             for interval, count in col_distrib.items():
-                stats.append({"value": safe_str(interval),
-                                "target_distrib": target_distrib[interval].to_dict() if count > 0 else {},
-                                "mid": interval.mid,
-                                "count": count/float(full_count)})
+                target_distrib_dict = target_distrib[interval].to_dict() if count > 0 else {}
+                stats["target_distrib"][ErrorAnalyzerConstants.WRONG_PREDICTION].append(target_distrib_dict.get(ErrorAnalyzerConstants.WRONG_PREDICTION, 0))
+                stats["target_distrib"][ErrorAnalyzerConstants.CORRECT_PREDICTION].append(target_distrib_dict.get(ErrorAnalyzerConstants.CORRECT_PREDICTION, 0))
+                stats["count"].append(count/float(full_count))
+                stats["mid"].append(interval.mid)
+                if len(stats["bin_edge"]) == 0:
+                    stats["bin_edge"].append(interval.left)
+                stats["bin_edge"].append(interval.right)
         return stats
 
-    def get_stats_categorical_node(self, column, target_column):
-        stats = []
+    def get_stats_categorical_node(self, column, target_column, nr_bins):
+        stats = {
+            "bin_value": [],
+            "target_distrib": {ErrorAnalyzerConstants.WRONG_PREDICTION: [], ErrorAnalyzerConstants.CORRECT_PREDICTION: []},
+            "count": []
+        }
         if not column.empty:
             full_count = column.shape[0]
             target_grouped = target_column.groupby(column.fillna("No values").apply(safe_str))
@@ -185,9 +216,11 @@ class InteractiveTree(object):
             target_distrib = target_distrib / full_count
             col_distrib = target_grouped.count().sort_values(ascending=False)
             for value in col_distrib.index:
-                stats.append({"value": value,
-                                "target_distrib": target_distrib[value].to_dict(),
-                                "count": col_distrib[value]/float(full_count)})
-                if len(stats) == 10:
+                target_distrib_dict = target_distrib[value].to_dict()
+                stats["target_distrib"][ErrorAnalyzerConstants.WRONG_PREDICTION].append(target_distrib_dict.get(ErrorAnalyzerConstants.WRONG_PREDICTION, 0))
+                stats["target_distrib"][ErrorAnalyzerConstants.CORRECT_PREDICTION].append(target_distrib_dict.get(ErrorAnalyzerConstants.CORRECT_PREDICTION, 0))
+                stats["count"].append(col_distrib[value]/float(full_count))
+                stats["bin_value"].append(value)
+                if len(stats["bin_value"]) == nr_bins:
                     return stats
         return stats

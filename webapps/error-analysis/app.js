@@ -21,12 +21,12 @@
         $scope.loadingHistogram = true;
         $scope.scales = {
             "Default": d3.scale.category20().range().concat(d3.scale.category20b().range()),
-            "DSS Next": ["#00AEDB", "#8CC63F", "#FFC425", "#F37735", "#D11141", "#91268F", "#194BA3", "#00B159"],
-            "Pastel": ["#EC6547", "#FDC665", "#95C37B", "#75C2CC", "#694A82", "#538BC8", "#65B890", "#A874A0"],
-            "Corporate": ["#0075B2", "#818991", "#EA9423", "#A4C2DB", "#EF3C39", "#009D4B", "#CFD6D3", "#231F20"],
-            "Deuteranopia": ["#193C81", "#7EA0F9", "#211924", "#757A8D", "#D6C222", "#776A37", "#AE963A", "#655E5D"],
+            "DSS Next": ["#D11141", "#FFC425", "#00AEDB", "#8CC63F", "#F37735", "#91268F", "#194BA3", "#00B159"],
+            "Pastel": ["#EC6547", "#538BC8", "#FDC665", "#95C37B", "#75C2CC", "#694A82", "#65B890", "#A874A0"],
+            "Corporate": ["#EF3C39", "#0075B2", "#818991", "#EA9423", "#A4C2DB", "#009D4B", "#CFD6D3", "#231F20"],
+            "Deuteranopia": ["#D6C222",  "#193C81",  "#211924", "#757A8D", "#776A37", "#AE963A", "#655E5D"],
             "Tritanopia": ["#CA0849", "#0B4D61", "#E4B2BF", "#3F6279", "#F24576", "#7D8E98", "#9C4259", "#2B2A2E"],
-            "Pastel 2": ["#f06548", "#fdc766", "#7bc9a6", "#4ec5da", "#548ecb", "#97668f", "#5e2974"]
+            "Pastel 2": ["#f06548", "#7bc9a6", "#fdc766",  "#4ec5da", "#548ecb", "#97668f", "#5e2974"]
         };
         let targetValues;
 
@@ -51,9 +51,8 @@
         const setScale = function(scaleName) {
             $scope.selectedScale = $scope.scales[scaleName];
             $scope.colors = {};
-            angular.forEach(targetValues, function(value, key) {
-                $scope.colors[value] = $scope.selectedScale[key%$scope.selectedScale.length];
-            });
+            $scope.colors["Wrong prediction"] = $scope.selectedScale[0];
+            $scope.colors["Correct prediction"] = $scope.selectedScale[1];
         }
 
         $scope.closeColorPicker = function(event) {

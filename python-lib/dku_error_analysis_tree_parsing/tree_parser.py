@@ -4,9 +4,8 @@ from dku_error_analysis_decision_tree.tree import InteractiveTree
 from dataiku.doctor.preprocessing.dataframe_preprocessing import RescalingProcessor2, QuantileBinSeries, UnfoldVectorProcessor, BinarizeSeries, \
     FastSparseDummifyProcessor, ImpactCodingStep, FlagMissingValue2, TextCountVectorizerProcessor, TextHashingVectorizerWithSVDProcessor, \
     TextHashingVectorizerProcessor, TextTFIDFVectorizerProcessor
-from dku_error_analysis_mpp.error_analyzer import ERROR_COLUMN
+from dku_error_analysis_utils import ErrorAnalyzerConstants, rank_features_by_error_correlation
 
-MAX_MOST_IMPORTANT_FEATURES = 3
 
 class TreeParser(object):
     class SplitParameters(object):
@@ -97,29 +96,23 @@ class TreeParser(object):
     def get_split_parameters(self, preprocessed_name, threshold=None):
         return self.preprocessed_feature_mapping.get(preprocessed_name, self.SplitParameters(Node.TYPES.NUM, preprocessed_name, threshold))
 
-    def build_tree(self, df, feature_list, target=ERROR_COLUMN):
+    def build_tree(self, df, feature_list, target=ErrorAnalyzerConstants.ERROR_COLUMN):
         features = {}
-        for name, settings in self.model_handler.get_preproc_handler().collector_data.get('per_feature').iteritems():
+        for name, settings in self.model_handler.get_preproc_handler().collector_data.get('per_feature').items():
             avg = settings.get('stats').get('average')
-            if avg is not None: #TODO AGU: add cases where missing is not replaced by mean
+            if avg is not None: # TODO AGU: add cases where missing is not replaced by mean (ch49216)
                 features[name] = {
                     'mean':  avg
                 }
-        ranked_features = self._rank_features_by_error_correlation(feature_list)
+
+        ranked_feature_ids = rank_features_by_error_correlation(self.error_model.feature_importances_)
+        def get_unique_ranked_features(accumulated_list, current_value, seen_values=set()):
+            unprocessed_name = self.get_split_parameters(feature_list[current_value]).feature
+            if unprocessed_name not in seen_values:
+                accumulated_list.append(unprocessed_name)
+                seen_values.add(unprocessed_name)
+            return accumulated_list
+
+        ranked_features = list(reduce(get_unique_ranked_features, ranked_feature_ids, []))
         tree = InteractiveTree(df, target, ranked_features, features)
         return tree
-
-    # Rank features according to their correlation with the model performance
-    def _rank_features_by_error_correlation(self, feature_list, max_number_features=MAX_MOST_IMPORTANT_FEATURES):
-        sorted_feature_indices = np.argsort(- self.error_model.feature_importances_)
-        ranked_features = []
-        for feature_idx in sorted_feature_indices:
-            feature_importance = - self.error_model.feature_importances_[feature_idx]
-            if feature_importance != 0:
-                preprocessed_name = feature_list[feature_idx]
-                feature = self.get_split_parameters(preprocessed_name).feature
-                if feature not in ranked_features:
-                    ranked_features.append(feature)
-                    if len(ranked_features) == max_number_features:
-                        return ranked_features
-        return ranked_features

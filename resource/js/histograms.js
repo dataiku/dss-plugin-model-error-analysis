@@ -8,11 +8,35 @@ app.directive("histogram", function (Format, $compile) {
                 width = 415 - margin.left - margin.right,
                 height = 195 - margin.top - margin.bottom;
 
-                let histSvg = d3.select(elem[0].children[0]).append("svg")
-                    .attr("width", "100%")
-                    .attr("height", "100%")
-                    .append("g")
-                    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+            let histSvg = d3.select(elem[0].children[0]).append("svg")
+                .attr("width", "100%")
+                .attr("height", "100%");
+  
+            //Create hatched pattern
+            const hatchSize = 5;
+            const defs = histSvg.append("defs");
+            defs.append("pattern")
+                .attr("id", "hatch-pattern")
+                .attr("width", hatchSize)
+                .attr("height", hatchSize)
+                .attr("patternTransform", "rotate(45)")
+                .attr("patternUnits","userSpaceOnUse")
+                .append("rect")
+                .attr("width", hatchSize/2)
+                .attr("height", hatchSize)
+                .attr("fill", "white");
+
+            defs.append("mask")
+                .attr("id", "hatch-mask")
+                .append("rect")
+                .attr("width", "100%")
+                .attr("height", "100%")
+                .attr("x", 0)
+                .attr("y", 0)
+                .attr("fill", "url(#hatch-pattern");
+
+            
+            histSvg = histSvg.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
             const x = d3.scale.ordinal().rangeRoundBands([0, width], .2);
             const y = d3.scale.linear().range([height, 0]);
@@ -29,10 +53,8 @@ app.directive("histogram", function (Format, $compile) {
                     .call(function() {
                         $compile(this[0])($scope);
                     });
-
-                    d3.select(this).style("opacity", .7);
                 })
-                .on("mousemove", function(d, i){
+                .on("mousemove", function(){
                     let xPosition = d3.mouse(this)[0] + 20;
                     let yPosition = d3.mouse(this)[1];
                     const histogramDim = d3.select(".histogram-svg").node().getBoundingClientRect();
@@ -46,27 +68,23 @@ app.directive("histogram", function (Format, $compile) {
                     d3.select("[tooltip='histogram']").attr("transform", "translate(" + xPosition + "," + yPosition + ")");
                 })
                 .on("mouseleave", function() {
-                    d3.select(this).style("opacity", null);
                     d3.select("[tooltip='histogram']").remove();
                 });
             }
 
-            const addGroupProperties = function(groups, darkerShade) {
+            const addGroupProperties = function(groups, wholeData) {
                 groups.selectAll("rect")
                 .data(d => d)
                 .enter()
                 .append("rect")
-                .style("fill", function(d) {
-                    return darkerShade ? d3.rgb(d.color).darker(1) : d.color;
-                })
+                .attr("fill", d => d.color)
+                .attr("x", d => x(d.x) + (wholeData? x.rangeBand()/2 : 0))
                 .attr("y", d => y(d.y0 + d.y))
                 .attr("height", d => y(d.y0) - y(d.y0 + d.y))
                 .attr("width", x.rangeBand()/2);
             }
 
             function update() {
-                let data;
-                let dataWhole;
                 let predArray;
                 if ($scope.selectedNode.probabilities[0][0] == "Wrong prediction") {
                     predArray = ["Wrong prediction", "Correct prediction"]
@@ -74,93 +92,87 @@ app.directive("histogram", function (Format, $compile) {
                     predArray = ["Correct prediction", "Wrong prediction"]
                 }
 
+                const values = $scope.histData[feature];
+                const valuesWhole = $scope.histDataWholeSet[feature];
+                const data = [];
+                const dataWhole = [];
                 if (feature in $scope.features) {
-                    const values = $scope.histData[feature];
-                    data = values.map(function(d) {
+                    values.mid.forEach(function(mid, idx) {
                         const bar = [];
                         let y0 = 0;
-                        $scope.selectedNode.probabilities.forEach(function(proba, i) {
-                            if (d.target_distrib[proba[0]]) {
-                                bar.push({x: d.mid,
-                                    y: d.target_distrib[proba[0]],
+                        predArray.forEach(function(prediction) {
+                            if (values.target_distrib[prediction][idx]) {
+                                bar.push({x: mid,
+                                    y: values.target_distrib[prediction][idx],
                                     y0: y0,
-                                    color: $scope.colors[proba[0]],
-                                    interval: d.value
+                                    color: $scope.colors[prediction],
+                                    interval: `[${values.bin_edge[idx]}, ${values.bin_edge[idx+1]})`
                                 });
-                                y0 += d.target_distrib[proba[0]];
+                                y0 += values.target_distrib[prediction][idx];
                             }
                         });
-                        return bar;
+                        data.push(bar);
                     });
-                    const valuesWhole = $scope.histDataWholeSet[feature];
-                    dataWhole = valuesWhole.map(function(d) {
+                    valuesWhole.mid.forEach(function(mid, idx) {
                         const bar = [];
                         let y0 = 0;
-                        predArray.forEach(function(proba, i) {
-                            if (d.target_distrib[proba]) {
-                                bar.push({x: d.mid,
-                                    y: d.target_distrib[proba],
+                        predArray.forEach(function(prediction) {
+                            if (valuesWhole.target_distrib[prediction][idx]) {
+                                bar.push({x: mid,
+                                    y: valuesWhole.target_distrib[prediction][idx],
                                     y0: y0,
-                                    color: $scope.colors[proba],
-                                    interval: d.value
+                                    color: $scope.colors[prediction],
+                                    interval: `[${valuesWhole.bin_edge[idx]}, ${valuesWhole.bin_edge[idx+1]})`
                                 });
-                                y0 += d.target_distrib[proba];
+                                y0 += valuesWhole.target_distrib[prediction][idx];
                             }
                         });
-                        return bar;
+                        dataWhole.push(bar);
                     });
                     yAxis.ticks(5)
                     y.domain([0, 1]);
-                    x.domain(values.map(_ => _.mid));
+                    x.domain(values.mid);
                 } else {
-                    const values = $scope.histData[feature];
-                    data = values.filter(_ => _.target_distrib).map(function(d) {
+                    values.bin_value.forEach(function(bin_value, idx) {
                         const bar = [];
                         let y0 = 0;
-                        $scope.selectedNode.probabilities.forEach(function(proba, i) {
-                            if (d.target_distrib[proba[0]]) {
-                                bar.push({x: d.value,
-                                    y: d.target_distrib[proba[0]],
+                        predArray.forEach(function(prediction) {
+                            if (values.target_distrib[prediction][idx]) {
+                                bar.push({x: bin_value,
+                                    y: values.target_distrib[prediction][idx],
                                     y0: y0,
-                                    color: $scope.colors[proba[0]]
+                                    color: $scope.colors[prediction]
                                 });
-                                y0 += d.target_distrib[proba[0]];
+                                y0 += values.target_distrib[prediction][idx];
                             }
                         });
-                        return bar;
+                        data.push(bar);
                     });
-                    let predArray;
-                    if ($scope.selectedNode.probabilities[0][0] == "Wrong prediction") {
-                        predArray = ["Wrong prediction", "Correct prediction"];
-                    } else {
-                        predArray = ["Correct prediction", "Wrong prediction"];
-                    }
-                    dataWhole = $scope.histDataWholeSet[feature].filter(_ => _.target_distrib).map(function(d) {
+                    values.bin_value.forEach(function(bin_value, idx) { // TODO
                         const bar = [];
                         let y0 = 0;
-                        predArray.forEach(function(proba, i) {
-                            if (d.target_distrib[proba]) {
-                                bar.push({x: d.value,
-                                    y: d.target_distrib[proba],
+                        predArray.forEach(function(prediction) {
+                            if (valuesWhole.target_distrib[prediction][idx]) {
+                                bar.push({x: bin_value,
+                                    y: valuesWhole.target_distrib[prediction][idx],
                                     y0: y0,
-                                    color: $scope.colors[proba]
+                                    color: $scope.colors[prediction]
                                 });
-                                y0 += d.target_distrib[proba];
+                                y0 += valuesWhole.target_distrib[prediction][idx];
                             }
                         });
-                        return bar;
+                        dataWhole.push(bar);
                     });
                     yAxis.ticks(5)
                     y.domain([0, 1]);
-                    x.domain(values.map(_ => _.value));
+                    x.domain(values.bin_value);
                 }
-
                 histSvg.append("g")
                     .attr("class", "x axis")
                     .attr("transform", "translate(0," + height + ")")
                     .call(xAxis)
                     .selectAll("text")
-                    .style("text-anchor", "middle")
+                    .classed("x-axis__text", true)
                     .attr("transform", "translate(-15,10) rotate(-45)")
                     .attr("dy", "1em");
 
@@ -172,27 +184,26 @@ app.directive("histogram", function (Format, $compile) {
                     .attr("class", "y axis")
                     .call(yAxis)
                     .append("text")
+                    .classed("y-axis__text", true)
                     .attr("transform", "rotate(-90)")
                     .attr("y", 6)
-                    .attr("dy", ".71em")
-                    .style("text-anchor", "end")
+                    .attr("dy", ".71em");
 
                 // Create groups for each series, rects for each segment
-                let groups = histSvg.selectAll("g.bar")
+                const groups = histSvg.selectAll("g.bar")
                 .data(data)
                 .enter()
-                .append("g");
+                .append("g")
+                .classed("histogram__bar", true);
 
-                let groupsWhole = histSvg.selectAll("g.bar")
+                const groupsWhole = histSvg.selectAll("g.bar")
                 .data(dataWhole)
                 .enter()
-                .append("g");
+                .append("g")
+                .classed("histogram__bar histogram__bar_global", true);
 
                 addGroupProperties(groups);
                 addGroupProperties(groupsWhole, true);
-
-                groups.selectAll("rect").attr("x", d => x(d.x));
-                groupsWhole.selectAll("rect").attr("x", d => x(d.x) + x.rangeBand()/2);
 
                 addInteractions(groups);
                 addInteractions(groupsWhole, true);
