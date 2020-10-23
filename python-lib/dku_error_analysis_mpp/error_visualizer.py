@@ -194,7 +194,7 @@ class DkuErrorVisualizer(_BaseErrorVisualizer):
 
                 if show_global:
                     if feature_name not in root_hist_data_all_features:
-                        root_hist_data_all_features[feature_name] = self._tree.get_stats(0, feature_name, nr_bins)
+                        root_hist_data_all_features[feature_name] = self._tree.get_stats(0, feature_name, min(len(bins), nr_bins))
                     if show_class:
                         root_hist_data = root_hist_data_all_features[feature_name]["target_distrib"]
                     else:
