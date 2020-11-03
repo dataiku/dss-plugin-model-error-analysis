@@ -98,14 +98,6 @@ select {
     height: 5%;
 }
 
-.button-div {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    min-width: 100px;
-    background-color: var(--white);
-}
-
 .button {
     text-transform: uppercase;
     padding : 5px 20px;
@@ -236,6 +228,13 @@ select {
 .icon.sunburst {
     border-right: 1px solid #ccc;
     padding: 5px 9px;
+}
+
+.empty-panel {
+    margin: auto;
+    color: #666;
+    text-align: center;
+    font-size: 32px;
 }
 
 .edit-panel {

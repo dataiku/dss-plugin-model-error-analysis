@@ -95,15 +95,15 @@ app.service("TreeInteractions", function($timeout, $http, $compile, Format) {
         scope.decisionRule = [];
         while (node_id > -1) {
             let node = d3.select("#node-" + node_id);
-            node.selectAll(".decision-rule,.feature-children,[tooltip='tree']").classed("selected", true).classed("hovered", false);
+            node.selectAll(".decision-rule,.feature-children").classed("selected", true).classed("hovered", false);
             d3.select("#link-" + node_id).classed("selected", true).classed("hovered", false);
 
             if (node_id == id) {
                 node.select("rect").style("stroke", "#007eff")
                     .style("stroke-width", "1px");
+            } else {
+                node.select("#tooltip-"+node_id).classed("selected", true);
             }
-
-            node.select("#tooltip-"+node_id).classed("selected", true);
 
             if (node_id > 0) {
                 scope.decisionRule.unshift({"full": decisionRule(node.node().__data__), "ellipsed": decisionRule(node.node().__data__, true)});
@@ -119,7 +119,9 @@ app.service("TreeInteractions", function($timeout, $http, $compile, Format) {
             let node = d3.select("#node-" + node_id);
             node.selectAll(".decision-rule,.feature-children").classed("hovered", true);
             d3.select("#link-" + node_id).classed("hovered", true);
-            node.select("#tooltip-"+node_id).classed("hovered", true);
+            if (node_id != id) {
+                node.select("#tooltip-"+node_id).classed("hovered", true);
+            }
             node_id = scope.treeData[node_id].parent_id;
         }
     }
@@ -184,9 +186,8 @@ app.service("TreeInteractions", function($timeout, $http, $compile, Format) {
                 scope.histData = response.data;
                 if (id == 0) {
                     scope.histDataWholeSet = response.data;
-                } else {
-                    scope.loadingHistogram = false;
                 }
+                scope.loadingHistogram = false;
             }, function(e) {
                 scope.loadingHistogram = false;
                 scope.createModal.error(e.data);

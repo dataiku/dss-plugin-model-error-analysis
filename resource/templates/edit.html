@@ -60,5 +60,10 @@
             <spinner ng-if="loadingTree"></spinner>
         </div>
     </div>
-    <div class="histogram-panel" ng-include="'/plugins/model-error-analysis/resource/templates/histograms.html'" ng-if="!loadingHistogram && template === 'viz'"></div>
+    <div class="histogram-panel" ng-include="'/plugins/model-error-analysis/resource/templates/histograms.html'" ng-if="selectedNode.id && !loadingHistogram && template === 'viz'"></div>
+    <div class="empty-panel" ng-if="selectedNode && !selectedNode.id && template === 'viz'">
+        <div>
+            Select a node
+        </div>
+    </div>
 </div>
