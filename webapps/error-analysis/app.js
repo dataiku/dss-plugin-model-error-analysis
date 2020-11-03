@@ -1,7 +1,7 @@
 (function() {
     'use strict';
 
-    app.controller("IdtbController", function($scope, ModalService) {
+    app.controller("MeaController", function($scope, ModalService) {
         $scope.template = "viz";
         $scope.setTemplate = function(newTemplate) {
             $scope.template = newTemplate;
