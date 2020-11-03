@@ -478,10 +478,11 @@ div[histogram] {
     height: calc(100% - 40px);
 }
 
-.proba-square {
+.proba-bullet {
     width: 10px;
     height: 10px;
     margin-right: 5px;
+    border-radius: 5px;
     display: flex;
     align-self: center;
 }
@@ -490,6 +491,7 @@ div[histogram] {
     display: flex;
     align-content: center;
     margin-bottom: 5px;
+    justify-content: space-between;
 }
 
 .samples {
@@ -549,7 +551,6 @@ div[histogram] {
 }
 
 .section-title {
-    text-transform: uppercase;
     font-weight: lighter;
     height:16px;
 }
@@ -662,6 +663,10 @@ div[histogram] {
 .ellipsed-text {
     overflow: hidden;
     text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.no-wrap-text {
     white-space: nowrap;
 }
 
@@ -784,23 +789,23 @@ path.selected, path.hovered {
 
 /*TOOLTIPS*/
 
-.tooltip-info-tree .section {
+.tooltip-container-tree .section {
     max-height: 50px;
     width: 65%;
     position: absolute;
     left: 50px;
 }
 
-.tooltip-info-tree .section-inline {
+.tooltip-container-tree .section-inline {
     top: 55px;
 }
 
-.tooltip-info-tree {
+.tooltip-container-tree {
     box-shadow: 2px 5px 4px var(--grey-lighten-6);
     position: absolute;
 }
 
-.tooltip-info-tree .info-section {
+.tooltip-container-tree .info-section {
     max-height: 36px;
 }
 
@@ -809,13 +814,25 @@ path.selected, path.hovered {
     width: 100%;
 }
 
-.tooltip-info {
+.tooltip-container {
+    display: flex;
+    height: 70%;
     width: 90%;
-    height: 80%;
-    padding: 2px;
+    padding: 10px 10px;
     border: 1px solid var(--grey-lighten-6);
-    font-size: 10px;
     background: var(--white);
+}
+
+.camembert-container {
+    height: auto;
+    width: 30%;
+}
+
+.tooltip-main {
+    width: 70%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-evenly;
 }
 
 [tooltip='tree'] {

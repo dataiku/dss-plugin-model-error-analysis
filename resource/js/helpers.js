@@ -130,9 +130,9 @@ app.directive('tooltip', function() {
                 .attr("x", -30)
                 .attr("y", -25)
                 .attr("height", 120)
-                .attr("width", 240)
-                .select(".tooltip-info")
-                .classed("tooltip-info-tree", true);
+                .attr("width", 260)
+                .select(".tooltip-container")
+                .classed("tooltip-container-tree", true);
 
                 // Compute the position of each group on the pie
                 var pie = d3.layout.pie()
@@ -142,7 +142,7 @@ app.directive('tooltip', function() {
                 // Build the pie chart
                 d3.select("#tooltip-" + node.id)
                 .append("g")
-                .attr("transform", "translate(5, 10)")
+                .attr("transform", "translate(10, 25)")
                 .selectAll('.camembert')
                 .data(proba)
                 .enter()
