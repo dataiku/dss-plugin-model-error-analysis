@@ -121,6 +121,7 @@ app.directive('tooltip', function() {
         templateUrl: "/plugins/model-error-analysis/resource/templates/tooltip.html",
         link: function($scope, element, attr) {
             if(attr.tooltip == "tree") {
+                $scope.treeTooltip = true;
                 const node = $scope.treeData[attr.node];
                 $scope.probabilities = node.probabilities;
                 $scope.samples = node.samples;
@@ -171,7 +172,8 @@ app.directive('tooltip', function() {
                     return b[1] - a[1];
                 });
                 $scope.probabilities = $scope.probabilities.slice(0, 5).map(_ => [_[0], _[1] / histData.count[binIndex]]);
-                $scope.samples = [$scope.toFixedIfNeeded(histData.count[binIndex], 2, true)];
+                $scope.samples = [histData.count[binIndex],
+                                histData.count[binIndex]/$scope.selectedNode.samples[0]];
                 if (histData.bin_value) {
                     $scope.binName = histData.bin_value[binIndex];
                 } else {

@@ -1,7 +1,6 @@
 <foreignObject>
     <div class="tooltip-container">
-        <div class="camembert-container">
-        </div>
+        <div class="camembert-container" ng-if="treeTooltip"></div>
         <div class="tooltip-main">
             <div>
                 <div class="section-title tooltip-title ellipsed-text" ng-if="dataOrigin">{{dataOrigin}}</div>
@@ -24,7 +23,7 @@
             <div class="section-inline global-error" style="top: 75px;" ng-if="globalError !== undefined">
                 <div class="section-title">Global error</div>
                 <div class="info global-error">
-                    <span class="small-text">&nbsp;{{toFixedIfNeeded(globalError*100, 2, true)}}%</span>
+                    <span class="small-text">&nbsp;{{toFixedIfNeeded(globalError, 3, true)}}</span>
                 </div>
             </div>
         </div>
