@@ -4,16 +4,20 @@
             Decision rule
         </div>
         <div class="legend-container">
-            <div class="legend">
-                <div class="color-bar" ng-style="{'background': selectedScale[0]}"></div>
-                <div class="color-bar" ng-style="{'background': selectedScale[1]}"></div>
-                <div class="legend-label">Local</div>
-            </div>
-            <div class="legend">
-                <div class="color-bar color-bar__global-legend" ng-style="{'background': selectedScale[0]}"></div>
-                <div class="color-bar color-bar__global-legend" ng-style="{'background': selectedScale[1]}"> </div>
-                <div class="legend-label">Global</div>
-            </div>
+            <svg height="20px" width="50%">
+                <g>
+                    <rect height="20" width="8" fill="{{selectedScale[0]}}"></rect>
+                    <rect height="20" width="8" x="8" fill="{{selectedScale[1]}}"> </rect>
+                    <text x="36" y="14">Local</text>
+                </g>
+            </svg>
+            <svg height="20px" width="50%">
+                <g>
+                    <rect class="color-bar__global-legend" height="20" width="8" fill="{{selectedScale[0]}}"></rect>
+                    <rect class="color-bar__global-legend" height="20" width="8" x="8" fill="{{selectedScale[1]}}"> </rect>
+                    <text x="36" y="14">Global</text>
+                </g>
+            </svg>
         </div>
     </div>
     <div class="info-section">

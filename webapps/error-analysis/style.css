@@ -370,15 +370,6 @@ input[name=split-input] {
     width: 50%;
 }
 
-.legend {
-    display: flex;
-    width: 50%;
-}
-
-.legend-label {
-    margin: auto;
-}
-
 .legend-container {
     display:flex;
     width: 40%;
