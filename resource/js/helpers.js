@@ -171,7 +171,7 @@ app.directive('tooltip', function() {
                 $scope.probabilities.sort(function(a, b) {
                     return b[1] - a[1];
                 });
-                $scope.probabilities = $scope.probabilities.slice(0, 5).map(_ => [_[0], _[1] / histData.count[binIndex]]);
+                $scope.probabilities = $scope.probabilities.slice(0, 5).map(_ => [_[0], _[1]]);
                 $scope.samples = [histData.count[binIndex],
                                 histData.count[binIndex]/$scope.selectedNode.samples[0]];
                 if (histData.bin_value) {
