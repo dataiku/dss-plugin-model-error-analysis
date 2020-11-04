@@ -1,7 +1,19 @@
 <div class="section" style="padding-top: 10px" ng-if="selectedNode.id">
-    <div class="header header-border-light">
-        <div class="header-feature-desc header-div">
+    <div class="header">
+        <div class="header-decision-rule header-div">
             Decision rule
+        </div>
+        <div class="legend-container">
+            <div class="legend">
+                <div class="color-bar" ng-style="{'background': selectedScale[0]}"></div>
+                <div class="color-bar" ng-style="{'background': selectedScale[1]}"></div>
+                <div class="legend-label">Local</div>
+            </div>
+            <div class="legend">
+                <div class="color-bar color-bar__global-legend" ng-style="{'background': selectedScale[0]}"></div>
+                <div class="color-bar color-bar__global-legend" ng-style="{'background': selectedScale[1]}"> </div>
+                <div class="legend-label">Global</div>
+            </div>
         </div>
     </div>
     <div class="info-section">
@@ -11,7 +23,7 @@
 
 <div class="histograms">
     <div ng-repeat="feature in rankedFeatures">
-        <div class="header header-split-edit header-border-light">
+        <div class="header header-split-edit">
             <div class="header-feature-desc  header-div header-div--uppercase">
                 <i class="icon-font" ng-show="!features.hasOwnProperty(feature)"></i>
                 <div class="numerical" ng-show="features.hasOwnProperty(feature)">#</div>
