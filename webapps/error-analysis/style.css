@@ -131,10 +131,17 @@ select {
 }
 
 .tree-visualization {
-    width: calc(100% - 400px);
     height: 100%;
     position: relative;
     border-right: 1px solid var(--grey-lighten-5);
+}
+
+.tree-visualization--tree {
+    width: calc(100% - 400px);
+}
+
+.tree-visualization--sun {
+    width: 100%;
 }
 
 .toolbar-header {
@@ -354,10 +361,13 @@ input[name=split-input] {
 
 .header-div {
     font-size: 16px;
-    text-transform: uppercase;
     font-weight: bold;
     height: 20px;
     color: var(--grey-lighten-2);
+}
+
+.header-div--uppercase {
+    text-transform: uppercase;
 }
 
 .header-split-edit {
@@ -486,14 +496,15 @@ div[histogram] {
     display: flex;
     align-content: center;
     margin-bottom: 5px;
+}
+
+[tooltip] .info {
     justify-content: space-between;
 }
 
 .samples {
-    margin-left: 25px;
     width: 70%;
     text-align: right;
-    justify-content: flex-end;
 }
 
 .info.global-error {
@@ -506,10 +517,6 @@ div[histogram] {
 
 .info-section {
     overflow-y: auto;
-    margin-left: 5%;
-}
-
-.info-section-decision-rule {
     max-height: 60px;
     padding-top: 5px;
 }
@@ -517,11 +524,6 @@ div[histogram] {
 .histograms {
     height: calc(100% - 100px);
     overflow-y: auto;
-}
-
-.info-section-edit {
-    max-height: 84px;
-    width: 95%;
 }
 
 .icon-caret-down {
@@ -798,10 +800,6 @@ path.selected, path.hovered {
 .tooltip-container-tree {
     box-shadow: 2px 5px 4px var(--grey-lighten-6);
     position: absolute;
-}
-
-.tooltip-container-tree .info-section {
-    max-height: 36px;
 }
 
 .tooltip-title {

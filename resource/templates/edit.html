@@ -5,7 +5,7 @@
          ng-keyup="$event.keyCode == 27 && removeModal()"
          ng-click="removeModal($event)">
     </div>
-    <div class="tree-visualization" ng-class="{'full-screen': template === 'sun'}">
+    <div class="tree-visualization" ng-class="{'tree-visualization--sun': template === 'sun', 'tree-visualization--tree': template === 'viz'}">
         <div class="toolbar-header">
             <div class="icons-div" ng-class="{'icons-div-tree': template === 'viz', 'icons-div-sun': template === 'sun'}">
                 <i class="icon icon-tint icon-grey"

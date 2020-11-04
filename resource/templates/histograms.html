@@ -4,7 +4,7 @@
             Decision rule
         </div>
     </div>
-    <div class="info-section info-section-decision-rule">
+    <div class="info-section">
         <div class="info" ng-repeat="rule in decisionRule" title="{{rule.full}}"><span ng-if="decisionRule.length > 1 && $index">↳</span>&nbsp;{{rule.ellipsed}} </div>
     </div>
 </div>
@@ -12,7 +12,7 @@
 <div class="histograms">
     <div ng-repeat="feature in rankedFeatures">
         <div class="header header-split-edit header-border-light">
-            <div class="header-feature-desc header-div">
+            <div class="header-feature-desc  header-div header-div--uppercase">
                 <i class="icon-font" ng-show="!features.hasOwnProperty(feature)"></i>
                 <div class="numerical" ng-show="features.hasOwnProperty(feature)">#</div>
                 <div class="ellipsed-text" title="{{feature}}">&emsp;{{feature}}</div>
