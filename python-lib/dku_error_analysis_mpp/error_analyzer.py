@@ -4,11 +4,11 @@ import collections
 from sklearn import tree
 from sklearn.model_selection import GridSearchCV
 from sklearn.base import is_regressor
-from sklearn.utils.validation import check_is_fitted
+from sklearn.metrics import make_scorer
 from sklearn.exceptions import NotFittedError
 from dku_error_analysis_mpp.kneed import KneeLocator
 from dku_error_analysis_utils import check_enough_data, ErrorAnalyzerConstants
-from dku_error_analysis_mpp.metrics import mpp_report
+from dku_error_analysis_mpp.metrics import mpp_report, fidelity_balanced_accuracy_score
 
 import logging
 
@@ -112,13 +112,15 @@ class ErrorAnalyzer(object):
         # entropy/mutual information is used to split nodes in Microsoft Pandora system
         criterion = ErrorAnalyzerConstants.CRITERION
 
-        dt_clf = tree.DecisionTreeClassifier(criterion=criterion, min_samples_leaf=1, random_state=self._seed)
-        parameters = {'max_depth': ErrorAnalyzerConstants.MAX_DEPTH_GRID}
-        gs_clf = GridSearchCV(dt_clf, parameters, cv=5)
+        dt_clf = tree.DecisionTreeClassifier(criterion=criterion, random_state=self._seed)
+        gs_clf = GridSearchCV(dt_clf, param_grid=ErrorAnalyzerConstants.PARAMETERS_GRID,
+                              cv=5, scoring=make_scorer(fidelity_balanced_accuracy_score))
+
         gs_clf.fit(self._error_train_x, self._error_train_y)
         self._error_clf = gs_clf.best_estimator_
 
-        logger.info('Grid search selected max_depth = {}'.format(gs_clf.best_params_['max_depth']))
+        logger.info('Grid search selected parameters:')
+        logger.info(gs_clf.best_params_)
 
     def _compute_primary_model_error(self, x, y, max_nr_rows):
         """
