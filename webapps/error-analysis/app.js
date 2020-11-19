@@ -2,10 +2,6 @@
     'use strict';
 
     app.controller("MeaController", function($scope, ModalService) {
-        $scope.template = "viz";
-        $scope.setTemplate = function(newTemplate) {
-            $scope.template = newTemplate;
-        }
         $scope.config = {};
         $scope.modal = {};
         $scope.removeModal = function(event) {
@@ -16,8 +12,7 @@
         $scope.createModal = ModalService.create($scope.modal);
     });
 
-    app.controller("EditController", function($scope, $http, $timeout, TreeInteractions, SunburstInteractions, Format) {
-        const side = 30;
+    app.controller("EditController", function($scope, $http, TreeInteractions, Format) {
         $scope.loadingHistogram = true;
         $scope.scales = {
             "Default": d3.scale.category20().range().concat(d3.scale.category20b().range()),
@@ -37,15 +32,8 @@
 
         $scope.setScale = function(scaleName) {
             setScale(scaleName);
-            if ($scope.template === "sun") {
-                SunburstInteractions.updateColors($scope.colors);
-            }
-            else {
-                TreeInteractions.select($scope.selectedNode.id, $scope, false, true);
-                if ($scope.template === "viz") {
-                    TreeInteractions.updateTooltipColors($scope.colors);
-                }
-            }
+            TreeInteractions.select($scope.selectedNode.id, $scope, false, true);
+            TreeInteractions.updateTooltipColors($scope.colors);
         }
 
         const setScale = function(scaleName) {
@@ -59,31 +47,6 @@
             if (event.target.matches('.color-picker') || event.target.matches('.icon-tint')) return;
             $scope.displayColorPicker = false;
         }
-
-        $scope.$watch("template", function(nv, ov) {
-            if (ov == nv) return;
-            if (ov == "viz") {
-                d3.selectAll("[tooltip='tree']").remove();
-
-                d3.select(".tree").select("svg").remove();
-                delete $scope.selectedNode;
-                $scope.setTemplate("sun");
-                $timeout(function() {
-                    SunburstInteractions.createSun($scope.treeData, $scope.colors);
-                });
-            }
-            if (ov == "sun") {
-                d3.select("#chart").select("svg").remove();
-                d3.select("#leftsidebar").select("svg").remove();
-                $scope.selectedNode = $scope.treeData[0];
-
-                $scope.setTemplate("viz");
-                $timeout(function() {
-                    TreeInteractions.createTree($scope);
-                    //TreeInteractions.addVizTooltips($scope);
-                });
-            }
-        });
 
         const create = function(data) {
             $scope.treeData = data.nodes;
@@ -109,7 +72,7 @@
         $scope.load();
 
         $scope.zoomFit = function() {
-            TreeInteractions.zoomFit($scope.template == "viz");
+            TreeInteractions.zoomFit();
         }
 
         $scope.zoomBack = function() {

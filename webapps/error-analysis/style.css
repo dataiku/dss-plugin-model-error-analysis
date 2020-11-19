@@ -140,10 +140,6 @@ select {
     width: calc(100% - 400px);
 }
 
-.tree-visualization--sun {
-    width: 100%;
-}
-
 .toolbar-header {
     height: 40px;
     display: flex;
@@ -197,10 +193,6 @@ select {
     width: 200px;
 }
 
-.icons-div-sun {
-    width: 125px;
-}
-
 .icons-div > img:hover, .icons-div > ul:hover {
     opacity: .7;
 }
@@ -230,11 +222,6 @@ select {
 
 .icon.icon-tint {
     height: 20px;
-}
-
-.icon.sunburst {
-    border-right: 1px solid #ccc;
-    padding: 5px 9px;
 }
 
 .empty-panel {
@@ -826,45 +813,6 @@ path.selected, path.hovered {
 
 [tooltip='tree'].selected, [tooltip='tree'].hovered {
     visibility: visible;
-}
-
-/*SUNBURST*/
-#leftsidebar {
-    width: 600px;
-}
-
-.tree-sunburst {
-    width: 100%;
-    height: calc(100% - 40px);
-    display: flex;
-}
-
-#chart {
-    width: calc(100% - 600px);
-}
-
-#sequence {
-    width: 500px;
-    height: 70px;
-}
-
-#sequence text, #legend text {
-    font-weight: 600;
-    fill: var(--white);
-}
-
-#chart path {
-    stroke: var(--white);
-}
-
-
-#percentage {
-    font-size: 1.5em;
-}
-
-#unzoom-msg {
-    color: var(--grey-lighten-5);
-    font-size: 16px;
 }
 
 /*MODALS*/

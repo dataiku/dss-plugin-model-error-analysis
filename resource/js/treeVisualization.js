@@ -134,12 +134,12 @@ app.service("TreeInteractions", function($timeout, $http, $compile, Format) {
         centerOnNode(selectedNode, true);
     }
 
-    const zoomFit = function(vizMode) {
+    const zoomFit = function() {
         const treePanel = d3.select(".tree").node().getBoundingClientRect(),
             svgDim = svg.node().getBBox();
         const leftOffset = 10;
         const scaleX = treePanel.width / (svgDim.width + leftOffset),
-            scaleY = treePanel.height / (svgDim.height + (vizMode ? 5 : 25))
+            scaleY = treePanel.height / (svgDim.height + 5)
         const scale = Math.min(scaleX, scaleY, maxZoom);
 
         let leftTranslate;
@@ -149,7 +149,7 @@ app.service("TreeInteractions", function($timeout, $http, $compile, Format) {
             leftTranslate = (Math.abs(svgDim.x) + leftOffset)*scale;
         }
 
-        const topTranslate = (vizMode ? 40 : 20) * scale;
+        const topTranslate = 40 * scale;
         zoomListener.translate([leftTranslate, topTranslate]).scale(scale);
         svg.transition().duration(400).attr("transform", "translate(" + leftTranslate + "," + topTranslate +")scale(" + scale + ")");
     }
@@ -332,251 +332,11 @@ app.service("TreeInteractions", function($timeout, $http, $compile, Format) {
     }
 
     return {
-        createTree: createTree,
-        decisionRule: decisionRule,
-        zoomFit: zoomFit,
-        zoomBack: zoomBack,
-        select: select,
-        updateTooltipColors: updateTooltipColors
-    }
-});
-
-app.service("SunburstInteractions", function(Format, TreeInteractions) {
-    // Breadcrumb dimensions: width, height, spacing, width of tip/tail.
-    const b = {
-            w: 590, h: 20, s: 3, t: 10
-    };
-
-    const initializeBreadcrumbTrail = function() {
-        const trail = d3.select("#leftsidebar").append("svg")
-            .attr("width", "100%")
-            .attr("height", "100%")
-            .attr("id", "trail");
-
-        // Add the label at the end, for the percentage.
-        trail.append("text").attr("id", "endlabel").style("fill", "#000");
-    }
-
-    const breadcrumbPoints = function(id) {
-        let points = "0,0 ";
-        points += b.w + ",0 ";
-        points += b.w + b.t + "," + (b.h / 2) + " ";
-        points += b.w + "," + b.h + " ";
-        points += "0," + b.h + " ";
-        if (id > 0) {
-            points += b.t + "," + (b.h / 2);
-        }
-    return points;
-    }
-
-    let currentScale;
-    const createSun = function(treeData, colors) {
-        currentScale = colors;
-        const vis = d3.select("#chart")
-        .append("svg")
-        .attr("width", "100%")
-        .attr("height", "100%")
-        .append("g")
-        .attr("id", "container");
-
-        const sunburstW = d3.select("#chart").node().getBoundingClientRect().width,
-            sunburstH = d3.select("#chart").node().getBoundingClientRect().height;
-        vis.attr("transform", "translate(" + sunburstW / 2 + "," + sunburstH / 2 + ")");
-
-        const partition = d3.layout.partition()
-            .sort(function(a,b) {
-                return b.parent.children_ids.indexOf(b) - a.parent.children_ids.indexOf(a);
-            })
-            .size([2 * Math.PI, 100])
-            .value(function(d) { return d.samples[0]; })
-            .children(function(d) {
-                return d.children_ids.map(_ => treeData[_]);
-            });
-
-        const radius = (Math.min(sunburstH, sunburstW) - 10) / 2;
-        const arc = d3.svg.arc()
-            .startAngle(function(d) { return d.x; })
-            .endAngle(function(d) { return d.x + d.dx; })
-            .innerRadius(function(d) { return radius * Math.sqrt(d.y) / 10; })
-            .outerRadius(function(d) { return radius * Math.sqrt(d.y + d.dy) / 10; });
-
-        // Basic setup of page elements.
-        initializeBreadcrumbTrail();
-        // Bounding circle underneath the sunburst
-        vis.append("circle").attr("r", radius).style("opacity", 0);
-
-        // For efficiency, filter nodes to keep only those large enough to see.
-        const fakeRoot = Object.assign({}, treeData[0]);
-        fakeRoot.children_ids = [0];
-        const nodes = partition.nodes(fakeRoot)
-            .filter(function(d) {
-                return (d.dx > 0.005); // 0.005 radians = 0.29 degrees
-            });
-        delete fakeRoot.parent;
-
-        const mouseenter = function(d) {
-            d3.select("#percentage").remove();
-            let percentageString;
-            if (d.samples[1] < 0.1) {
-                percentageString = "< 0.1%";
-            } else {
-                percentageString = Format.toFixedIfNeeded(d.samples[1], 2) + "%";
-            }
-
-            const rootText = d3.select("#root")
-            .append("text")
-            .attr("id", "percentage")
-            .text(percentageString);
-
-            const x = - rootText.node().getBoundingClientRect().width / 2;
-            rootText.attr("x", x);
-
-            // Fade all the segments.
-            d3.selectAll("path").style("opacity", d => d.depth ? 0.3 : 0);
-            updateBreadcrumbs(d, d.samples[0] + " samples", currentScale);
-        }
-
-        const mouseleave = function(d) {
-            d3.select("#percentage").remove();
-            d3.select("#trail").selectAll("g").remove();
-            d3.select("#endlabel").style("display", "none");
-            d3.selectAll("path")
-            .style("opacity", d => d.depth ? null : 0);
-        }
-
-        const drawArcs = function(p) {
-            d3.select("#unzoom-msg").remove();
-            const fakeRoot = Object.assign({}, treeData[p.parent_id]);
-            fakeRoot.children_ids = [p.id];
-            const nodes = partition.nodes(fakeRoot)
-                .filter(function(d) {
-                    return (d.dx > 0.005);
-                });
-
-            const data =  vis.selectAll("g").data(nodes);
-            data.exit().remove();
-
-            data.attr("id", d => d.depth ? ("arc-sun-"+d.id) : "root")
-            .select("path")
-            .attr("d", arc)
-            .style("opacity", d => d.depth ? null : 0)
-            .style("fill", d => currentScale[d.prediction])
-            .style("cursor", d => d.depth > 1 ? "pointer" : null);
-
-            data.enter()
-            .append("g")
-            .attr("id", d => d.depth ? ("arc-sun-"+d.id) : "root")
-            .append("path")
-            .on("click", function(d) {
-                if (d.depth > 1) {
-                    drawArcs(d);
-                }
-            })
-            .attr("d", arc)
-            .attr("fill-rule", "evenodd")
-            .style("fill", d => currentScale[d.prediction])
-            .style("cursor", d => d.depth > 1 ? "pointer" : null)
-            .style("opacity", d => d.depth ? null : 0)
-            .on("mouseenter", function(d) {
-                if (d.depth) {
-                    mouseenter(d);
-                } else {
-                    mouseenter(d.children[0]);
-                }
-            });
-
-            if(p.id) {
-                d3.select("#root")
-                .on("click", function() {
-                    drawArcs(treeData[0]);
-                })
-                .style("cursor", "pointer")
-                .append("text")
-                .attr("id", "unzoom-msg")
-                .text("Click to unzoom")
-                .attr("x", function() {
-                    return - this.getBoundingClientRect().width / 2;
-                })
-                .attr("y", d3.select("#percentage").attr("y") + 20)
-            } else {
-                d3.select("#root").on("click", null).style("cursor", null);
-            }
-        }
-
-        drawArcs(treeData[0]);
-
-        // Add the mouseleave handler to the bounding circle.
-        d3.select("#container").on("mouseleave", mouseleave);
-    }
-
-    const updateBreadcrumbs = function(node, sampleString, colors) {
-        d3.select("#trail").selectAll("g").remove();
-        const g = d3.select("#trail");
-
-        let crumbs = 0;
-        let sunburstContainerHeight = d3.select(".tree-sunburst").node().getBoundingClientRect().height;
-        while (node.parent && crumbs < Math.floor(sunburstContainerHeight / (b.h+b.s))) {
-            g.insert("g", ":first-child")
-                .attr("id", "bread-"+node.id)
-                .append("polygon")
-                .attr("points", function() {
-                    return breadcrumbPoints(node.id);
-                })
-                .style("fill", colors[node.prediction]);
-
-            d3.select("#bread-"+node.id).append("text")
-                .attr("x", (b.w + b.t) / 2)
-                .attr("y", b.h / 2)
-                .attr("dy", "0.35em")
-                .attr("text-anchor", "middle")
-                .text(node.id > 0 ? TreeInteractions.decisionRule(node) : "Whole population")
-                .style("font-size", function(d){ // scale the font size according to text length
-                    const newLength = this.textContent.length;
-                    const charsPerLine = 50;
-                    if (newLength < charsPerLine){
-                        return "15px";
-                    }
-                    const newEmSize = charsPerLine / newLength;
-                    const textBaseSize = 13;
-                    const newFontSize = (2 - newEmSize)*newEmSize * textBaseSize;
-                    if (newFontSize >= 9) {
-                        return newFontSize + "px";
-                    } else {
-                        this.textContent = Format.ellipsis(this.textContent, 130);
-                        return "9px";
-                    }
-                });
-
-            d3.select("#arc-sun-" + node.id).select("path").style("opacity", null);
-
-            node = node.parent;
-            crumbs++;
-        }
-
-        const breadcrumbs = d3.select("#trail").selectAll("g");
-
-        breadcrumbs.attr("transform", function(d, i) {
-            return "translate(0, " + i * (b.h + b.s) + ")";
-        });
-
-        // Now move and update the percentage at the end.
-        d3.select("#trail").select("#endlabel")
-            .attr("x", b.w / 2)
-            .attr("y", (breadcrumbs[0].length + 0.5) * (b.h + b.s))
-            .attr("dy", "0.35em")
-            .attr("text-anchor", "middle")
-            .text(sampleString);
-    }
-
-    const updateColors = function(colors) {
-        d3.select("#container").selectAll("path")
-        .style("fill", d => colors[d.prediction]);
-
-        currentScale = colors;
-    }
-
-    return {
-        createSun: createSun,
-        updateColors: updateColors
+        createTree,
+        decisionRule,
+        zoomFit,
+        zoomBack,
+        select,
+        updateTooltipColors
     }
 });
