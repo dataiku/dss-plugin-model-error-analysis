@@ -141,12 +141,79 @@ select {
 }
 
 .toolbar-header {
-    height: 40px;
+    padding: 10px 20px;
+    height: 20px;
     display: flex;
     background-color: var(--grey-lighten-7);
     align-items: center;
-    justify-content: flex-end;
     border-bottom: 1px solid var(--grey-lighten-5);
+}
+
+.toolbar-header--expanded {
+    height: 160px;
+    justify-content: space-between;
+}
+
+.link {
+    cursor: pointer;
+    color: var(--blue);
+}
+
+.link:hover {
+    text-decoration: underline;
+}
+
+.link:hover > i {
+    text-decoration: none;
+}
+
+.expandable-introduction-text {
+    width: 50%;
+}
+
+.expandable-introduction-text--expanded {
+    width: 60%;
+    height: inherit;
+}
+
+.introduction-text {
+    font-size: 10px;
+    margin-top: 5px;
+}
+
+.metrics {
+    display: flex;
+    width: 50%;
+    justify-content: space-between;
+}
+
+.metrics--expanded {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    width: 35%;
+    height: 90%;
+}
+
+.metric {
+    display: flex;
+}
+
+.metrics .metric {
+    align-items: baseline;
+}
+
+.metric__value {
+    font-size: 24px;
+    margin-right: 5px;
+}
+
+.metrics--expanded .metric__name {
+    font-weight: bold;
+}
+
+.metric__explanation {
+    font-size: 10px;
 }
 
 .color-picker {
@@ -191,6 +258,10 @@ select {
     top: 60px;
     width: 150px;
     font-size: 20px;
+}
+
+.icons-div--offset {
+    top: 200px;
 }
 
 .icons-div > img:hover {
@@ -365,13 +436,6 @@ div[histogram] {
     bottom: 10px;
 }
 
-.label-div {
-    display: flex;
-    width: 70%;
-    justify-content: flex-end;
-    align-items: baseline;
-}
-
 .template {
     position:relative;
     min-width : 200px;
@@ -532,14 +596,6 @@ div[histogram] {
 .icons {
     width: 15%;
     display: flex;
-}
-
-.icons-duo {
-    justify-content: space-between;
-}
-
-.icons-solo {
-    justify-content: flex-end;
 }
 
 .icon {

@@ -6,10 +6,47 @@
          ng-click="removeModal($event)">
     </div>
     <div class="tree-visualization tree-visualization--tree">
-        <div class="toolbar-header">
+        <div class="toolbar-header" ng-class="{'toolbar-header--expanded': displayText}">
+            <div class="expandable-introduction-text" ng-class="{'expandable-introduction-text--expanded': displayText}">
+                <div class="expand-text" ng-click="displayText = !displayText">
+                    <span class="link">
+                        How does it work ?
+                        &nbsp;<i ng-class="{'icon-chevron-down': !displayText, 'icon-chevron-up': displayText}"></i>
+                    </span>
+                </div>
+                <div class="introduction-text" ng-if="displayText">
+                    Model Error Analysis highlights the subpopulations where your model (the primary model) makes the majority of errors.
+                    <p>
+                        A Decision Tree has been trained with the primary model correctness as the target, on its test set.  
+                        If the primary model is a classification, a prediction is correct if the predicted value is the correct class.
+                        If the primary model is a regression, a prediction is correct if the predicted value is not too far from the correct one. 
+                    </p>
+                    <p>
+                        The leaves of the tree hence partition the primary model test samples into groups with similar feature values and correctness.
+                        Selecting a leaf will show you detailed statistics regarding the errors in the leaf subset compared to the whole set.
+                        See the <a class="link">Plugin documentation&nbsp;<i class="icon-external-link"></i></a>.
+                    </p>
+                </div>
+            </div>
+            <div ng-class="{'metrics': !displayText, 'metrics--expanded': displayText}">
+                <div class="metric">
+                    <span class="metric__value">0.965</span>
+                    <div>
+                        <div class="metric__name">Estimated accuracy</div>
+                        <span class="metric__explanation" ng-if="displayText">Proportion of samples the primary model predicts correctly</span>
+                    </div>
+                </div>
+                <div class="metric">
+                    <span class="metric__value">0.978</span>
+                    <div>
+                        <div class="metric__name">Actual accuracy</div>
+                        <span class="metric__explanation" ng-if="displayText">Proportion of samples the Decision Tree predicts as correct predictions</span>
+                    </div>
+                </div>
+            </div>
         </div>
         <div class="tree">
-            <div class="icons-div">
+            <div class="icons-div" ng-class="{'icons-div--offset': displayText}">
                 <i class="icon icon-tint icon-grey"
                     title="Change color scale"
                     ng-click="displayColorPicker = !displayColorPicker">
@@ -43,7 +80,7 @@
         </div>
     </div>
     <div class="histogram-panel" ng-include="'/plugins/model-error-analysis/resource/templates/histograms.html'" ng-if="selectedNode.id && !loadingHistogram"></div>
-    <div class="empty-panel" ng-if="selectedNode && !selectedNode.id">
+    <div class="empty-panel" ng-if="!selectedNode">
         <div>
             Select a node
         </div>
