@@ -7,7 +7,9 @@
     </div>
     <div class="tree-visualization tree-visualization--tree">
         <div class="toolbar-header">
-            <div class="icons-div icons-div-tree">
+        </div>
+        <div class="tree">
+            <div class="icons-div" ng-show="selectedNode">
                 <i class="icon icon-tint icon-grey"
                     title="Change color scale"
                     ng-click="displayColorPicker = !displayColorPicker">
@@ -24,8 +26,6 @@
                      height="20px">
                 </img>
             </div>
-        </div>
-        <div class="tree">
             <div class="color-picker" ng-show="displayColorPicker">
                 <div class="row-color-picker row"
                      ng-repeat="(name, scale) in scales"

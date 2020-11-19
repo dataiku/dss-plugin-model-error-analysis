@@ -153,13 +153,15 @@ select {
     width: 150px;
     height: 210px;
     position: absolute;
-    top: 40px;
-    right: 220px;
-    background: var(--grey-lighten-7);
+    top: 93px;
+    right: 130px;
+    background: var(--white);
     display: flex;
     flex-direction: column;
     align-items: center;
-    border-top: 1px solid var(--grey-lighten-5);
+    justify-content: space-between;
+    border: 1px solid var(--grey-lighten-5);
+    padding: 5px 0;
 }
 
 .color-bars {
@@ -181,46 +183,33 @@ select {
 }
 
 .icons-div {
-    height: 80%;
-    padding: 20px;
     display: flex;
     align-items: center;
     justify-content: space-between;
+    position: absolute;
+    right: 20px;
+    top: 60px;
+    width: 150px;
     font-size: 20px;
 }
 
-.icons-div-tree {
-    width: 200px;
-}
-
-.icons-div > img:hover, .icons-div > ul:hover {
+.icons-div > img:hover {
     opacity: .7;
 }
 
-.icons-toggle > .icon {
-    border-top: 1px solid var(--grey-lighten-5);
-    border-bottom: 1px solid var(--grey-lighten-5);
-    border-left: 1px solid var(--grey-lighten-5);
-    padding: 3px 9px;
+.icons-div > .icon {
+    border: 1px solid var(--grey-lighten-5);
     background: var(--white);
     color: var(--grey-lighten-2);
 }
 
-.icons-toggle > .toolbar-selected {
-    box-shadow: inset 0 0 3px var(--grey-lighten-4);
-    background: var(--grey-lighten-6);
-    cursor: auto;
+.icons-div > img {
+    padding: 6px 9px;
 }
 
-.icons-toggle > :not(.toolbar-selected):hover {
-    background: var(--grey-lighten-6);
-}
-
-.icons-toggle {
-    display: flex;
-}
-
-.icon.icon-tint {
+.icons-div > i {
+    padding: 6px 3px 6px 13px;
+    width: 22px;
     height: 20px;
 }
 
@@ -272,62 +261,6 @@ select {
     display: flex;
     font-size: 16px;
     height: 10%;
-}
-
-.edit-row {
-    height: 50%;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.edit-row-sub {
-    width: calc(100% - 195px);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-input[name=split-input] {
-    width: 120px;
-}
-
-.table {
-    height: calc(100% - 60px);
-    display: flex;
-    flex-direction: column;
-}
-
-.table-title{
-    padding: 10px 5%;
-    font-weight: bold;
-    text-transform: uppercase;
-    border: 1px solid var(--grey-lighten-5);
-    height: 20px;
-}
-
-.table-records {
-    max-height: calc(100% - 50px);
-    border-bottom: 1px solid var(--grey-lighten-5);
-    overflow-y: auto;
-}
-
-.record, .table-title {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-
-.record {
-    padding: 1% 5%;
-    border-bottom: 1px solid var(--grey-lighten-6);
-    border-left: 1px solid var(--grey-lighten-5);
-    border-right: 1px solid var(--grey-lighten-5);
-}
-
-.proportion-cat-table {
-    display: flex;
-    text-align: right;
 }
 
 .header {
@@ -560,34 +493,11 @@ div[histogram] {
     align-items: center;
     display: flex;
     height: 20px;
-    margin-top: 2%;
-    padding: 1% 5%;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     border-radius: 2px;
-}
-
-.row > .numerical {
-    font-size: 16px;
-}
-
-.row-feature {
-    cursor: pointer;
-}
-
-.row-feature:hover  {
-    background: var(--grey-lighten-6);
-}
-
-.row-feature-split {
-    margin-bottom: 2%;
-    margin-left: 5%;
-    margin-right: 5%;
-}
-
-.row-split {
-    justify-content: space-between;
+    border: 1px solid var(--grey-lighten-5);
 }
 
 .row-color-picker {
@@ -599,27 +509,6 @@ div[histogram] {
 
 .row-color-picker:hover {
     background: var(--grey-lighten-6);
-}
-
-.record-cat {
-    cursor: pointer;
-}
-
-.record-cat-selectable:hover  {
-    background: var(--grey-lighten-6);
-}
-
-.record-cat-disabled {
-    background: var(--grey-lighten-7);
-    color: var(--grey-lighten-5);
-}
-
-.record-cat-selected {
-    background: var(--blue-lighten-5);
-}
-
-.record-cat-selected:hover {
-    background: var(--blue-lighten-4);
 }
 
 .ellipsed-text {
@@ -638,14 +527,6 @@ div[histogram] {
 
 .very-small-text {
     width: 40%;
-}
-
-.max-small-text {
-    max-width: 60%;
-}
-
-.max-very-small-text {
-    max-width: 40%;
 }
 
 .icons {
