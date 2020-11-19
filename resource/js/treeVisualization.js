@@ -180,23 +180,26 @@ app.service("TreeInteractions", function($timeout, $http, $compile, Format) {
         scope.selectedNode = scope.treeData[id];
         scope.histData = {};
         scope.loadingHistogram = true;
-        if (id > 0 || !scope.histDataWholeSet) {
-            $http.get(getWebAppBackendUrl("select-node/"+id))
+        loadHistograms(scope, id);
+
+        if (!noRecenter) {
+            centerOnNode(scope.selectedNode, unzoom);
+        }
+    }
+
+    const loadHistograms = function(scope, id) {
+        $http.get(getWebAppBackendUrl("select-node/"+id))
             .then(function(response) {
-                scope.histData = response.data;
                 if (id == 0) {
                     scope.histDataWholeSet = response.data;
+                } else {
+                    scope.histData = response.data;
                 }
                 scope.loadingHistogram = false;
             }, function(e) {
                 scope.loadingHistogram = false;
                 scope.createModal.error(e.data);
             });
-        }
-
-        if (!noRecenter) {
-            centerOnNode(scope.selectedNode, unzoom);
-        }
     }
 
     const addVizTooltips = function(scope) {
@@ -211,8 +214,6 @@ app.service("TreeInteractions", function($timeout, $http, $compile, Format) {
         .on("wheel", function() {
             d3.event.stopPropagation();
         });
-
-        showSelected(scope.selectedNode.id, scope);
     };
 
     const createTree = function(scope) {
@@ -229,7 +230,8 @@ app.service("TreeInteractions", function($timeout, $http, $compile, Format) {
             .append("g");
 
         update(scope);
-        select(0, scope, true);
+        loadHistograms(scope, 0);
+        zoomFit();
         addVizTooltips(scope);
     }
 

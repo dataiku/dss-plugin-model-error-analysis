@@ -9,20 +9,20 @@
         <div class="toolbar-header">
         </div>
         <div class="tree">
-            <div class="icons-div" ng-show="selectedNode">
+            <div class="icons-div">
                 <i class="icon icon-tint icon-grey"
                     title="Change color scale"
                     ng-click="displayColorPicker = !displayColorPicker">
                 </i>
                 <img class="icon"
                      src="/plugins/model-error-analysis/resource/img/fit.png"
-                     title="Zoom fit" ng-click="zoomFit()"
+                     title="See whole tree" ng-click="zoomFit()"
                      height="20px">
                 </img>
                 <img class="icon"
                      src="/plugins/model-error-analysis/resource/img/100.png"
-                     title="Zoom 100%"
-                     ng-click="zoomBack()"
+                     title="Zoom on selected node"
+                     ng-click="selectedNode && zoomBack()"
                      height="20px">
                 </img>
             </div>
