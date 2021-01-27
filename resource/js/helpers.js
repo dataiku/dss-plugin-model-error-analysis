@@ -141,7 +141,7 @@ app.directive('tooltip', function() {
                 var proba = pie($scope.probabilities);
 
                 // Build the pie chart
-                d3.select("#tooltip-" + node.id)
+                d3.select("#tooltip-" + node.node_id)
                 .append("g")
                 .attr("transform", "translate(10, 25)")
                 .selectAll('.camembert')

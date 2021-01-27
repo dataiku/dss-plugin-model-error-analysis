@@ -27,7 +27,7 @@ class Node(object):
         CAT = "cat"
 
     def __init__(self, node_id, parent_id, feature=None):
-        self.id = node_id
+        self.node_id = node_id
         self.parent_id = parent_id
         self.children_ids = []
         self.feature = feature
@@ -35,6 +35,10 @@ class Node(object):
         self.prediction = None
         self.samples = None
         self.global_error = None
+
+    @property
+    def id(self):
+        return self.node_id
 
     def set_node_info(self, samples, total_samples, probabilities, prediction, error):
         self.samples = [samples, 100.0 * samples / total_samples]

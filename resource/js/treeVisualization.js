@@ -58,7 +58,7 @@ app.service("TreeInteractions", function($timeout, $http, $compile, Format) {
                 nodes = nodes.concat(node.children_ids);
             }
 
-            const linkParentToNode = d3.select("#link-" + node.id);
+            const linkParentToNode = d3.select("#link-" + node.node_id);
             if (linkParentToNode.classed(classLink)) {
                 shiftRight.add(node.parent_id);
             } else {
@@ -66,12 +66,12 @@ app.service("TreeInteractions", function($timeout, $http, $compile, Format) {
                     let delta;
                     if (shiftRight.has(node.parent_id)) {
                         delta = 120 + 40*node.depth;
-                        shiftRight.add(node.id);
+                        shiftRight.add(node.node_id);
                     } else {
                         delta = -80 - 30*node.depth;
                     }
                     node.x = node.x + (unspread ? -delta : delta);
-                    d3.select("#node-" + node.id).attr("transform", function(d) {
+                    d3.select("#node-" + node.node_id).attr("transform", function(d) {
                         return "translate(" + d.x + "," + d.y + ")";
                     });
                 }
@@ -173,7 +173,7 @@ app.service("TreeInteractions", function($timeout, $http, $compile, Format) {
         }
         if (scope.selectedNode) {
             update(scope);
-            hideUnselected(scope.selectedNode.id);
+            hideUnselected(scope.selectedNode.node_id);
         }
         showSelected(id, scope);
         shift(id, scope, "selected");
@@ -206,8 +206,8 @@ app.service("TreeInteractions", function($timeout, $http, $compile, Format) {
         d3.selectAll(".node-container").append("g")
         .attr("transform", "translate(100, -10)")
         .attr("tooltip", "tree")
-        .attr("id", d => "tooltip-" + d.id)
-        .attr("node", d => d.id)
+        .attr("id", d => "tooltip-" + d.node_id)
+        .attr("node", d => d.node_id)
         .call(function() {
             $compile(this[0])(scope);
         })
@@ -244,7 +244,7 @@ app.service("TreeInteractions", function($timeout, $http, $compile, Format) {
         });
 
         const node = svg.selectAll("g.node-container")
-        .data(nodes, d => d.id);
+        .data(nodes, d => d.node_id);
 
         // update pre-existing nodes
         node.attr("transform", function(d) {
@@ -260,7 +260,7 @@ app.service("TreeInteractions", function($timeout, $http, $compile, Format) {
         // add new nodes
         const nodeEnter = node.enter().append("g")
         .classed("node-container", true)
-        .attr("id", d => "node-" + d.id)
+        .attr("id", d => "node-" + d.node_id)
         .attr("transform", function(d) {
             return "translate(" + d.x + "," + d.y + ")";
         });
@@ -270,21 +270,21 @@ app.service("TreeInteractions", function($timeout, $http, $compile, Format) {
         .attr("width", side)
         .attr("fill", function(d) {return scope.colors[d.prediction] || "black"})
         .on("click", function(d) {
-            if (scope.selectedNode && scope.selectedNode.id == d.id) {return;}
-            $timeout(select(d.id, scope));
+            if (scope.selectedNode && scope.selectedNode.node_id == d.node_id) {return;}
+            $timeout(select(d.node_id, scope));
         })
         .on("mouseenter", function(d) {
-            if (currentPath.has(d.id)) { return;}
-            showHovered(d.id, scope);
-            shift(d.id, scope, "hovered");
+            if (currentPath.has(d.node_id)) { return;}
+            showHovered(d.node_id, scope);
+            shift(d.node_id, scope, "hovered");
         })
         .on("mouseleave", function(d) {
-            if (currentPath.has(d.id)) { return;}
-            shift(d.id, scope, "hovered", true);
+            if (currentPath.has(d.node_id)) { return;}
+            shift(d.node_id, scope, "hovered", true);
             hideUnhovered();
         });
 
-        nodeEnter.filter(d => d.id > 0)
+        nodeEnter.filter(d => d.node_id > 0)
         .append("text")
         .attr("class", "decision-rule")
         .attr("text-anchor","middle")
@@ -298,10 +298,10 @@ app.service("TreeInteractions", function($timeout, $http, $compile, Format) {
         .attr("text-anchor","middle")
         .attr("x", side / 2)
         .attr("y", side + 15)
-        .text(d => Format.ellipsis(scope.treeData[d.children_ids[0]].feature, 20));
+        .text(d => Format.ellipsis(scope.treeData[d.children_ids[0].toString()].feature, 20));
 
         var link = svg.selectAll(".link")
-        .data(links, d => d.target.id);
+        .data(links, d => d.target.node_id);
 
         // update pre-existing links
         link.attr("d", function(d) {
@@ -316,7 +316,7 @@ app.service("TreeInteractions", function($timeout, $http, $compile, Format) {
         // add new links
         link.enter().insert("path", "g")
         .attr("class", "link")
-        .attr("id", d => "link-" + d.target.id)
+        .attr("id", d => "link-" + d.target.node_id)
         .attr("d", function(d) {
             return d3.svg.diagonal()({source: {x: d.source.x + side/2, y: d.source.y},
                                   target: {x: d.target.x + side/2, y: d.target.y}});

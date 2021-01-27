@@ -32,7 +32,7 @@
 
         $scope.setScale = function(scaleName) {
             setScale(scaleName);
-            TreeInteractions.select($scope.selectedNode.id, $scope, false, true);
+            TreeInteractions.select($scope.selectedNode.node_id, $scope, false, true);
             TreeInteractions.updateTooltipColors($scope.colors);
         }
 

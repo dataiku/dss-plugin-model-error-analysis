@@ -120,7 +120,7 @@ class InteractiveTree(object):
     def jsonify_nodes(self):
         jsonified_tree = {}
         for key, node in self.nodes.items():
-            jsonified_tree[key] = node.jsonify()
+            jsonified_tree[str(key)] = node.jsonify()
         return jsonified_tree
 
     def add_node(self, node):
