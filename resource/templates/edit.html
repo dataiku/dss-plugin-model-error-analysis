@@ -6,16 +6,18 @@
          ng-click="removeModal($event)">
     </div>
     <div class="tree-visualization tree-visualization--tree">
-        <div class="toolbar-header" ng-class="{'toolbar-header--expanded': displayText}">
+        <div class="toolbar-header"  ng-click="displayText = !displayText" ng-class="{'toolbar-header--expanded': displayText}">
             <div class="expandable-introduction-text" ng-class="{'expandable-introduction-text--expanded': displayText}">
-                <div class="expand-text" ng-click="displayText = !displayText">
-                    <span class="link">
+                <div class="expand-text">
+                    <span class="link link-show-more">
                         How does it work ?
                         &nbsp;<i ng-class="{'icon-chevron-down': !displayText, 'icon-chevron-up': displayText}"></i>
                     </span>
                 </div>
                 <div class="introduction-text" ng-if="displayText">
-                    Model Error Analysis highlights the subpopulations where your model (the primary model) makes the majority of errors.
+                    <p>
+                        Model Error Analysis highlights the subpopulations where your model (the primary model) makes the majority of errors.
+                    </p>
                     <p>
                         A Decision Tree has been trained with the primary model correctness as the target, on its test set.  
                         If the primary model is a classification, a prediction is correct if the predicted value is the correct class.
@@ -81,8 +83,8 @@
     </div>
     <div class="histogram-panel" ng-include="'/plugins/model-error-analysis/resource/templates/histograms.html'" ng-if="selectedNode.node_id && !loadingHistogram"></div>
     <div class="empty-panel" ng-if="!selectedNode">
-        <div>
+        <p>
             Select a node
-        </div>
+        </p>
     </div>
 </div>

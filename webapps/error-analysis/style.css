@@ -147,6 +147,11 @@ select {
     background-color: var(--grey-lighten-7);
     align-items: center;
     border-bottom: 1px solid var(--grey-lighten-5);
+    cursor: pointer;
+}
+
+.toolbar-header:hover .link-show-more {
+    text-decoration: underline;
 }
 
 .toolbar-header--expanded {
@@ -177,6 +182,7 @@ select {
 }
 
 .introduction-text {
+    text-align: justify;
     font-size: 10px;
     margin-top: 5px;
 }
@@ -286,6 +292,7 @@ select {
 
 .empty-panel {
     margin: auto;
+    width: 400px;
     color: var(--grey-lighten-3);
     text-align: center;
     font-size: 32px;
@@ -321,6 +328,8 @@ select {
 .histogram-panel {
     height: 100%;
     width: 400px;
+    display: flex;
+    flex-direction: column;
 }
 
 .feature-details {
@@ -351,20 +360,28 @@ select {
 
 .header-split-edit {
     display: flex;
-    padding-top: 10px;
-    padding-bottom: 10px;
     align-items: center;
     margin: 0 5%;
 }
 
 .header-decision-rule {
     width: 50%;
+    font-weight: 500;
 }
 
 .legend-container {
     display:flex;
-    width: 40%;
-    justify-content: space-around;
+    padding: 16px;
+}
+
+.legend-description {
+    flex: 1 0 auto;
+    display: flex;
+    align-items: center;
+}
+
+.legend-details {
+    display: flex;
 }
 
 .header-feature-desc {
@@ -454,6 +471,11 @@ div[histogram] {
 .tree {
     width: 100%;
     height: calc(100% - 40px);
+    cursor: grab;
+}
+
+.tree:active {
+    cursor: grabbing;
 }
 
 .proba-bullet {
@@ -489,13 +511,24 @@ div[histogram] {
 }
 
 .info-section {
-    overflow-y: auto;
+    overflow-y: hidden;
     max-height: 60px;
     padding-top: 5px;
 }
 
+.info-section--expanded {
+    overflow-y: auto;
+    max-height: 300px;
+}
+
+.histograms-container {
+    flex: 1 1 auto;
+    min-height: 0;
+    border-top: 1px solid var(--grey-lighten-5);
+}
+
 .histograms {
-    height: calc(100% - 100px);
+    height: calc(100% - 55px);
     overflow-y: auto;
 }
 
@@ -503,13 +536,14 @@ div[histogram] {
     margin-left: 30px;
 }
 
-.header-info{
+.header-info {
     align-self: center;
     height: 25px;
 }
 
-.section {
-    padding-left: 5%;
+.decision-rule-section {
+    padding: 16px;
+    flex: 0 0 auto;
 }
 
 .section-edit {
