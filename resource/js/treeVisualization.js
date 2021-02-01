@@ -285,15 +285,15 @@ app.service("TreeInteractions", function($timeout, $http, $compile, Format) {
 
     const createTree = function(scope) {
         tree = d3.layout.tree()
-                .nodeSize([140, 65])
-                .children(function(d) {
-                   return d.children_ids.map(_ => scope.treeData[_]);
-               });
+            .nodeSize([140, 65])
+            .children(function(d) {
+                return d.children_ids.map(_ => scope.treeData[_]);
+            });
 
         svg = d3.select(".tree").append("svg")
             .attr("width", "100%")
             .attr("height", "100%")
-            .call(zoomListener).on("dblclick.zoom", null);
+            .call(zoomListener);
 
         addHatchMask();
 

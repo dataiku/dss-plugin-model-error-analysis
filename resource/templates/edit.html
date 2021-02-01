@@ -32,14 +32,16 @@
             </div>
             <div ng-class="{'metrics': !displayText, 'metrics--expanded': displayText}">
                 <div class="metric">
-                    <span class="metric__value">0.965</span>
+                    <span class="metric__value" ng-show="metrics && metrics.estimated">{{ toFixedIfNeeded(metrics.estimated, 3, true) }}</span>
+                    <span class="metric__value" ng-show="!metrics ||  !metrics.estimated">&hellip;</span>
                     <div>
                         <div class="metric__name">Estimated accuracy</div>
                         <span class="metric__explanation" ng-if="displayText">Proportion of samples the primary model predicts correctly</span>
                     </div>
                 </div>
                 <div class="metric">
-                    <span class="metric__value">0.978</span>
+                    <span class="metric__value" ng-show="metrics && metrics.actual">{{ toFixedIfNeeded(metrics.actual, 3, true) }}</span>
+                    <span class="metric__value" ng-show="!metrics || !metrics.actual">&hellip;</span>
                     <div>
                         <div class="metric__name">Actual accuracy</div>
                         <span class="metric__explanation" ng-if="displayText">Proportion of samples the Decision Tree predicts as correct predictions</span>
@@ -47,7 +49,7 @@
                 </div>
             </div>
         </div>
-        <div class="tree">
+        <div class="tree" ng-class="{'tree--no-selection': loadingTree || !selectedNode && !hideExploreInfo}" ng-mouseover="hideExploreInfo = true" ng-mouseleave="hideExploreInfo = false">
             <div class="icons-div">
                 <i class="icon icon-tint icon-grey"
                     title="Change color scale"
@@ -78,13 +80,15 @@
                     <div>{{name}}</div>
                 </div>
             </div>
+            <div class="empty-panel"
+                 ng-if="loadingTree || !selectedNode && !hideExploreInfo">
+                    Drag and zoom to explore
+            </div>
             <spinner ng-if="loadingTree"></spinner>
         </div>
     </div>
     <div class="histogram-panel" ng-include="'/plugins/model-error-analysis/resource/templates/histograms.html'" ng-if="selectedNode.node_id && !loadingHistogram"></div>
-    <div class="empty-panel" ng-if="!selectedNode">
-        <p>
-            Select a node
-        </p>
+    <div class="histogram-panel--empty empty-panel" ng-if="!selectedNode">
+        Select a node
     </div>
 </div>

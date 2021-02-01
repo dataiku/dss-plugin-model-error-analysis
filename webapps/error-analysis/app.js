@@ -52,6 +52,10 @@
             $scope.treeData = data.nodes;
             $scope.features = data.features;
             $scope.rankedFeatures = data.rankedFeatures;
+            $scope.metrics = {
+                actual: data.actualAccuracy,
+                estimated: data.estimatedAccuracy
+            }
             targetValues = data.target_values;
             setScale("Pastel");
             TreeInteractions.createTree($scope);

@@ -233,10 +233,13 @@ select {
 }
 
 .empty-panel {
-    margin: auto;
-    width: 400px;
     color: var(--grey-lighten-3);
     text-align: center;
+}
+
+.histogram-panel--empty {
+    margin: auto;
+    width: 400px;
     font-size: 32px;
 }
 
@@ -352,6 +355,18 @@ div[histogram] {
 
 .tree:active {
     cursor: grabbing;
+}
+
+.tree--no-selection .empty-panel {
+    font-size: 24px;
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 40%;
+}
+
+.tree--no-selection svg {
+    opacity: .4;
 }
 
 .bullet {
