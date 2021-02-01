@@ -570,7 +570,7 @@ path.selected, path.hovered {
 }
 
 .tooltip-rp-container {
-    height: 100%;
+    height: 100px;
     padding: 0;
     border: none;
 }
