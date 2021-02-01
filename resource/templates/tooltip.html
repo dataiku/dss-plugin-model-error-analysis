@@ -2,7 +2,7 @@
     <div class="tooltip-container">
         <div class="tooltip-main">
             <div>
-                <div class="info tooltip-title ellipsed-text" ng-if="binName">{{binName}}</div>
+                <div class="info tooltip-title ellipsed-text" ng-if="inHistogram">{{binName}}</div>
                 <div>
                     <div class="info" ng-repeat="proba in probabilities">
                         <div class="proba-bullet" ng-style="{'background-color': colors[proba[0]]}"></div>
@@ -11,17 +11,23 @@
                     </div>
                 </div>
             </div>
-            <div class="section-inline">
+            <div ng-if="inRightPanel">
+                <strong>{{ samples[0] }}</strong> samples (<strong>{{ toFixedIfNeeded(samples[1], 2, true) }}</strong>% of the whole dataset).
+            </div>
+            <div ng-if="inRightPanel">
+                The global error is  <strong>{{ toFixedIfNeeded(globalError, 3, true) }}</strong>.
+            </div>
+            <div class="section-inline" ng-if="!inRightPanel">
                 <div class="section-title">Samples</div>
                 <div class="info samples">
                     <div class="info-samples-absolute ellipsed-text small-text" title="{{samples[0]}}">{{samples[0]}}</div>
-                    <em class="very-small-text" ng-if="samples[1]">&nbsp;({{toFixedIfNeeded(samples[1], 2, true)}}%)</em>
+                    <em class="very-small-text" ng-if="samples[1]">&nbsp;({{ toFixedIfNeeded(samples[1], 2, true) }}%)</em>
                 </div>
             </div>
-            <div class="section-inline" style="top: 75px;" ng-if="globalError !== undefined">
+            <div class="section-inline" style="top: 75px;" ng-if="!inHistogram && !inRightPanel">
                 <div class="section-title">Global error</div>
                 <div class="info">
-                    <span class="small-text">&nbsp;{{toFixedIfNeeded(globalError, 3, true)}}</span>
+                    <span class="small-text">&nbsp;{{ toFixedIfNeeded(globalError, 3, true) }}</span>
                 </div>
             </div>
         </div>

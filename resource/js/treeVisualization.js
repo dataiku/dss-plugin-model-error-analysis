@@ -84,7 +84,6 @@ app.service("TreeInteractions", function($timeout, $http, $compile, Format) {
     }
 
     const hideUnselected = function(id) {
-        d3.selectAll(".tooltip-tree").classed("selected", false);
         d3.selectAll(".selected").classed("selected", false);
         d3.select("#node-" + id).select("rect").style("stroke", null).style("stroke-width", null);
     }
@@ -175,6 +174,7 @@ app.service("TreeInteractions", function($timeout, $http, $compile, Format) {
             update(scope);
             hideUnselected(scope.selectedNode.node_id);
         }
+        hideUnhovered();
         showSelected(id, scope);
         shift(id, scope, "selected");
         scope.selectedNode = scope.treeData[id];

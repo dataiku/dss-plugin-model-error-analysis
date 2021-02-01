@@ -713,20 +713,24 @@ path.selected, path.hovered {
 
 /*TOOLTIPS*/
 
-.tooltip-container-tree .section {
+.tooltip-container-tree .section, .tooltip-container-rp .section {
     max-height: 50px;
     width: 65%;
     position: absolute;
     left: 50px;
 }
 
-.tooltip-container-tree .section-inline {
+.tooltip-container-tree .section-inline, .tooltip-container-rp .section-inline {
     top: 55px;
 }
 
 .tooltip-container-tree {
     box-shadow: 2px 5px 4px var(--grey-lighten-6);
-    position: absolute;
+    width: 90%;
+}
+
+.tooltip-container-tree .tooltip-main {
+    width: 70%;
 }
 
 .tooltip-title {
@@ -741,6 +745,12 @@ path.selected, path.hovered {
     border: 1px solid var(--grey-lighten-6);
     background: var(--white);
     flex-direction: row-reverse;
+}
+
+.tooltip-container-rp {
+    height: 100%;
+    padding: 0;
+    border: none;
 }
 
 .camembert-container {
@@ -764,10 +774,6 @@ path.selected, path.hovered {
 
 .tooltip-histogram .tooltip-container {
     width: 85%;
-}
-
-.tooltip-tree .tooltip-container {
-    width: 90%;
 }
 
 .tooltip-tree {

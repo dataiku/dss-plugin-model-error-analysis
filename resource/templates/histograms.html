@@ -1,19 +1,24 @@
 <div class="decision-rule-section" ng-if="selectedNode.node_id">
-    <div class="header">
-        <div class="header-decision-rule header-div">
-            Decision rule
+    <svg height="100px" width="100%">
+        <g class="tooltip-tree tooltip selected" id="tooltip-right-panel" right-panel node="{{ selectedNode.node_id }}"></g>
+    </svg>
+    <div>
+        <div class="header">
+            <div class="header-decision-rule header-div">
+                Decision rule
+            </div>
         </div>
-    </div>
-    <div class="info-section" ng-class="{'info-section--expanded': displayRule}">
-        <div class="info" ng-repeat="rule in decisionRule" title="{{rule.full}}">
-            <span ng-if="decisionRule.length > 1 && $index">↳</span>&nbsp;{{rule.ellipsed}}
+        <div class="info-section" ng-class="{'info-section--expanded': displayRule}">
+            <div class="info" ng-repeat="rule in decisionRule" title="{{rule.full}}">
+                <span ng-if="decisionRule.length > 1 && $index">↳</span>&nbsp;{{rule.ellipsed}}
+            </div>
         </div>
-    </div>
-    <div ng-show="decisionRule.length > 3">
+        <div ng-show="decisionRule.length > 3">
             <span class="link" ng-click="displayRule = !displayRule">
                 Show {{ displayRule ? 'less' : 'more' }}&nbsp;<i ng-class="{'icon-chevron-down': !displayRule, 'icon-chevron-up': displayRule}"></i>
             </span>
         </div>
+    </div>
 </div>
 
 <div class="histograms-container">
