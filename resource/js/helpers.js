@@ -115,75 +115,74 @@ app.directive("modalBackground", function($compile) {
     }
 });
 
-app.directive('tooltip', function() {
+app.directive('tooltipTree', function() {
     return {
         scope: true,
+        restrict: "C",
         templateUrl: "/plugins/model-error-analysis/resource/templates/tooltip.html",
         link: function($scope, element, attr) {
-            if(attr.tooltip == "tree") {
-                $scope.treeTooltip = true;
-                const node = $scope.treeData[attr.node];
-                $scope.probabilities = node.probabilities;
-                $scope.samples = node.samples;
-                $scope.globalError = node.global_error;
+            $scope.treeTooltip = true;
+            const node = $scope.treeData[attr.node];
+            $scope.probabilities = node.probabilities;
+            $scope.samples = node.samples;
+            $scope.globalError = node.global_error;
 
-                d3.select(element[0].children[0])
-                .attr("x", -30)
-                .attr("y", -25)
-                .attr("height", 120)
-                .attr("width", 260)
-                .select(".tooltip-container")
-                .classed("tooltip-container-tree", true);
+            d3.select(element[0].children[0])
+            .attr("x", -30)
+            .attr("y", -25)
+            .attr("height", 120)
+            .attr("width", 260)
+            .select(".tooltip-container")
+            .classed("tooltip-container-tree", true);
 
-                // Compute the position of each group on the pie
-                var pie = d3.layout.pie()
-                    .value(function(d) {return d[1];});
-                var proba = pie($scope.probabilities);
+            // Compute the position of each group on the pie
+            var pie = d3.layout.pie()
+                .value(function(d) {return d[1];});
+            var proba = pie($scope.probabilities);
 
-                // Build the pie chart
-                d3.select("#tooltip-" + node.node_id)
-                .append("g")
-                .attr("transform", "translate(10, 25)")
-                .selectAll('.camembert')
-                .data(proba)
-                .enter()
-                .append('path')
-                .attr('d', d3.svg.arc()
-                    .innerRadius(0)
-                    .outerRadius(30)
-                )
-                .attr('fill', function(d) {
-                    return $scope.colors[d.data[0]];
-                });
+            // Build the pie chart
+            d3.select("#tooltip-" + node.node_id)
+            .append("g")
+            .attr("transform", "translate(10, 25)")
+            .selectAll('.camembert')
+            .data(proba)
+            .enter()
+            .append('path')
+            .attr('d', d3.svg.arc()
+                .innerRadius(0)
+                .outerRadius(30)
+            )
+            .attr('fill', function(d) {
+                return $scope.colors[d.data[0]];
+            });
+        }
+    };
+});
+
+app.directive('tooltipHistogram', function() {
+    return {
+        scope: true,
+        restrict: "C",
+        templateUrl: "/plugins/model-error-analysis/resource/templates/tooltip.html",
+        link: function($scope, element, attr) {
+            const binIndex = parseInt(attr.binIndex);
+            const histData = attr.wholeData ? $scope.histDataWholeSet[attr.feature] : $scope.histData[attr.feature];
+            $scope.probabilities = Object.entries(histData.target_distrib).map(_ => [_[0], _[1][binIndex]]);
+            $scope.probabilities.sort(function(a, b) {
+                return b[1] - a[1];
+            });
+            $scope.probabilities = $scope.probabilities.slice(0, 5).map(_ => [_[0], _[1]]);
+            $scope.samples = [histData.count[binIndex],
+                            histData.count[binIndex]/$scope.selectedNode.samples[0]];
+            if (histData.bin_value) {
+                $scope.binName = histData.bin_value[binIndex];
+            } else {
+                $scope.binName = `[${histData.bin_edge[binIndex]}, ${histData.bin_edge[binIndex+1]})`;
             }
 
-            if (attr.tooltip == "histogram") {
-                const binIndex = parseInt(attr.binIndex);
-                let histData;
-                if (attr.wholeData) {
-                    $scope.dataOrigin = "Whole data";
-                    histData = $scope.histDataWholeSet[attr.feature];
-                } else {
-                    $scope.dataOrigin = "Subset data (at this node)"
-                    histData = $scope.histData[attr.feature];
-                }
-                $scope.probabilities = Object.entries(histData.target_distrib).map(_ => [_[0], _[1][binIndex]]);
-                $scope.probabilities.sort(function(a, b) {
-                    return b[1] - a[1];
-                });
-                $scope.probabilities = $scope.probabilities.slice(0, 5).map(_ => [_[0], _[1]]);
-                $scope.samples = [histData.count[binIndex],
-                                histData.count[binIndex]/$scope.selectedNode.samples[0]];
-                if (histData.bin_value) {
-                    $scope.binName = histData.bin_value[binIndex];
-                } else {
-                    $scope.binName = `[${histData.bin_edge[binIndex]}, ${histData.bin_edge[binIndex+1]})`;
-                }
-
-                d3.select(element[0].children[0])
-                .attr("width", 190)
-                .attr("height", 80 + $scope.probabilities.length * 22);
-            }
+            d3.select(element[0].children[0])
+            .attr("width", 190)
+            .attr("height", 60 + $scope.probabilities.length * 22);
         }
     };
 });

@@ -46,7 +46,8 @@ app.directive("histogram", function (Format, $compile) {
             const addInteractions = function(groups, onWholeSet) {
                 groups.on("mouseenter", function(d, i) {
                     histSvg.append("g")
-                    .attr("tooltip", "histogram")
+                    .classed("tooltip", true)
+                    .classed("tooltip-histogram", true)
                     .attr("feature", feature)
                     .attr("whole-data", onWholeSet)
                     .attr("bin-index", i)
@@ -58,17 +59,17 @@ app.directive("histogram", function (Format, $compile) {
                     let xPosition = d3.mouse(this)[0] + 20;
                     let yPosition = d3.mouse(this)[1];
                     const histogramDim = d3.select(".histogram-svg").node().getBoundingClientRect();
-                    const tooltipDim = d3.select("[tooltip='histogram']").node().getBoundingClientRect();
+                    const tooltipDim = d3.select(".tooltip-histogram").node().getBoundingClientRect();
                     if (xPosition + 25 + tooltipDim.width > histogramDim.width) {
                         xPosition -= 30 + tooltipDim.width;
                     }
                     if (yPosition + 15 + tooltipDim.height > histogramDim.height) {
                         yPosition -= (yPosition + tooltipDim.height) - histogramDim.height + 15;
                     }
-                    d3.select("[tooltip='histogram']").attr("transform", "translate(" + xPosition + "," + yPosition + ")");
+                    d3.select(".tooltip-histogram").attr("transform", "translate(" + xPosition + "," + yPosition + ")");
                 })
                 .on("mouseleave", function() {
-                    d3.select("[tooltip='histogram']").remove();
+                    d3.select(".tooltip-histogram").remove();
                 });
             }
 

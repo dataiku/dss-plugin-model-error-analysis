@@ -84,7 +84,7 @@ app.service("TreeInteractions", function($timeout, $http, $compile, Format) {
     }
 
     const hideUnselected = function(id) {
-        d3.selectAll("[tooltip='tree']").classed("selected", false);
+        d3.selectAll(".tooltip-tree").classed("selected", false);
         d3.selectAll(".selected").classed("selected", false);
         d3.select("#node-" + id).select("rect").style("stroke", null).style("stroke-width", null);
     }
@@ -205,7 +205,8 @@ app.service("TreeInteractions", function($timeout, $http, $compile, Format) {
     const addVizTooltips = function(scope) {
         d3.selectAll(".node-container").append("g")
         .attr("transform", "translate(100, -10)")
-        .attr("tooltip", "tree")
+        .classed("tooltip", true)
+        .classed("tooltip-tree", true)
         .attr("id", d => "tooltip-" + d.node_id)
         .attr("node", d => d.node_id)
         .call(function() {
@@ -330,7 +331,7 @@ app.service("TreeInteractions", function($timeout, $http, $compile, Format) {
     }
 
     const updateTooltipColors = function(colors) {
-        d3.selectAll("[tooltip='tree']").selectAll("path").attr("fill", d => colors[d.data[0]]);
+        d3.selectAll(".tooltip-tree").selectAll("path").attr("fill", d => colors[d.data[0]]);
     }
 
     return {

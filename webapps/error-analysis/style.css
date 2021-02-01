@@ -421,11 +421,6 @@ div[histogram] {
     display: flex;
 }
 
-.selected-split-panel-search-bar {
-    position: absolute;
-    right: 0px;
-}
-
 .header-border {
     border-bottom: 1px var(--grey-lighten-5) solid;
 }
@@ -493,17 +488,13 @@ div[histogram] {
     margin-bottom: 5px;
 }
 
-[tooltip] .info {
+.tooltip .info {
     justify-content: space-between;
 }
 
 .samples {
     width: 70%;
     text-align: right;
-}
-
-.info.global-error {
-    margin-left: 25px;
 }
 
 .info-samples-absolute {
@@ -749,6 +740,7 @@ path.selected, path.hovered {
     padding: 10px 10px;
     border: 1px solid var(--grey-lighten-6);
     background: var(--white);
+    flex-direction: row-reverse;
 }
 
 .camembert-container {
@@ -762,27 +754,27 @@ path.selected, path.hovered {
     justify-content: space-evenly;
 }
 
-[tooltip="histogram"] .tooltip-main {
+.tooltip-histogram .tooltip-main {
     width: 100%;
 }
 
-[tooltip="tree"] .tooltip-main {
+.tooltip-tree .tooltip-main {
     width: 70%;
 }
 
-[tooltip="histogram"] .tooltip-container {
+.tooltip-histogram .tooltip-container {
     width: 85%;
 }
 
-[tooltip="tree"] .tooltip-container {
+.tooltip-tree .tooltip-container {
     width: 90%;
 }
 
-[tooltip='tree'] {
+.tooltip-tree {
     visibility: hidden;
 }
 
-[tooltip='tree'].selected, [tooltip='tree'].hovered {
+.tooltip-tree.selected, .tooltip-tree.hovered {
     visibility: visible;
 }
 

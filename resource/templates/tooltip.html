@@ -1,10 +1,8 @@
 <foreignObject>
     <div class="tooltip-container">
-        <div class="camembert-container" ng-if="treeTooltip"></div>
         <div class="tooltip-main">
             <div>
-                <div class="section-title tooltip-title ellipsed-text" ng-if="dataOrigin">{{dataOrigin}}</div>
-                <div class="section-title tooltip-title ellipsed-text" ng-if="binName">{{binName}}</div>
+                <div class="info tooltip-title ellipsed-text" ng-if="binName">{{binName}}</div>
                 <div>
                     <div class="info" ng-repeat="proba in probabilities">
                         <div class="proba-bullet" ng-style="{'background-color': colors[proba[0]]}"></div>
@@ -20,9 +18,9 @@
                     <em class="very-small-text" ng-if="samples[1]">&nbsp;({{toFixedIfNeeded(samples[1], 2, true)}}%)</em>
                 </div>
             </div>
-            <div class="section-inline global-error" style="top: 75px;" ng-if="globalError !== undefined">
+            <div class="section-inline" style="top: 75px;" ng-if="globalError !== undefined">
                 <div class="section-title">Global error</div>
-                <div class="info global-error">
+                <div class="info">
                     <span class="small-text">&nbsp;{{toFixedIfNeeded(globalError, 3, true)}}</span>
                 </div>
             </div>
