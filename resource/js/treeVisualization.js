@@ -1,4 +1,47 @@
 'use strict';
+app.directive('tooltipTree', function() {
+    return {
+        scope: true,
+        restrict: "C",
+        templateUrl: "/plugins/model-error-analysis/resource/templates/tooltip.html",
+        link: function(scope, element, attr) {
+            const node = scope.treeData[attr.node];
+            scope.probabilities = node.probabilities;
+            scope.samples = node.samples;
+            scope.globalError = node.global_error;
+
+            scope.inRightPanel = attr.hasOwnProperty("rightPanel");
+
+            d3.select(element[0].children[0])
+            .attr("x", scope.inRightPanel ? 0 : -30)
+            .attr("y", scope.inRightPanel ? 0 : -25)
+            .attr("height", scope.inRightPanel ? "100%" : 120)
+            .attr("width", scope.inRightPanel ? "100%" : 260);
+
+            // Compute the position of each group on the pie
+            const pie = d3.layout.pie()
+                .value(function(d) {return d[1];});
+            const proba = pie(scope.probabilities);
+
+            // Build the pie chart
+            d3.select(scope.inRightPanel ? "#tooltip-right-panel" : "#tooltip-" + node.node_id)
+            .append("g")
+            .attr("transform", scope.inRightPanel ? "translate(50, 50)" : "translate(10, 25)")
+            .selectAll('.camembert')
+            .data(proba)
+            .enter()
+            .append('path')
+            .attr('d', d3.svg.arc()
+                .innerRadius(0)
+                .outerRadius(scope.inRightPanel ? 40 : 30)
+            )
+            .attr('fill', function(d) {
+                return scope.colors[d.data[0]];
+            });
+        }
+    };
+});
+
 app.service("TreeInteractions", function($timeout, $http, $compile, Format) {
     let svg, tree, currentPath = new Set();
     const side = 30, maxZoom = 3;
@@ -83,9 +126,9 @@ app.service("TreeInteractions", function($timeout, $http, $compile, Format) {
         }
     }
 
-    const hideUnselected = function(id) {
+    const hideUnselected = function() {
         d3.selectAll(".selected").classed("selected", false);
-        d3.select("#node-" + id).select("rect").style("stroke", null).style("stroke-width", null);
+        d3.select(".node--selected").classed("node--selected", false);
     }
 
     const showSelected = function(id, scope) {
@@ -98,8 +141,7 @@ app.service("TreeInteractions", function($timeout, $http, $compile, Format) {
             d3.select("#link-" + node_id).classed("selected", true).classed("hovered", false);
 
             if (node_id == id) {
-                node.select("rect").style("stroke", "#007eff")
-                    .style("stroke-width", "1px");
+                node.select("rect").classed("node--selected", true);
             } else {
                 node.select("#tooltip-"+node_id).classed("selected", true);
             }
@@ -172,7 +214,7 @@ app.service("TreeInteractions", function($timeout, $http, $compile, Format) {
         }
         if (scope.selectedNode) {
             update(scope);
-            hideUnselected(scope.selectedNode.node_id);
+            hideUnselected();
         }
         hideUnhovered();
         showSelected(id, scope);
@@ -217,6 +259,30 @@ app.service("TreeInteractions", function($timeout, $http, $compile, Format) {
         });
     };
 
+    const addHatchMask = function(hatchSize = 5) {
+        //Create hatched pattern
+        const defs = svg.append("defs");
+        defs.append("pattern")
+            .attr("id", "hatch-pattern")
+            .attr("width", hatchSize)
+            .attr("height", hatchSize)
+            .attr("patternTransform", "rotate(45)")
+            .attr("patternUnits","userSpaceOnUse")
+            .append("rect")
+            .attr("width", hatchSize/2)
+            .attr("height", hatchSize)
+            .attr("fill", "white");
+
+        defs.append("mask")
+            .attr("id", "hatch-mask")
+            .append("rect")
+            .attr("width", "100%")
+            .attr("height", "100%")
+            .attr("x", 0)
+            .attr("y", 0)
+            .attr("fill", "url(#hatch-pattern");
+    }
+
     const createTree = function(scope) {
         tree = d3.layout.tree()
                 .nodeSize([140, 65])
@@ -227,8 +293,11 @@ app.service("TreeInteractions", function($timeout, $http, $compile, Format) {
         svg = d3.select(".tree").append("svg")
             .attr("width", "100%")
             .attr("height", "100%")
-            .call(zoomListener).on("dblclick.zoom", null)
-            .append("g");
+            .call(zoomListener).on("dblclick.zoom", null);
+
+        addHatchMask();
+
+        svg = svg.append("g");
 
         update(scope);
         loadHistograms(scope, 0);

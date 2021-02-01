@@ -1,11 +1,12 @@
 <foreignObject>
-    <div class="tooltip-container">
-        <div class="tooltip-main">
+    <div class="tooltip-container"
+        ng-class="{'tooltip-rp-container': inRightPanel, 'tooltip-tree-container': !inRightPanel && !inHistogram, 'tooltip-histogram-container': inHistogram}">
+        <div class="tooltip-main" ng-class="{'tooltip-histogram-main': inHistogram}">
             <div>
                 <div class="info tooltip-title ellipsed-text" ng-if="inHistogram">{{binName}}</div>
                 <div>
                     <div class="info" ng-repeat="proba in probabilities">
-                        <div class="proba-bullet" ng-style="{'background-color': colors[proba[0]]}"></div>
+                        <div class="bullet" ng-style="{'background-color': colors[proba[0]]}"></div>
                         <span class="no-wrap-text small-text">{{proba[0]}}</span>
                         <span >&nbsp; {{proba[1].toFixed(3)}}</span>
                     </div>
