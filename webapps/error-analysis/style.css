@@ -132,7 +132,6 @@ select {
 
 .tree-visualization {
     height: 100%;
-    position: relative;
     border-right: 1px solid var(--grey-lighten-5);
 }
 
@@ -226,7 +225,7 @@ select {
     width: 150px;
     height: 210px;
     position: absolute;
-    top: 93px;
+    top: 53px;
     right: 130px;
     background: var(--white);
     display: flex;
@@ -261,13 +260,9 @@ select {
     justify-content: space-between;
     position: absolute;
     right: 20px;
-    top: 60px;
+    top: 20px;
     width: 150px;
     font-size: 20px;
-}
-
-.icons-div--offset {
-    top: 200px;
 }
 
 .icons-div > img:hover {
@@ -467,6 +462,7 @@ div[histogram] {
     width: 100%;
     height: calc(100% - 40px);
     cursor: grab;
+    position: relative;
 }
 
 .tree:active {
