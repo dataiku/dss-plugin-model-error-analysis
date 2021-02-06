@@ -384,6 +384,10 @@ div[histogram] {
     margin-bottom: 5px;
 }
 
+.info-decision-rule {
+    width: 100%;
+}
+
 .tooltip .info {
     justify-content: space-between;
 }
@@ -477,6 +481,15 @@ div[histogram] {
     text-overflow: ellipsis;
     white-space: nowrap;
 }
+
+.no-shrink-no-grow {
+    flex: 0 0 auto;
+}
+
+.no-grow {
+    flex: 0 auto;
+}
+
 
 .no-wrap-text {
     white-space: nowrap;

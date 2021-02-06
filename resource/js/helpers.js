@@ -1,6 +1,7 @@
 'use strict';
 app.service("Format", function() {
     return {
+        noBreakingSpace: "\xa0",
         ellipsis: function(text, length) {
             text = text.toString();
             if (text.length > length) {
@@ -10,7 +11,7 @@ app.service("Format", function() {
         },
         toFixedIfNeeded: function(number, decimals) {
             if(Math.round(number) !== number) {
-                return number.toFixed(decimals);
+                return parseFloat(number.toFixed(decimals));
             }
             return number;
         }

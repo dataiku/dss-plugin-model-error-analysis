@@ -68,7 +68,7 @@ app.service("TreeInteractions", function($timeout, $http, $compile, Format) {
                 + (d.hasOwnProperty("end") ? (Format.ellipsis(d.end, 8) + "]") : "+∞["));
     }
 
-    const decisionRule = function(node, ellipsis) {
+    const decisionRule = function(node) {
         if (node.values) {
             let middle = " is ";
             if (node.others) {
@@ -77,19 +77,18 @@ app.service("TreeInteractions", function($timeout, $http, $compile, Format) {
             if (node.values.length > 1) {
                 middle += "one of ";
             }
-            if (ellipsis) {
-                return Format.ellipsis(node.feature, 20) + middle + Format.ellipsis(node.values, 20);
+            return {
+                left: node.feature,
+                middle,
+                right: node.values.join(", ")
             }
-            return node.feature + middle + node.values;
         }
-        if (ellipsis) {
-            return (node.hasOwnProperty("beginning") ? (Format.ellipsis(node.beginning, 10) + " < ") : "")
-                + Format.ellipsis(node.feature, 20)
-                + (node.hasOwnProperty("end") ? (" ≤ " + Format.ellipsis(node.end, 10)) : "");
+        return {
+            left: (node.hasOwnProperty("beginning") ? (Format.toFixedIfNeeded(node.beginning, 5) + Format.noBreakingSpace + "<") : ""),
+            middle: node.feature,
+            right: (node.hasOwnProperty("end") ? ("≤" + Format.noBreakingSpace + Format.toFixedIfNeeded(node.end, 5)) : ""),
+            numerical: true
         }
-        return (node.hasOwnProperty("beginning") ? (Format.toFixedIfNeeded(node.beginning, 3) + " < ") : "")
-        + node.feature
-        + (node.hasOwnProperty("end") ? (" ≤ " + Format.toFixedIfNeeded(node.end, 3)) : "");
     }
 
     const shift = function(id, scope, classLink, unspread) {
@@ -147,7 +146,7 @@ app.service("TreeInteractions", function($timeout, $http, $compile, Format) {
             }
 
             if (node_id > 0) {
-                scope.decisionRule.unshift({"full": decisionRule(node.node().__data__), "ellipsed": decisionRule(node.node().__data__, true)});
+                scope.decisionRule.unshift(decisionRule(node.node().__data__));
             }
             currentPath.add(node_id);
             node_id = node.node().__data__.parent_id;
