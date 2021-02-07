@@ -8,7 +8,7 @@ app.directive('tooltipTree', function() {
             const node = scope.treeData[attr.node];
             scope.probabilities = node.probabilities;
             scope.samples = node.samples;
-            scope.globalError = node.global_error;
+            scope.globalError = node.global_error * 100;
 
             scope.inRightPanel = attr.hasOwnProperty("rightPanel");
 
