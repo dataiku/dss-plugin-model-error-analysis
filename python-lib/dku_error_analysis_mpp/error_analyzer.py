@@ -4,7 +4,6 @@ import collections
 from sklearn import tree
 from sklearn.model_selection import GridSearchCV
 from sklearn.base import is_regressor
-from sklearn.utils.validation import check_is_fitted
 from sklearn.exceptions import NotFittedError
 from dku_error_analysis_mpp.kneed import KneeLocator
 from dku_error_analysis_utils import check_enough_data, ErrorAnalyzerConstants

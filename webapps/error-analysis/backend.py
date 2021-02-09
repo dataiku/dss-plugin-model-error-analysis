@@ -23,30 +23,37 @@ VERSION_ID = get_webapp_config()["versionId"]
 
 TREE = []
 
-def get_error_dt(model_handler):
-    model_accessor = ModelAccessor(model_handler)
-    dku_error_analyzer = DkuErrorAnalyzer(model_accessor)
-
-    dku_error_analyzer.fit()
-    dku_error_analyzer.parse_tree()
-    tree = dku_error_analyzer.tree
-
-    report_dict = dku_error_analyzer.mpp_summary(output_dict=True)
-    confidence_decision = report_dict[ErrorAnalyzerConstants.CONFIDENCE_DECISION]
+def check_confidence(summary):
+    confidence_decision = summary[ErrorAnalyzerConstants.CONFIDENCE_DECISION]
 
     if not confidence_decision:
         # TODO: add message in UI (ch49209)
         LOGGER.warning("Warning: the built MPP might not be representative of the primary model performances.")
 
-    return tree
+def get_error_analyzer(model_handler):
+    model_accessor = ModelAccessor(model_handler)
+    dku_error_analyzer = DkuErrorAnalyzer(model_accessor)
+
+    dku_error_analyzer.fit()
+    dku_error_analyzer.parse_tree()
+    return dku_error_analyzer
 
 @app.route("/load", methods=["GET"])
 def load():
     try:
         model_handler = get_model_handler(dataiku.Model(MODEL_ID), VERSION_ID)
-        tree = get_error_dt(model_handler)
+        analyzer = get_error_analyzer(model_handler)
+        summary = analyzer.mpp_summary(output_dict=True)
+        check_confidence(summary)
+        tree = analyzer.tree
         TREE.append(tree)
-        return jsonify(nodes=tree.jsonify_nodes(), target_values=tree.target_values, features=tree.features, rankedFeatures=tree.ranked_features[:ErrorAnalyzerConstants.TOP_K_FEATURES])
+
+        return jsonify(nodes=tree.jsonify_nodes(),
+            target_values=tree.target_values,
+            features=tree.features,
+            rankedFeatures=tree.ranked_features[:ErrorAnalyzerConstants.TOP_K_FEATURES],
+            estimatedAccuracy=summary[ErrorAnalyzerConstants.PRIMARY_MODEL_PREDICTED_ACCURACY],
+            actualAccuracy=summary[ErrorAnalyzerConstants.PRIMARY_MODEL_TRUE_ACCURACY])
     except:
         LOGGER.error(traceback.format_exc())
         return traceback.format_exc(), 500

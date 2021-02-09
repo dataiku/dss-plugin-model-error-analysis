@@ -5,43 +5,68 @@
          ng-keyup="$event.keyCode == 27 && removeModal()"
          ng-click="removeModal($event)">
     </div>
-    <div class="tree-visualization" ng-class="{'full-screen': template === 'sun'}">
-        <div class="toolbar-header">
-            <div class="icons-div" ng-class="{'icons-div-tree': template === 'viz', 'icons-div-sun': template === 'sun'}">
+    <div class="tree-visualization tree-visualization--tree">
+        <div class="toolbar-header"  ng-click="displayText = !displayText" ng-class="{'toolbar-header--expanded': displayText}">
+            <div class="expandable-introduction-text" ng-class="{'expandable-introduction-text--expanded': displayText}">
+                <div class="expand-text">
+                    <span class="link link-show-more">
+                        How does it work ?
+                        &nbsp;<i ng-class="{'icon-chevron-down': !displayText, 'icon-chevron-up': displayText}"></i>
+                    </span>
+                </div>
+                <div class="introduction-text" ng-if="displayText">
+                    <p>
+                        Model Error Analysis highlights the subpopulations where your model (the primary model) makes the majority of errors.
+                    </p>
+                    <p>
+                        A Decision Tree has been trained with the primary model correctness as the target, on its test set.  
+                        If the primary model is a classification, a prediction is correct if the predicted value is the correct class.
+                        If the primary model is a regression, a prediction is correct if the predicted value is not too far from the correct one. 
+                    </p>
+                    <p>
+                        The leaves of the tree hence partition the primary model test samples into groups with similar feature values and correctness.
+                        Selecting a leaf will show you detailed statistics regarding the errors in the leaf subset compared to the whole set.
+                        See the <a class="link">Plugin documentation&nbsp;<i class="icon-external-link"></i></a>.
+                    </p>
+                </div>
+            </div>
+            <div ng-class="{'metrics': !displayText, 'metrics--expanded': displayText}">
+                <div class="metric">
+                    <span class="metric__value" ng-show="metrics && metrics.estimated">{{ toFixedIfNeeded(metrics.estimated, 3, true) }}</span>
+                    <span class="metric__value" ng-show="!metrics ||  !metrics.estimated">&hellip;</span>
+                    <div>
+                        <div class="metric__name">Estimated accuracy</div>
+                        <span class="metric__explanation" ng-if="displayText">Proportion of samples the primary model predicts correctly</span>
+                    </div>
+                </div>
+                <div class="metric">
+                    <span class="metric__value" ng-show="metrics && metrics.actual">{{ toFixedIfNeeded(metrics.actual, 3, true) }}</span>
+                    <span class="metric__value" ng-show="!metrics || !metrics.actual">&hellip;</span>
+                    <div>
+                        <div class="metric__name">Actual accuracy</div>
+                        <span class="metric__explanation" ng-if="displayText">Proportion of samples the Decision Tree predicts as correct predictions</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="tree" ng-class="{'tree--no-selection': loadingTree || !selectedNode && !hideExploreInfo}" ng-mouseover="hideExploreInfo = true" ng-mouseleave="hideExploreInfo = false">
+            <div class="icons-div">
                 <i class="icon icon-tint icon-grey"
                     title="Change color scale"
                     ng-click="displayColorPicker = !displayColorPicker">
                 </i>
-                <div class="icons-toggle">
-                    <i class="icon icon-eye-open"
-                       ng-class="{'toolbar-selected': template === 'viz'}"
-                       title="Tree visualization"
-                       ng-click="setTemplate('viz')">
-                    </i>
-                    <img class="icon sunburst"
-                         ng-class="{'toolbar-selected': template === 'sun'}"
-                         src="/plugins/model-error-analysis/resource/img/sunburst.png"
-                         title="Sunburst visualization"
-                         ng-click="setTemplate('sun')"
-                         height="20px">
-                    </img>
-                </div>
                 <img class="icon"
-                     ng-if="template === 'viz'"
                      src="/plugins/model-error-analysis/resource/img/fit.png"
-                     title="Zoom fit" ng-click="zoomFit()"
+                     title="See whole tree" ng-click="zoomFit()"
                      height="20px">
                 </img>
                 <img class="icon"
-                     ng-if="template === 'viz'"
                      src="/plugins/model-error-analysis/resource/img/100.png"
-                     title="Zoom 100%"
-                     ng-click="zoomBack()"
+                     title="Zoom on selected node"
+                     ng-click="selectedNode && zoomBack()"
                      height="20px">
                 </img>
             </div>
-        </div>
-        <div ng-class="template == 'sun' ? 'tree-sunburst' : 'tree'">
             <div class="color-picker" ng-show="displayColorPicker">
                 <div class="row-color-picker row"
                      ng-repeat="(name, scale) in scales"
@@ -55,10 +80,15 @@
                     <div>{{name}}</div>
                 </div>
             </div>
-            <div id="leftsidebar" ng-if="template == 'sun'"></div>
-            <div id="chart" ng-if="template == 'sun'"></div>
+            <div class="empty-panel"
+                 ng-if="loadingTree || !selectedNode && !hideExploreInfo">
+                    Drag and zoom to explore
+            </div>
             <spinner ng-if="loadingTree"></spinner>
         </div>
     </div>
-    <div class="histogram-panel" ng-include="'/plugins/model-error-analysis/resource/templates/histograms.html'" ng-if="!loadingHistogram && template === 'viz'"></div>
+    <div class="histogram-panel" ng-include="'/plugins/model-error-analysis/resource/templates/histograms.html'" ng-if="selectedNode.node_id && !loadingHistogram"></div>
+    <div class="histogram-panel--empty empty-panel" ng-if="!selectedNode">
+        Select a node
+    </div>
 </div>

@@ -1,4 +1,33 @@
 'use strict';
+app.directive('tooltipHistogram', function() {
+    return {
+        scope: true,
+        restrict: "C",
+        templateUrl: "/plugins/model-error-analysis/resource/templates/tooltip.html",
+        link: function(scope, element, attr) {
+            scope.inHistogram = true;
+            const binIndex = parseInt(attr.binIndex);
+            const histData = attr.wholeData ? scope.histDataWholeSet[attr.feature] : scope.histData[attr.feature];
+            scope.probabilities = Object.entries(histData.target_distrib).map(_ => [_[0], _[1][binIndex]]);
+            scope.probabilities.sort(function(a, b) {
+                return b[1] - a[1];
+            });
+            scope.probabilities = scope.probabilities.slice(0, 5).map(_ => [_[0], _[1]]);
+            scope.samples = [histData.count[binIndex],
+                            histData.count[binIndex]/scope.selectedNode.samples[0]];
+            if (histData.bin_value) {
+                scope.binName = histData.bin_value[binIndex];
+            } else {
+                scope.binName = `[${histData.bin_edge[binIndex]}, ${histData.bin_edge[binIndex+1]})`;
+            }
+
+            d3.select(element[0].children[0])
+            .attr("width", 190)
+            .attr("height", 60 + scope.probabilities.length * 22);
+        }
+    };
+});
+
 app.directive("histogram", function (Format, $compile) {
     return {
         scope: true,
@@ -11,30 +40,6 @@ app.directive("histogram", function (Format, $compile) {
             let histSvg = d3.select(elem[0].children[0]).append("svg")
                 .attr("width", "100%")
                 .attr("height", "100%");
-  
-            //Create hatched pattern
-            const hatchSize = 5;
-            const defs = histSvg.append("defs");
-            defs.append("pattern")
-                .attr("id", "hatch-pattern")
-                .attr("width", hatchSize)
-                .attr("height", hatchSize)
-                .attr("patternTransform", "rotate(45)")
-                .attr("patternUnits","userSpaceOnUse")
-                .append("rect")
-                .attr("width", hatchSize/2)
-                .attr("height", hatchSize)
-                .attr("fill", "white");
-
-            defs.append("mask")
-                .attr("id", "hatch-mask")
-                .append("rect")
-                .attr("width", "100%")
-                .attr("height", "100%")
-                .attr("x", 0)
-                .attr("y", 0)
-                .attr("fill", "url(#hatch-pattern");
-
             
             histSvg = histSvg.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
@@ -46,7 +51,8 @@ app.directive("histogram", function (Format, $compile) {
             const addInteractions = function(groups, onWholeSet) {
                 groups.on("mouseenter", function(d, i) {
                     histSvg.append("g")
-                    .attr("tooltip", "histogram")
+                    .classed("tooltip", true)
+                    .classed("tooltip-histogram", true)
                     .attr("feature", feature)
                     .attr("whole-data", onWholeSet)
                     .attr("bin-index", i)
@@ -58,17 +64,17 @@ app.directive("histogram", function (Format, $compile) {
                     let xPosition = d3.mouse(this)[0] + 20;
                     let yPosition = d3.mouse(this)[1];
                     const histogramDim = d3.select(".histogram-svg").node().getBoundingClientRect();
-                    const tooltipDim = d3.select("[tooltip='histogram']").node().getBoundingClientRect();
+                    const tooltipDim = d3.select(".tooltip-histogram").node().getBoundingClientRect();
                     if (xPosition + 25 + tooltipDim.width > histogramDim.width) {
                         xPosition -= 30 + tooltipDim.width;
                     }
                     if (yPosition + 15 + tooltipDim.height > histogramDim.height) {
                         yPosition -= (yPosition + tooltipDim.height) - histogramDim.height + 15;
                     }
-                    d3.select("[tooltip='histogram']").attr("transform", "translate(" + xPosition + "," + yPosition + ")");
+                    d3.select(".tooltip-histogram").attr("transform", "translate(" + xPosition + "," + yPosition + ")");
                 })
                 .on("mouseleave", function() {
-                    d3.select("[tooltip='histogram']").remove();
+                    d3.select(".tooltip-histogram").remove();
                 });
             }
 

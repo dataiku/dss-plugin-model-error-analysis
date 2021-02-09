@@ -120,7 +120,7 @@ class InteractiveTree(object):
     def jsonify_nodes(self):
         jsonified_tree = {}
         for key, node in self.nodes.items():
-            jsonified_tree[key] = node.jsonify()
+            jsonified_tree[str(key)] = node.jsonify()
         return jsonified_tree
 
     def add_node(self, node):
@@ -196,7 +196,7 @@ class InteractiveTree(object):
                 target_distrib_dict = target_distrib[interval].to_dict() if count > 0 else {}
                 stats["target_distrib"][ErrorAnalyzerConstants.WRONG_PREDICTION].append(target_distrib_dict.get(ErrorAnalyzerConstants.WRONG_PREDICTION, 0))
                 stats["target_distrib"][ErrorAnalyzerConstants.CORRECT_PREDICTION].append(target_distrib_dict.get(ErrorAnalyzerConstants.CORRECT_PREDICTION, 0))
-                stats["count"].append(count/float(full_count))
+                stats["count"].append(count)
                 stats["mid"].append(interval.mid)
                 if len(stats["bin_edge"]) == 0:
                     stats["bin_edge"].append(interval.left)
@@ -219,7 +219,7 @@ class InteractiveTree(object):
                 target_distrib_dict = target_distrib[value].to_dict()
                 stats["target_distrib"][ErrorAnalyzerConstants.WRONG_PREDICTION].append(target_distrib_dict.get(ErrorAnalyzerConstants.WRONG_PREDICTION, 0))
                 stats["target_distrib"][ErrorAnalyzerConstants.CORRECT_PREDICTION].append(target_distrib_dict.get(ErrorAnalyzerConstants.CORRECT_PREDICTION, 0))
-                stats["count"].append(col_distrib[value]/float(full_count))
+                stats["count"].append(col_distrib[value])
                 stats["bin_value"].append(value)
                 if len(stats["bin_value"]) == nr_bins:
                     return stats

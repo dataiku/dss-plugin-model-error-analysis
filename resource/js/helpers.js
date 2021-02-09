@@ -1,6 +1,7 @@
 'use strict';
 app.service("Format", function() {
     return {
+        noBreakingSpace: "\xa0",
         ellipsis: function(text, length) {
             text = text.toString();
             if (text.length > length) {
@@ -10,7 +11,7 @@ app.service("Format", function() {
         },
         toFixedIfNeeded: function(number, decimals) {
             if(Math.round(number) !== number) {
-                return number.toFixed(decimals);
+                return parseFloat(number.toFixed(decimals));
             }
             return number;
         }
@@ -113,77 +114,6 @@ app.directive("modalBackground", function($compile) {
             }
         }
     }
-});
-
-app.directive('tooltip', function() {
-    return {
-        scope: true,
-        templateUrl: "/plugins/model-error-analysis/resource/templates/tooltip.html",
-        link: function($scope, element, attr) {
-            if(attr.tooltip == "tree") {
-                const node = $scope.treeData[attr.node];
-                $scope.probabilities = node.probabilities;
-                $scope.samples = node.samples;
-                $scope.globalError = node.global_error;
-
-                d3.select(element[0].children[0])
-                .attr("x", -30)
-                .attr("y", -25)
-                .attr("height", 120)
-                .attr("width", 240)
-                .select(".tooltip-info")
-                .classed("tooltip-info-tree", true);
-
-                // Compute the position of each group on the pie
-                var pie = d3.layout.pie()
-                    .value(function(d) {return d[1];});
-                var proba = pie($scope.probabilities);
-
-                // Build the pie chart
-                d3.select("#tooltip-" + node.id)
-                .append("g")
-                .attr("transform", "translate(5, 10)")
-                .selectAll('.camembert')
-                .data(proba)
-                .enter()
-                .append('path')
-                .attr('d', d3.svg.arc()
-                    .innerRadius(0)
-                    .outerRadius(30)
-                )
-                .attr('fill', function(d) {
-                    return $scope.colors[d.data[0]];
-                });
-            }
-
-            if (attr.tooltip == "histogram") {
-                const binIndex = parseInt(attr.binIndex);
-                let histData;
-                if (attr.wholeData) {
-                    $scope.dataOrigin = "Whole data";
-                    histData = $scope.histDataWholeSet[attr.feature];
-                } else {
-                    $scope.dataOrigin = "Subset data (at this node)"
-                    histData = $scope.histData[attr.feature];
-                }
-                $scope.probabilities = Object.entries(histData.target_distrib).map(_ => [_[0], _[1][binIndex]]);
-                $scope.probabilities.sort(function(a, b) {
-                    return b[1] - a[1];
-                });
-                $scope.probabilities = $scope.probabilities.slice(0, 5).map(_ => [_[0], _[1] / histData.count[binIndex]]);
-                $scope.samples = [$scope.toFixedIfNeeded(histData.count[binIndex], 2, true)];
-                if (histData.bin_value) {
-                    $scope.binName = histData.bin_value[binIndex];
-                } else {
-                    $scope.binName = `[${histData.bin_edge[binIndex]}, ${histData.bin_edge[binIndex+1]})`;
-                }
-
-                d3.select(element[0].children[0])
-                .attr("width", 190)
-                .attr("height", 80 + $scope.probabilities.length * 22);
-            }
-        }
-    };
 });
 
 app.directive('focusHere', function ($timeout) {

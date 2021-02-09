@@ -5,6 +5,7 @@ from dataiku.doctor.preprocessing.dataframe_preprocessing import RescalingProces
     FastSparseDummifyProcessor, ImpactCodingStep, FlagMissingValue2, TextCountVectorizerProcessor, TextHashingVectorizerWithSVDProcessor, \
     TextHashingVectorizerProcessor, TextTFIDFVectorizerProcessor
 from dku_error_analysis_utils import ErrorAnalyzerConstants, rank_features_by_error_correlation
+from functools import reduce
 
 
 class TreeParser(object):

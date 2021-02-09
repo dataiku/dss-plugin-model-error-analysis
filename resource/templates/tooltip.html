@@ -1,28 +1,35 @@
 <foreignObject>
-    <div class="tooltip-info">
-        <div class="section">
-            <div class="section-title tooltip-title ellipsed-text" ng-if="dataOrigin">{{dataOrigin}}</div>
-            <div class="section-title tooltip-title ellipsed-text" ng-if="binName">{{binName}}</div>
-            <div class="section-title">Probabilities</div>
-            <div class="info-section">
-                <div class="info" ng-repeat="proba in probabilities">
-                    <div class="proba-square" ng-style="{'background-color': colors[proba[0]]}"></div>
-                    <span class="ellipsed-text small-text" title="{{proba[0]}}">{{proba[0]}}:</span>
-                    <span class="very-small-text">&nbsp; {{proba[1].toFixed(3)}}</span>
+    <div class="tooltip-container"
+        ng-class="{'tooltip-rp-container': inRightPanel, 'tooltip-tree-container': !inRightPanel && !inHistogram, 'tooltip-histogram-container': inHistogram}">
+        <div class="tooltip-main" ng-class="{'tooltip-histogram-main': inHistogram}">
+            <div>
+                <div class="info tooltip-title ellipsed-text" ng-if="inHistogram">{{binName}}</div>
+                <div>
+                    <div class="info" ng-repeat="proba in probabilities">
+                        <div class="bullet" ng-style="{'background-color': colors[proba[0]]}"></div>
+                        <span class="no-wrap-text small-text">{{proba[0]}}</span>
+                        <span >&nbsp; {{proba[1].toFixed(3)}}</span>
+                    </div>
                 </div>
             </div>
-        </div>
-        <div class="section section-inline">
-            <div class="section-title">Samples</div>
-            <div class="info samples">
-                <div class="info-samples-absolute small-text">{{samples[0]}}</div>
-                <em class="very-small-text" ng-if="samples[1]">&nbsp;({{toFixedIfNeeded(samples[1], 2, true)}}%)</em>
+            <div ng-if="inRightPanel">
+                <strong>{{ samples[0] }}</strong> samples (<strong>{{ toFixedIfNeeded(samples[1], 2, true) }}%</strong> of the whole dataset).
             </div>
-        </div>
-        <div class="section section-inline global-error" style="top: 75px;" ng-if="globalError !== undefined">
-            <div class="section-title">Global error</div>
-            <div class="info global-error">
-                <span class="small-text">&nbsp;{{toFixedIfNeeded(globalError*100, 2, true)}}%</span>
+            <div ng-if="inRightPanel">
+                Global error (% total error in node) is <strong>{{ toFixedIfNeeded(globalError, 3, true) }}%</strong>.
+            </div>
+            <div class="section-inline" ng-if="!inRightPanel">
+                <div class="section-title">Samples</div>
+                <div class="info samples">
+                    <div class="info-samples-absolute ellipsed-text small-text" title="{{samples[0]}}">{{samples[0]}}</div>
+                    <em class="very-small-text" ng-if="samples[1]">&nbsp;({{ toFixedIfNeeded(samples[1], 2, true) }}%)</em>
+                </div>
+            </div>
+            <div class="section-inline" style="top: 75px;" ng-if="!inHistogram && !inRightPanel">
+                <div class="section-title">Global error</div>
+                <div class="info">
+                    <span class="small-text">&nbsp;{{ toFixedIfNeeded(globalError, 2, true) }}%</span>
+                </div>
             </div>
         </div>
     </div>
