@@ -539,7 +539,7 @@ path.selected, path.hovered {
 }
 
 .node-background {
-    fill: var(--white);;
+    fill: var(--white);
     stroke: var(--grey-lighten-5);
 }
 
@@ -547,7 +547,7 @@ path.selected, path.hovered {
     fill: var(--error-red);
 }
 
-.node.selected, .edge.selected {
+.node-background.selected, .edge.selected {
     stroke: var(--blue-lighten-1);
 }
 

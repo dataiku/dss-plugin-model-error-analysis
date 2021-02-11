@@ -136,7 +136,7 @@ app.service("TreeInteractions", function($timeout, $http, $compile, Format) {
         scope.decisionRule = [];
         while (node_id > -1) {
             let node = d3.select("#node-" + node_id);
-            node.selectAll(".decision-rule,.feature-children").classed("selected", true).classed("hovered", false);
+            node.selectAll(".decision-rule,.feature-children,.node-background").classed("selected", true).classed("hovered", false);
             d3.select("#edge-" + node_id).classed("selected", true).classed("hovered", false);
 
             if (node_id == id) {
