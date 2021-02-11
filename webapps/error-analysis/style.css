@@ -529,12 +529,29 @@ path.selected, path.hovered {
     stroke-opacity: 1;
 }
 
-.node-container > rect {
+.edge {
+    fill: none;
+    stroke: var(--grey-lighten-5);
+}
+
+.node-container {
     cursor: pointer;
 }
 
+.node-background {
+    fill: var(--white);;
+    stroke: var(--grey-lighten-5);
+}
+
+.node-content--error {
+    fill: var(--error-red);
+}
+
+.node.selected, .edge.selected {
+    stroke: var(--blue-lighten-1);
+}
+
 .node--selected {
-    stroke: var(--digital-blue-lighten-1);
     stroke-width: 2px;
 }
 

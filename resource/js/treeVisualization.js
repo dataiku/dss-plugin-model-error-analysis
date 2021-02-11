@@ -44,7 +44,7 @@ app.directive('tooltipTree', function() {
 
 app.service("TreeInteractions", function($timeout, $http, $compile, Format) {
     let svg, tree, currentPath = new Set();
-    const side = 30, maxZoom = 3;
+    const side = 40, maxZoom = 3;
 
     const zoom = function() {
         svg.attr("transform",  "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")")
@@ -100,7 +100,7 @@ app.service("TreeInteractions", function($timeout, $http, $compile, Format) {
                 nodes = nodes.concat(node.children_ids);
             }
 
-            const linkParentToNode = d3.select("#link-" + node.node_id);
+            const linkParentToNode = d3.select("#edge-" + node.node_id);
             if (linkParentToNode.classed(classLink)) {
                 shiftRight.add(node.parent_id);
             } else {
@@ -137,7 +137,7 @@ app.service("TreeInteractions", function($timeout, $http, $compile, Format) {
         while (node_id > -1) {
             let node = d3.select("#node-" + node_id);
             node.selectAll(".decision-rule,.feature-children").classed("selected", true).classed("hovered", false);
-            d3.select("#link-" + node_id).classed("selected", true).classed("hovered", false);
+            d3.select("#edge-" + node_id).classed("selected", true).classed("hovered", false);
 
             if (node_id == id) {
                 node.select("rect").classed("node--selected", true);
@@ -158,7 +158,7 @@ app.service("TreeInteractions", function($timeout, $http, $compile, Format) {
         while (node_id > -1) {
             let node = d3.select("#node-" + node_id);
             node.selectAll(".decision-rule,.feature-children").classed("hovered", true);
-            d3.select("#link-" + node_id).classed("hovered", true);
+            d3.select("#edge-" + node_id).classed("hovered", true);
             if (node_id != id) {
                 node.select("#tooltip-"+node_id).classed("hovered", true);
             }
@@ -320,12 +320,6 @@ app.service("TreeInteractions", function($timeout, $http, $compile, Format) {
         return "translate(" + d.x + "," + d.y + ")";
         });
 
-        node.select("rect")
-        .style("fill", function(d) {return scope.colors[d.prediction] || "black"});
-
-        node.select(".decision-rule")
-        .text(d => nodeValues(d));
-
         // add new nodes
         const nodeEnter = node.enter().append("g")
         .classed("node-container", true)
@@ -335,20 +329,26 @@ app.service("TreeInteractions", function($timeout, $http, $compile, Format) {
         });
 
         nodeEnter.append("rect")
+        .classed("node-background", true)
         .attr("height", side)
         .attr("width", side)
-        .attr("fill", function(d) {return scope.colors[d.prediction] || "black"})
-        .on("click", function(d) {
-            if (scope.selectedNode && scope.selectedNode.node_id == d.node_id) {return;}
+
+        nodeEnter.append("rect")
+        .classed("node-content--error", true)
+        .attr("x", .5)
+        .attr("y", d => .5 + (side - 1) * (1 - d.global_error))
+        .attr("height", d => (side-1)*d.global_error)
+        .attr("width", side-1)
+
+        nodeEnter.on("click", function(d) {
+            if (scope.selectedNode && scope.selectedNode.node_id == d.node_id) return;
             $timeout(select(d.node_id, scope));
-        })
-        .on("mouseenter", function(d) {
-            if (currentPath.has(d.node_id)) { return;}
+        }).on("mouseenter", function(d) {
+            if (currentPath.has(d.node_id)) return;
             showHovered(d.node_id, scope);
             shift(d.node_id, scope, "hovered");
-        })
-        .on("mouseleave", function(d) {
-            if (currentPath.has(d.node_id)) { return;}
+        }).on("mouseleave", function(d) {
+            if (currentPath.has(d.node_id))return;
             shift(d.node_id, scope, "hovered", true);
             hideUnhovered();
         });
@@ -369,33 +369,24 @@ app.service("TreeInteractions", function($timeout, $http, $compile, Format) {
         .attr("y", side + 15)
         .text(d => Format.ellipsis(scope.treeData[d.children_ids[0].toString()].feature, 20));
 
-        var link = svg.selectAll(".link")
+        const edge = svg.selectAll(".edge")
         .data(links, d => d.target.node_id);
 
         // update pre-existing links
-        link.attr("d", function(d) {
+        edge.attr("d", function(d) {
             return d3.svg.diagonal()({source: {x: d.source.x + side/2, y: d.source.y},
                                     target: {x: d.target.x + side/2, y: d.target.y}});
         })
-        .attr("stroke", function(d) {return scope.colors[d.target.prediction] || "black"})
-        .attr("stroke-width", function(d) {
-                return 1+d.target.samples[1] / 5;
-        });
 
         // add new links
-        link.enter().insert("path", "g")
-        .attr("class", "link")
-        .attr("id", d => "link-" + d.target.node_id)
+        edge.enter().insert("path", "g")
+        .attr("class", "edge")
+        .attr("id", d => "edge-" + d.target.node_id)
         .attr("d", function(d) {
             return d3.svg.diagonal()({source: {x: d.source.x + side/2, y: d.source.y},
                                   target: {x: d.target.x + side/2, y: d.target.y}});
         })
-        .attr("stroke", function(d) {return scope.colors[d.target.prediction] || "black"})
-        .style("fill", "none")
-        .attr("stroke-width", function(d) {
-                return 1+d.target.samples[1] / 5;
-        })
-        .attr("stroke-opacity", ".8");
+        .attr("stroke-width", d => 1+d.target.samples[1] / 5)
     }
 
     const updateTooltipColors = function(colors) {
