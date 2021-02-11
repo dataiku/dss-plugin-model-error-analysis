@@ -15,7 +15,7 @@ app.directive('tooltipTree', function() {
             d3.select(element[0].children[0])
             .attr("x", scope.inRightPanel ? 0 : -30)
             .attr("y", scope.inRightPanel ? 0 : -25)
-            .attr("height", scope.inRightPanel ? "100%" : 120)
+            .attr("height", scope.inRightPanel ? "100%" : 100)
             .attr("width", scope.inRightPanel ? "100%" : 260);
 
             // Compute the position of each group on the pie
@@ -26,7 +26,7 @@ app.directive('tooltipTree', function() {
             // Build the pie chart
             d3.select(scope.inRightPanel ? "#tooltip-right-panel" : "#tooltip-" + node.node_id)
             .append("g")
-            .attr("transform", scope.inRightPanel ? "translate(50, 50)" : "translate(10, 25)")
+            .attr("transform", scope.inRightPanel ? "translate(50, 50)" : "translate(10, 20)")
             .selectAll('.camembert')
             .data(proba)
             .enter()
@@ -315,7 +315,7 @@ app.service("TreeInteractions", function($timeout, $http, $compile, Format) {
 
         // update pre-existing nodes
         node.attr("transform", function(d) {
-        return "translate(" + d.x + "," + d.y + ")";
+            return "translate(" + d.x + "," + d.y + ")";
         });
 
         // add new nodes
@@ -329,14 +329,21 @@ app.service("TreeInteractions", function($timeout, $http, $compile, Format) {
         nodeEnter.append("rect")
         .classed("node-background", true)
         .attr("height", side)
-        .attr("width", side)
+        .attr("width", side);
 
         nodeEnter.append("rect")
         .classed("node-content--error", true)
         .attr("x", .5)
         .attr("y", d => .5 + (side - 1) * (1 - d.global_error))
         .attr("height", d => (side-1)*d.global_error)
-        .attr("width", side-1)
+        .attr("width", side-1);
+
+        nodeEnter.append("text")
+        .attr("class", "global-error")
+        .attr("text-anchor","middle")
+        .attr("x", side / 2)
+        .attr("y", side / 2)
+        .text(d => Format.toFixedIfNeeded(d.global_error*100, 2, true));
 
         nodeEnter.on("click", function(d) {
             if (scope.selectedNode && scope.selectedNode.node_id == d.node_id) return;
@@ -356,7 +363,7 @@ app.service("TreeInteractions", function($timeout, $http, $compile, Format) {
         .attr("class", "decision-rule")
         .attr("text-anchor","middle")
         .attr("x", side / 2)
-        .attr("y", - 5)
+        .attr("y", - 10)
         .text(d => nodeValues(d));
 
         nodeEnter.filter(d => d.children_ids.length)
@@ -364,7 +371,7 @@ app.service("TreeInteractions", function($timeout, $http, $compile, Format) {
         .attr("class", "feature-children")
         .attr("text-anchor","middle")
         .attr("x", side / 2)
-        .attr("y", side + 15)
+        .attr("y", side + 20)
         .text(d => Format.ellipsis(scope.treeData[d.children_ids[0].toString()].feature, 20));
 
         const edge = svg.selectAll(".edge")

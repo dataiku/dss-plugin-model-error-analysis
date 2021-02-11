@@ -16,19 +16,13 @@
                 <strong>{{ samples[0] }}</strong> samples (<strong>{{ toFixedIfNeeded(samples[1], 2, true) }}%</strong> of the whole dataset).
             </div>
             <div ng-if="inRightPanel">
-                Global error (% total error in node) is <strong>{{ toFixedIfNeeded(globalError, 3, true) }}%</strong>.
+                Global error (% total error in node) is <strong>{{ toFixedIfNeeded(globalError, 2, true) }}%</strong>.
             </div>
             <div class="section-inline" ng-if="!inRightPanel">
                 <div class="section-title">Samples</div>
                 <div class="info samples">
                     <div class="info-samples-absolute ellipsed-text small-text" title="{{samples[0]}}">{{samples[0]}}</div>
                     <em class="very-small-text" ng-if="samples[1]">&nbsp;({{ toFixedIfNeeded(samples[1], 2, true) }}%)</em>
-                </div>
-            </div>
-            <div class="section-inline" style="top: 75px;" ng-if="!inHistogram && !inRightPanel">
-                <div class="section-title">Global error</div>
-                <div class="info">
-                    <span class="small-text">&nbsp;{{ toFixedIfNeeded(globalError, 2, true) }}%</span>
                 </div>
             </div>
         </div>
