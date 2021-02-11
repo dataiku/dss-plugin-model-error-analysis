@@ -159,9 +159,7 @@ app.service("TreeInteractions", function($timeout, $http, $compile, Format) {
             let node = d3.select("#node-" + node_id);
             node.selectAll(".decision-rule,.feature-children").classed("hovered", true);
             d3.select("#edge-" + node_id).classed("hovered", true);
-            if (node_id != id) {
-                node.select("#tooltip-"+node_id).classed("hovered", true);
-            }
+            node.select("#tooltip-"+node_id).classed("hovered", true);
             node_id = scope.treeData[node_id].parent_id;
         }
     }
