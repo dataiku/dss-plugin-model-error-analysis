@@ -51,10 +51,6 @@
         </div>
         <div class="tree" ng-class="{'tree--no-selection': loadingTree || !selectedNode && !hideExploreInfo}" ng-mouseover="hideExploreInfo = true" ng-mouseleave="hideExploreInfo = false">
             <div class="icons-div">
-                <i class="icon icon-tint icon-grey"
-                    title="Change color scale"
-                    ng-click="displayColorPicker = !displayColorPicker">
-                </i>
                 <img class="icon"
                      src="/plugins/model-error-analysis/resource/img/fit.png"
                      title="See whole tree" ng-click="zoomFit()"
@@ -66,19 +62,6 @@
                      ng-click="selectedNode && zoomBack()"
                      height="20px">
                 </img>
-            </div>
-            <div class="color-picker" ng-show="displayColorPicker">
-                <div class="row-color-picker row"
-                     ng-repeat="(name, scale) in scales"
-                     ng-class="{'border-selected': scale == selectedScale}"
-                     ng-click="scale != selectedScale && setScale(name)">
-                    <ul class="color-bars-small color-bars">
-                        <li ng-repeat="(targetValue, color) in displayScale(scale)"
-                            class="color-bar"
-                            ng-style="{'background': color}"></li>
-                    </ul>
-                    <div>{{name}}</div>
-                </div>
             </div>
             <div class="empty-panel"
                  ng-if="loadingTree || !selectedNode && !hideExploreInfo">

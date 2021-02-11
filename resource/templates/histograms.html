@@ -32,15 +32,15 @@
         <div class="legend-details">
             <svg height="20px" width="50%">
                 <g>
-                    <rect height="20" width="8" x="4" fill="{{selectedScale[0]}}"></rect>
-                    <rect height="20" width="8" x="12" fill="{{selectedScale[1]}}"> </rect>
+                    <rect height="20" width="8" x="4" fill="{{colors['Wrong prediction']}}"></rect>
+                    <rect height="20" width="8" x="12" fill="{{colors['Correct prediction']}}"> </rect>
                     <text x="24" y="15">Local (this node)</text>
                 </g>
             </svg>
             <svg height="20px" width="50%">
                 <g>
-                    <rect class="color-bar__global-legend" height="20" width="8" x="4" fill="{{selectedScale[0]}}"></rect>
-                    <rect class="color-bar__global-legend" height="20" width="8" x="12" fill="{{selectedScale[1]}}"> </rect>
+                    <rect class="color-bar__global-legend" height="20" width="8" x="4" fill="{{colors['Wrong prediction']}}"></rect>
+                    <rect class="color-bar__global-legend" height="20" width="8" x="12" fill="{{colors['Correct prediction']}}"> </rect>
                     <text x="24" y="15">Global (whole set)</text>
                 </g>
             </svg>

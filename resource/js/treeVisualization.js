@@ -387,16 +387,11 @@ app.service("TreeInteractions", function($timeout, $http, $compile, Format) {
         .attr("stroke-width", d => 1+d.target.samples[1] / 5)
     }
 
-    const updateTooltipColors = function(colors) {
-        d3.selectAll(".tooltip-tree").selectAll("path").attr("fill", d => colors[d.data[0]]);
-    }
-
     return {
         createTree,
-        decisionRule,
+        decisionRule, // TODO: remove
         zoomFit,
         zoomBack,
-        select,
-        updateTooltipColors
+        select // TODO: remove
     }
 });
