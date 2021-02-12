@@ -177,7 +177,7 @@ class InteractiveTree(object):
                 if i > 0:
                     bins = pd.cut(column.fillna(mean), bins=bin_edges, right=False)
             return self.get_stats_numerical_node(column, target_column, bins)
-        return self.get_stats_categorical_node(column, target_column, nr_bins)
+        return self.get_stats_categorical_node(column, target_column, nr_bins if i > 0 else -1)
 
     def get_stats_numerical_node(self, column, target_column, bins):
         stats = {

@@ -49,13 +49,13 @@ app.directive("histogram", function (Format, $compile) {
             const yAxis = d3.svg.axis().scale(y).orient("left");
 
             const addInteractions = function(groups, onWholeSet) {
-                groups.on("mouseenter", function(d, i) {
+                groups.on("mouseenter", function(d) {
                     histSvg.append("g")
                     .classed("tooltip", true)
                     .classed("tooltip-histogram", true)
                     .attr("feature", feature)
                     .attr("whole-data", onWholeSet)
-                    .attr("bin-index", i)
+                    .attr("bin-index", d.idx)
                     .call(function() {
                         $compile(this[0])($scope);
                     });
@@ -80,7 +80,7 @@ app.directive("histogram", function (Format, $compile) {
 
             const addGroupProperties = function(groups, wholeData) {
                 groups.selectAll("rect")
-                .data(d => d)
+                .data(d => d.data)
                 .enter()
                 .append("rect")
                 .attr("fill", d => d.color)
@@ -104,11 +104,12 @@ app.directive("histogram", function (Format, $compile) {
                 const dataWhole = [];
                 if (feature in $scope.features) {
                     values.mid.forEach(function(mid, idx) {
-                        const bar = [];
+                        const bar = {data: [], idx};
                         let y0 = 0;
                         predArray.forEach(function(prediction) {
                             if (values.target_distrib[prediction][idx]) {
-                                bar.push({x: mid,
+                                bar.data.push({
+                                    x: mid,
                                     y: values.target_distrib[prediction][idx],
                                     y0: y0,
                                     color: $scope.colors[prediction],
@@ -120,11 +121,12 @@ app.directive("histogram", function (Format, $compile) {
                         data.push(bar);
                     });
                     valuesWhole.mid.forEach(function(mid, idx) {
-                        const bar = [];
+                        const bar = {data: [], idx};
                         let y0 = 0;
                         predArray.forEach(function(prediction) {
                             if (valuesWhole.target_distrib[prediction][idx]) {
-                                bar.push({x: mid,
+                                bar.data.push({
+                                    x: mid,
                                     y: valuesWhole.target_distrib[prediction][idx],
                                     y0: y0,
                                     color: $scope.colors[prediction],
@@ -140,11 +142,12 @@ app.directive("histogram", function (Format, $compile) {
                     x.domain(values.mid);
                 } else {
                     values.bin_value.forEach(function(bin_value, idx) {
-                        const bar = [];
+                        const bar = {data: [], idx};
                         let y0 = 0;
                         predArray.forEach(function(prediction) {
                             if (values.target_distrib[prediction][idx]) {
-                                bar.push({x: bin_value,
+                                bar.data.push({
+                                    x: bin_value,
                                     y: values.target_distrib[prediction][idx],
                                     y0: y0,
                                     color: $scope.colors[prediction]
@@ -154,12 +157,14 @@ app.directive("histogram", function (Format, $compile) {
                         });
                         data.push(bar);
                     });
-                    values.bin_value.forEach(function(bin_value, idx) { // TODO
-                        const bar = [];
+                    values.bin_value.forEach(function(bin_value) {
+                        const idx = valuesWhole.bin_value.indexOf(bin_value);
+                        const bar = {data: [], idx};
                         let y0 = 0;
                         predArray.forEach(function(prediction) {
                             if (valuesWhole.target_distrib[prediction][idx]) {
-                                bar.push({x: bin_value,
+                                bar.data.push({
+                                    x: bin_value,
                                     y: valuesWhole.target_distrib[prediction][idx],
                                     y0: y0,
                                     color: $scope.colors[prediction]
@@ -215,7 +220,7 @@ app.directive("histogram", function (Format, $compile) {
                 addInteractions(groupsWhole, true);
             }
 
-            $scope.$watch("selectedNode", function(nv) {
+            $scope.$watch("selectedNode", function(nv) { // TODO
                 if (nv) {
                     histSvg.selectAll("rect").remove();
                     histSvg.selectAll("g").remove();
