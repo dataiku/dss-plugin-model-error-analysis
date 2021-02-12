@@ -92,7 +92,7 @@
             <spinner ng-if="loadingTree"></spinner>
         </div>
     </div>
-    <div class="histogram-panel" ng-include="'/plugins/model-error-analysis/resource/templates/histograms.html'" ng-if="selectedNode.node_id && !loadingHistogram"></div>
+    <div class="histogram-panel" ng-include="'/plugins/model-error-analysis/resource/templates/histograms.html'" ng-if="selectedNode && !loadingHistogram"></div>
     <div class="histogram-panel--empty empty-panel" ng-if="!selectedNode">
         Select a node
     </div>

@@ -231,9 +231,8 @@ app.service("TreeInteractions", function($timeout, $http, $compile, Format) {
             .then(function(response) {
                 if (id == 0) {
                     scope.histDataWholeSet = response.data;
-                } else {
-                    scope.histData = response.data;
                 }
+                scope.histData = response.data;
                 scope.loadingHistogram = false;
             }, function(e) {
                 scope.loadingHistogram = false;
