@@ -16,7 +16,7 @@
                 <strong>{{ samples[0] }}</strong> samples (<strong>{{ toFixedIfNeeded(samples[1], 2, true) }}%</strong> of the whole dataset).
             </div>
             <div ng-if="inRightPanel">
-                Global error (% total error in node) is <strong>{{ toFixedIfNeeded(globalError, 2, true) }}%</strong>.
+                Global error (% wrong predictions in total) is <strong>{{ toFixedIfNeeded(globalError, 2, true) }}%</strong>.
             </div>
             <div class="section-inline" ng-if="!inRightPanel">
                 <div class="section-title">Samples</div>

@@ -168,6 +168,35 @@ select {
     font-size: 10px;
 }
 
+.tree-legend {
+    position: absolute;
+    left: 20px;
+    top: 20px;
+    display: flex;
+    align-items: center;
+    width: 255px;
+    justify-content: space-between;
+    cursor: auto;
+    opacity: .5;
+}
+
+.tree-legend:hover, .tree-legend--show {
+    opacity: 1;
+}
+
+.tree-legend_node {
+    width: 30px;
+    height: 30px;
+    background: var(--error-red);
+    border: 1px solid var(--grey-lighten-5);
+    display: flex;
+    justify-content: center;
+}
+
+.tree-legend_node__value {
+    padding-top: 4px;
+}
+
 .icons-div {
     display: flex;
     align-items: center;
@@ -175,22 +204,20 @@ select {
     position: absolute;
     right: 20px;
     top: 20px;
-    width: 100px;
+    width: 80px;
     font-size: 20px;
 }
 
-.icons-div > img:hover {
-    opacity: .7;
-}
-
-.icons-div > .icon {
+.zoom-icon {
     border: 1px solid var(--grey-lighten-5);
     background: var(--white);
-    color: var(--grey-lighten-2);
+    padding: 6px;
+    opacity: .5;
+    cursor: pointer;
 }
 
-.icons-div > img {
-    padding: 6px 9px;
+.zoom-icon:hover, .zoom-icon--show {
+    opacity: 1;
 }
 
 .empty-panel {

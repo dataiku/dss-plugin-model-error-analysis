@@ -51,17 +51,27 @@
         </div>
         <div class="tree" ng-class="{'tree--no-selection': loadingTree || !selectedNode && !hideExploreInfo}" ng-mouseover="hideExploreInfo = true" ng-mouseleave="hideExploreInfo = false">
             <div class="icons-div">
-                <img class="icon"
-                     src="/plugins/model-error-analysis/resource/img/fit.png"
-                     title="See whole tree" ng-click="zoomFit()"
-                     height="20px">
+                <img class="zoom-icon"
+                    ng-class="{'zoom-icon--show': loadingTree}"
+                    src="/plugins/model-error-analysis/resource/img/fit.png"
+                    title="See whole tree" ng-click="zoomFit()"
+                    height="20px">
                 </img>
-                <img class="icon"
-                     src="/plugins/model-error-analysis/resource/img/100.png"
-                     title="Zoom on selected node"
-                     ng-click="selectedNode && zoomBack()"
-                     height="20px">
+                <img class="zoom-icon"
+                    ng-class="{'zoom-icon--show': loadingTree}"
+                    src="/plugins/model-error-analysis/resource/img/100.png"
+                    title="Zoom on selected node"
+                    ng-click="selectedNode && zoomBack()"
+                    height="20px">
                 </img>
+            </div>
+            <div class="tree-legend" ng-class="{'tree-legend--show': loadingTree}">
+                <div class="tree-legend_node">
+                    <span class="tree-legend_node__value">100</span>
+                </div>
+                <div class="tree-legend_node__value">
+                    Global error (% wrong predictions in total)
+                </div>
             </div>
             <div class="empty-panel"
                  ng-if="loadingTree || !selectedNode && !hideExploreInfo">

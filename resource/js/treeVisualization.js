@@ -177,7 +177,7 @@ app.service("TreeInteractions", function($timeout, $http, $compile, Format) {
             svgDim = svg.node().getBBox();
         const leftOffset = 10;
         const scaleX = treePanel.width / (svgDim.width + leftOffset),
-            scaleY = treePanel.height / (svgDim.height + 5)
+            scaleY = treePanel.height / (svgDim.height + 25)
         const scale = Math.min(scaleX, scaleY, maxZoom);
 
         let leftTranslate;
@@ -187,7 +187,7 @@ app.service("TreeInteractions", function($timeout, $http, $compile, Format) {
             leftTranslate = (Math.abs(svgDim.x) + leftOffset)*scale;
         }
 
-        const topTranslate = 40 * scale;
+        const topTranslate = 40 * scale + 20;
         zoomListener.translate([leftTranslate, topTranslate]).scale(scale);
         svg.transition().duration(400).attr("transform", "translate(" + leftTranslate + "," + topTranslate +")scale(" + scale + ")");
     }
