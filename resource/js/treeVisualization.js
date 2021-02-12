@@ -328,7 +328,7 @@ app.service("TreeInteractions", function($timeout, $http, $compile, Format) {
         });
 
         nodeEnter.append("rect")
-        .classed("node-background", true)
+        .classed("node-content--empty", true)
         .attr("height", side)
         .attr("width", side);
 
@@ -346,7 +346,11 @@ app.service("TreeInteractions", function($timeout, $http, $compile, Format) {
         .attr("y", side / 2)
         .text(d => Format.toFixedIfNeeded(d.global_error*100, 2, true));
 
-        nodeEnter.on("click", function(d) {
+        nodeEnter.append("rect")
+        .classed("node-background", true)
+        .attr("height", side)
+        .attr("width", side)
+        .on("click", function(d) {
             if (scope.selectedNode && scope.selectedNode.node_id == d.node_id) return;
             $timeout(select(d.node_id, scope));
         }).on("mouseenter", function(d) {
