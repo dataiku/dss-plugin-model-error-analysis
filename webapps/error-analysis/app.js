@@ -21,6 +21,21 @@
             "Correct prediction": "#CCC"
         };
 
+        d3.select(".tree-legend_pie svg")
+        .append("g")
+        .attr("transform", "translate(15, 15)")
+        .selectAll('.camembert')
+        .data(d3.layout.pie()([1/3, 2/3]))
+        .enter()
+        .append('path')
+        .attr('d', d3.svg.arc()
+            .innerRadius(0)
+            .outerRadius(15)
+        )
+        .attr('fill', function(d, i) {
+            return Object.values($scope.colors)[i];
+        });
+
         const create = function(data) {
             $scope.treeData = data.nodes;
             $scope.features = data.features;
@@ -56,6 +71,7 @@
         }
 
         $scope.toFixedIfNeeded = function(number, decimals, precision) {
+            if (number === undefined) return;
             const lowerBound = 5 * Math.pow(10, -decimals-1);
             if (number && Math.abs(number) < lowerBound) {
                 if (precision) { // indicates that number is very small instead of rounding to 0 (given that number is positive)

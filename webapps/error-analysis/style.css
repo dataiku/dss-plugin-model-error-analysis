@@ -168,14 +168,20 @@ select {
     font-size: 10px;
 }
 
-.tree-legend {
+.tree-legend-container {
     position: absolute;
     left: 20px;
-    top: 20px;
+    top: 10px;
+    height: 70px;
+    width: 300px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.tree-legend {
     display: flex;
     align-items: center;
-    width: 255px;
-    justify-content: space-between;
     cursor: auto;
     opacity: .5;
 }
@@ -197,13 +203,30 @@ select {
     padding-top: 4px;
 }
 
+.tree-legend_node-desc {
+    margin-left: 10px;
+}
+
+.tree-legend_node-desc-full {
+    display: none;
+}
+
+.tree-legend-container:hover .tree-legend_node-desc-full, .tree-legend--show .tree-legend_node-desc-full {
+    display: unset;
+}
+
+.tree-legend_pie {
+    width: 32px;
+    height: 32px;
+}
+
 .icons-div {
     display: flex;
     align-items: center;
     justify-content: space-between;
     position: absolute;
     right: 20px;
-    top: 20px;
+    top: 10px;
     width: 80px;
     font-size: 20px;
 }
@@ -353,7 +376,7 @@ div[histogram] {
     top: 40%;
 }
 
-.tree--no-selection svg {
+.tree--no-selection .tree-svg {
     opacity: .4;
 }
 
@@ -563,6 +586,8 @@ path.selected, path.hovered {
     height: 100px;
     padding: 0;
     border: none;
+    text-align: justify;
+    padding: 0 10px 0 0;
 }
 
 .tooltip-tree-container {

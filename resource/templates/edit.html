@@ -65,12 +65,24 @@
                     height="20px">
                 </img>
             </div>
-            <div class="tree-legend" ng-class="{'tree-legend--show': loadingTree}">
-                <div class="tree-legend_node">
-                    <span class="tree-legend_node__value">100</span>
+            <div class="tree-legend-container">
+                <div class="tree-legend" ng-class="{'tree-legend--show': loadingTree}">
+                    <div class="tree-legend_item tree-legend_node">
+                        <span class="tree-legend_node__value">100</span>
+                    </div>
+                    <div class="tree-legend_node-desc">
+                        <span class="tree-legend_node-desc-short">Global error</span>
+                        <span class="tree-legend_node-desc-full">&nbsp;(% wrong predictions in total)</span>
+                    </div>
                 </div>
-                <div class="tree-legend_node__value">
-                    Global error (% wrong predictions in total)
+                <div class="tree-legend" ng-class="{'tree-legend--show': loadingTree}">
+                    <div class="tree-legend_item tree-legend_pie">
+                        <svg height="100%" width="100%"></svg>
+                    </div>
+                    <div class="tree-legend_node-desc">
+                        <span class="tree-legend_node-desc-short">Local error</span>
+                        <span class="tree-legend_node-desc-full">&nbsp;(% wrong predictions in node samples)</span>
+                    </div>
                 </div>
             </div>
             <div class="empty-panel"

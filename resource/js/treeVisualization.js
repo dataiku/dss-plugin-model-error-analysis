@@ -288,6 +288,7 @@ app.service("TreeInteractions", function($timeout, $http, $compile, Format) {
             });
 
         svg = d3.select(".tree").append("svg")
+            .classed("tree-svg", true)
             .attr("width", "100%")
             .attr("height", "100%")
             .call(zoomListener);
