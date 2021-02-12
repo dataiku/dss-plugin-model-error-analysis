@@ -517,12 +517,9 @@ path.selected, path.hovered {
     stroke: var(--grey-lighten-5);
 }
 
-.node-container {
-    cursor: pointer;
-}
-
 .node-background {
     fill: var(--white);
+    cursor: pointer;
     fill-opacity: 0;
     stroke: var(--grey-lighten-5);
 }
@@ -572,6 +569,10 @@ path.selected, path.hovered {
 }
 
 /*TOOLTIPS*/
+
+.tooltip {
+    cursor: auto;
+}
 
 .tooltip-title {
     font-weight: bold;

@@ -251,9 +251,9 @@ app.service("TreeInteractions", function($timeout, $http, $compile, Format) {
         .call(function() {
             $compile(this[0])(scope);
         })
-        .on("wheel", function() {
+        /*.on("wheel", function() {
             d3.event.stopPropagation();
-        });
+        });*/
     };
 
     const addHatchMask = function(hatchSize = 5) {
