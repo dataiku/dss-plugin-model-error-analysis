@@ -43,7 +43,52 @@ app.directive('tooltipTree', function() {
     };
 });
 
-app.service("TreeInteractions", function($timeout, $http, Format) {
+app.service("TreeUtils", function() {
+    const computeLocalError = function(d) {
+        return (d.probabilities.find(_ => _[0] === "Wrong prediction") || [0, 0])[1]
+    };
+
+    const addNode = function(svgParentElem, radius, getLocalErrorFunc, labelTextFunc, select=false) {
+        svgParentElem.append("circle")
+        .classed("node__background", true)
+        .classed("selected", select)
+        .attr("cx", radius)
+        .attr("cy", radius)
+        .attr("r", radius);
+
+        svgParentElem.append("path")
+        .classed("node__gauge", true)
+        .classed("selected", select)
+        .attr("d", function(d) {
+            const localError = getLocalErrorFunc(d);
+            const innerRadius = radius - 2;
+            const theta = Math.PI*(-localError+.5);
+            const start = {
+                x: innerRadius*Math.cos(theta) + radius,
+                y: innerRadius*Math.sin(theta) + radius
+            };
+            const end = {
+                x: -innerRadius*Math.cos(theta) + radius,
+                y: start.y
+            };
+            const largeArcFlag = theta > 0 ? 0 : 1;
+            return `M ${start.x} ${start.y} A ${innerRadius} ${innerRadius} 0 ${largeArcFlag} 1 ${end.x} ${end.y}`;
+        });
+
+        svgParentElem.append("text")
+        .attr("text-anchor", "middle")
+        .attr("x", radius)
+        .attr("y", radius)
+        .text(d => labelTextFunc(d));
+
+    };
+    return {
+        addNode,
+        computeLocalError
+    }
+});
+
+app.service("TreeInteractions", function($timeout, $http, Format, TreeUtils) {
     let svg, tree, currentPath = new Set();
     const radius = 20, maxZoom = 3;
 
@@ -238,18 +283,6 @@ app.service("TreeInteractions", function($timeout, $http, Format) {
             });
     }
 
-    /*const addVizTooltips = function(scope) {
-        d3.selectAll(".node-container").append("g")
-        .attr("transform", "translate(100, -10)")
-        .classed("tooltip", true)
-        .classed("tooltip-tree", true)
-        .attr("id", d => "tooltip-" + d.node_id)
-        .attr("node", d => d.node_id)
-        .call(function() {
-            $compile(this[0])(scope);
-        })
-    };*/
-
     const addHatchMask = function(hatchSize = 5) {
         //Create hatched pattern
         const defs = svg.append("defs");
@@ -334,36 +367,7 @@ app.service("TreeInteractions", function($timeout, $http, Format) {
             hideUnhovered();
         });
 
-        nodes.append("circle")
-        .classed("node__background", true)
-        .attr("cx", radius)
-        .attr("cy", radius)
-        .attr("r", radius);
-
-        nodes.append("path")
-        .classed("node__gauge", true)
-        .attr("d", function(d) {
-            const localError = (d.probabilities.find(_ => _[0] === "Wrong prediction") || [0, 0])[1];
-            const innerRadius = radius - 2;
-            const theta = Math.PI*(-localError+.5);
-            const start = {
-                x: innerRadius*Math.cos(theta) + radius,
-                y: innerRadius*Math.sin(theta) + radius
-            };
-            const end = {
-                x: -innerRadius*Math.cos(theta) + radius,
-                y: start.y
-            };
-            const largeArcFlag = theta > 0 ? 0 : 1;
-            return `M ${start.x} ${start.y} A ${innerRadius} ${innerRadius} 0 ${largeArcFlag} 1 ${end.x} ${end.y}`;
-        });
-
-        nodeEnter.append("text")
-        .attr("class", "global-error")
-        .attr("text-anchor","middle")
-        .attr("x", radius)
-        .attr("y", radius)
-        .text(d => Format.toFixedIfNeeded((d.probabilities.find(_ => _[0] === "Wrong prediction") || [0, 0])[1]*100, 2, true));
+        TreeUtils.addNode(nodes, radius, TreeUtils.computeLocalError, d=> Format.toFixedIfNeeded(TreeUtils.computeLocalError(d), 2, true));
 
         nodeEnter.filter(d => d.node_id > 0)
         .append("text")
@@ -406,9 +410,7 @@ app.service("TreeInteractions", function($timeout, $http, Format) {
 
     return {
         createTree,
-        decisionRule, // TODO: remove
         zoomFit,
-        zoomBack,
-        select // TODO: remove
+        zoomBack
     }
 });
