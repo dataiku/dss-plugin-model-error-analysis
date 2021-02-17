@@ -383,7 +383,7 @@ div[histogram] {
 .bullet {
     width: 10px;
     height: 10px;
-    margin-right: 5px;
+    margin-left: 5px;
     border-radius: 5px;
     display: flex;
     align-self: center;
@@ -442,6 +442,7 @@ div[histogram] {
 .section-title {
     font-weight: lighter;
     height:16px;
+    display: flex;
 }
 
 .section-inline {
@@ -504,40 +505,43 @@ div[histogram] {
     visibility: visible;
 }
 
-path {
-    stroke-opacity: .8;
+.edge.hovered {
+    stroke: var(--error-red);
 }
 
-path.selected, path.hovered {
-    stroke-opacity: 1;
+.edge.selected {
+    stroke: var(--blue);
 }
 
 .edge {
     fill: none;
-    stroke: var(--grey-lighten-5);
+    stroke: #F0B8C0;
 }
 
-.node-background {
-    fill: var(--white);
+.node {
     cursor: pointer;
-    fill-opacity: 0;
-    stroke: var(--grey-lighten-5);
 }
 
-.node-content--error {
+.node__background {
+    fill: var(--grey-lighten-6);
+    stroke: var(--white);
+    stroke-width: 2px;
+}
+
+.node__background.selected, .node__background.hovered {
+    fill: var(--grey-lighten-5);
+}
+
+.node__gauge {
+    fill: #F0B8C0; /*TODO*/
+}
+
+.node__gauge.selected, .node__gauge.hovered {
     fill: var(--error-red);
 }
 
-.node-content--empty {
-    fill: var(--white);
-}
-
-.node-background.selected, .edge.selected {
-    stroke: var(--blue-lighten-1);
-}
-
 .node--selected {
-    stroke-width: 2px;
+    stroke: var(--blue);
 }
 
 /*HISTOGRAMS*/

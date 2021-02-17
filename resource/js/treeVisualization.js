@@ -9,6 +9,7 @@ app.directive('tooltipTree', function() {
             scope.probabilities = node.probabilities;
             scope.samples = node.samples;
             scope.globalError = node.global_error * 100;
+            const probaError = (scope.probabilities.find(_ => _[0] === "Wrong prediction") || [0, 0])[1]*100;
 
             scope.inRightPanel = attr.hasOwnProperty("rightPanel");
 
@@ -35,16 +36,15 @@ app.directive('tooltipTree', function() {
                 .innerRadius(0)
                 .outerRadius(scope.inRightPanel ? 40 : 30)
             )
-            .attr('fill', function(d) {
-                return scope.colors[d.data[0]];
-            });
+            .attr('fill', d => d.data[0] === "Wrong prediction" ? scope.colors[d.data[0]] : "none")
+            .attr('stroke', d => scope.colors[d.data[0]]);
         }
     };
 });
 
-app.service("TreeInteractions", function($timeout, $http, $compile, Format) {
+app.service("TreeInteractions", function($timeout, $http, Format) {
     let svg, tree, currentPath = new Set();
-    const side = 40, maxZoom = 3;
+    const radius = 20, maxZoom = 3;
 
     const zoom = function() {
         svg.attr("transform",  "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")")
@@ -118,8 +118,8 @@ app.service("TreeInteractions", function($timeout, $http, $compile, Format) {
                     });
                 }
                 linkParentToNode.attr("d", function(d) {
-                    return d3.svg.diagonal()({source: {x: d.source.x + side/2, y: d.source.y},
-                        target: {x: d.target.x + side/2, y: d.target.y}});
+                    return d3.svg.diagonal()({source: {x: d.source.x + radius, y: d.source.y},
+                        target: {x: d.target.x + radius, y: d.target.y}});
                 });
             }
         }
@@ -136,13 +136,11 @@ app.service("TreeInteractions", function($timeout, $http, $compile, Format) {
         scope.decisionRule = [];
         while (node_id > -1) {
             let node = d3.select("#node-" + node_id);
-            node.selectAll(".decision-rule,.feature-children,.node-background").classed("selected", true).classed("hovered", false);
+            node.selectAll(".decision-rule,.feature-children,.node__background,.node__gauge").classed("selected", true).classed("hovered", false);
             d3.select("#edge-" + node_id).classed("selected", true).classed("hovered", false);
 
             if (node_id == id) {
-                node.select("rect").classed("node--selected", true);
-            } else {
-                node.select("#tooltip-"+node_id).classed("selected", true);
+                node.select(".node__background").classed("node--selected", true);
             }
 
             if (node_id > 0) {
@@ -157,9 +155,8 @@ app.service("TreeInteractions", function($timeout, $http, $compile, Format) {
         let node_id = id;
         while (node_id > -1) {
             let node = d3.select("#node-" + node_id);
-            node.selectAll(".decision-rule,.feature-children").classed("hovered", true);
+            node.selectAll(".decision-rule,.feature-children,.node__gauge,.node__background").classed("hovered", true);
             d3.select("#edge-" + node_id).classed("hovered", true);
-            node.select("#tooltip-"+node_id).classed("hovered", true);
             node_id = scope.treeData[node_id].parent_id;
         }
     }
@@ -172,13 +169,13 @@ app.service("TreeInteractions", function($timeout, $http, $compile, Format) {
         centerOnNode(selectedNode, true);
     }
 
-    const zoomFit = function() {
+    const zoomFit = function(onLoad) {
         const treePanel = d3.select(".tree").node().getBoundingClientRect(),
             svgDim = svg.node().getBBox();
         const leftOffset = 10;
         const scaleX = treePanel.width / (svgDim.width + leftOffset),
             scaleY = treePanel.height / (svgDim.height + 25)
-        const scale = Math.min(scaleX, scaleY, maxZoom);
+        const scale = onLoad ? Math.min(Math.max(scaleX, scaleY), maxZoom) : Math.min(scaleX, scaleY, maxZoom);
 
         let leftTranslate;
         if (scale == maxZoom) {
@@ -240,7 +237,7 @@ app.service("TreeInteractions", function($timeout, $http, $compile, Format) {
             });
     }
 
-    const addVizTooltips = function(scope) {
+    /*const addVizTooltips = function(scope) {
         d3.selectAll(".node-container").append("g")
         .attr("transform", "translate(100, -10)")
         .classed("tooltip", true)
@@ -250,10 +247,7 @@ app.service("TreeInteractions", function($timeout, $http, $compile, Format) {
         .call(function() {
             $compile(this[0])(scope);
         })
-        /*.on("wheel", function() {
-            d3.event.stopPropagation();
-        });*/
-    };
+    };*/
 
     const addHatchMask = function(hatchSize = 5) {
         //Create hatched pattern
@@ -298,57 +292,34 @@ app.service("TreeInteractions", function($timeout, $http, $compile, Format) {
 
         update(scope);
         loadHistograms(scope, 0);
-        zoomFit();
-        addVizTooltips(scope);
+        zoomFit(true);
     }
 
     const update = function(scope) {
         let source = scope.treeData[0];
-        const nodes = tree.nodes(source).reverse(),
-          links = tree.links(nodes);
-        nodes.forEach(function(d) {
+        const nodeData = tree.nodes(source).reverse(),
+          edgeData = tree.links(nodeData);
+          nodeData.forEach(function(d) {
           d.y = d.depth * 180;
         });
 
-        const node = svg.selectAll("g.node-container")
-        .data(nodes, d => d.node_id);
+        const nodeContainer = svg.selectAll("g.node-container")
+        .data(nodeData, d => d.node_id);
 
         // update pre-existing nodes
-        node.attr("transform", function(d) {
+        nodeContainer.attr("transform", function(d) {
             return "translate(" + d.x + "," + d.y + ")";
         });
 
         // add new nodes
-        const nodeEnter = node.enter().append("g")
+        const nodeEnter = nodeContainer.enter().append("g")
         .classed("node-container", true)
         .attr("id", d => "node-" + d.node_id)
         .attr("transform", function(d) {
             return "translate(" + d.x + "," + d.y + ")";
         });
 
-        nodeEnter.append("rect")
-        .classed("node-content--empty", true)
-        .attr("height", side)
-        .attr("width", side);
-
-        nodeEnter.append("rect")
-        .classed("node-content--error", true)
-        .attr("x", .5)
-        .attr("y", d => .5 + (side - 1) * (1 - d.global_error))
-        .attr("height", d => (side-1)*d.global_error)
-        .attr("width", side-1);
-
-        nodeEnter.append("text")
-        .attr("class", "global-error")
-        .attr("text-anchor","middle")
-        .attr("x", side / 2)
-        .attr("y", side / 2)
-        .text(d => Format.toFixedIfNeeded(d.global_error*100, 2, true));
-
-        nodeEnter.append("rect")
-        .classed("node-background", true)
-        .attr("height", side)
-        .attr("width", side)
+        const nodes = nodeEnter.append("g").classed("node", true)
         .on("click", function(d) {
             if (scope.selectedNode && scope.selectedNode.node_id == d.node_id) return;
             $timeout(select(d.node_id, scope));
@@ -362,11 +333,42 @@ app.service("TreeInteractions", function($timeout, $http, $compile, Format) {
             hideUnhovered();
         });
 
+        nodes.append("circle")
+        .classed("node__background", true)
+        .attr("cx", radius)
+        .attr("cy", radius)
+        .attr("r", radius);
+
+        nodes.append("path")
+        .classed("node__gauge", true)
+        .attr("d", function(d) {
+            const localError = (d.probabilities.find(_ => _[0] === "Wrong prediction") || [0, 0])[1];
+            const innerRadius = radius - 2;
+            const theta = Math.PI*(-localError+.5);
+            const start = {
+                x: innerRadius*Math.cos(theta) + radius,
+                y: innerRadius*Math.sin(theta) + radius
+            };
+            const end = {
+                x: -innerRadius*Math.cos(theta) + radius,
+                y: start.y
+            };
+            const largeArcFlag = theta > 0 ? 0 : 1;
+            return `M ${start.x} ${start.y} A ${innerRadius} ${innerRadius} 0 ${largeArcFlag} 1 ${end.x} ${end.y}`;
+        });
+
+        nodeEnter.append("text")
+        .attr("class", "global-error")
+        .attr("text-anchor","middle")
+        .attr("x", radius)
+        .attr("y", radius)
+        .text(d => Format.toFixedIfNeeded((d.probabilities.find(_ => _[0] === "Wrong prediction") || [0, 0])[1]*100, 2, true));
+
         nodeEnter.filter(d => d.node_id > 0)
         .append("text")
         .attr("class", "decision-rule")
         .attr("text-anchor","middle")
-        .attr("x", side / 2)
+        .attr("x", radius)
         .attr("y", - 10)
         .text(d => nodeValues(d));
 
@@ -374,28 +376,31 @@ app.service("TreeInteractions", function($timeout, $http, $compile, Format) {
         .append("text")
         .attr("class", "feature-children")
         .attr("text-anchor","middle")
-        .attr("x", side / 2)
-        .attr("y", side + 20)
+        .attr("x", radius)
+        .attr("y", radius*2 + 20)
         .text(d => Format.ellipsis(scope.treeData[d.children_ids[0].toString()].feature, 20));
 
-        const edge = svg.selectAll(".edge")
-        .data(links, d => d.target.node_id);
+        const edges = svg.selectAll(".edge").data(edgeData, d => d.target.node_id);
 
-        // update pre-existing links
-        edge.attr("d", function(d) {
-            return d3.svg.diagonal()({source: {x: d.source.x + side/2, y: d.source.y},
-                                    target: {x: d.target.x + side/2, y: d.target.y}});
-        })
+        // update pre-existing edges
+        edges.attr("d", function(d) {
+            return d3.svg.diagonal()({
+                source: {x: d.source.x + radius, y: d.source.y},
+                target: {x: d.target.x + radius, y: d.target.y}
+            });
+        });
 
-        // add new links
-        edge.enter().insert("path", "g")
+        // add new edges
+        edges.enter().insert("path", "g")
         .attr("class", "edge")
         .attr("id", d => "edge-" + d.target.node_id)
         .attr("d", function(d) {
-            return d3.svg.diagonal()({source: {x: d.source.x + side/2, y: d.source.y},
-                                  target: {x: d.target.x + side/2, y: d.target.y}});
+            return d3.svg.diagonal()({
+                source: {x: d.source.x + radius, y: d.source.y},
+                target: {x: d.target.x + radius, y: d.target.y}
+            });
         })
-        .attr("stroke-width", d => 1+d.target.samples[1] / 5)
+        .attr("stroke-width", d => 1+100*d.target.global_error / 5);
     }
 
     return {
