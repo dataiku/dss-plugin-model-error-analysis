@@ -2,21 +2,26 @@
     <div class="tooltip-container"
         ng-class="{'tooltip-rp-container': inRightPanel, 'tooltip-tree-container': !inRightPanel && !inHistogram, 'tooltip-histogram-container': inHistogram}">
         <div class="tooltip-main" ng-class="{'tooltip-histogram-main': inHistogram}">
-            <div>
-                <div class="info tooltip-title ellipsed-text" ng-if="inHistogram">{{binName}}</div>
-                <div>
-                    <div class="info" ng-repeat="proba in probabilities">
-                        <div class="bullet" ng-style="{'background-color': colors[proba[0]]}"></div>
-                        <span class="no-wrap-text small-text">{{proba[0]}}</span>
-                        <span >&nbsp; {{proba[1].toFixed(3)}}</span>
-                    </div>
-                </div>
+            <div ng-if="inHistogram">
+                <div class="info tooltip-title ellipsed-text">{{binName}}</div>
             </div>
             <div ng-if="inRightPanel">
                 <strong>{{ samples[0] }}</strong> samples (<strong>{{ toFixedIfNeeded(samples[1], 2, true) }}%</strong> of the whole dataset).
             </div>
             <div ng-if="inRightPanel">
-                Global error (% wrong predictions in total) is <strong>{{ toFixedIfNeeded(globalError, 2, true) }}%</strong>.
+                Global error (% wrong predictions over total) is <strong>{{ toFixedIfNeeded(globalError, 2, true) }}%</strong>.
+            </div>
+            <div ng-if="inRightPanel">
+                Local error (% wrong predictions over node samples) is <strong>{{ toFixedIfNeeded(localError, 2, true) }}%</strong>.
+            </div>
+            <div class="section-inline" ng-if="!inRightPanel">
+                <div class="section-title">
+                    {{ inHistogram ? 'Error' : 'Local error' }} 
+                    <span class="bullet" ng-style="{'background-color': '#CE1228'}"></span>
+                </div>
+                <div class="info">
+                    <span class="no-wrap-text small-text">{{ toFixedIfNeeded(localError, 2, true) }}%</span>
+                </div>
             </div>
             <div class="section-inline" ng-if="!inRightPanel">
                 <div class="section-title">Samples</div>

@@ -8,11 +8,12 @@ app.directive('tooltipHistogram', function() {
             scope.inHistogram = true;
             const binIndex = parseInt(attr.binIndex);
             const histData = attr.wholeData ? scope.histDataWholeSet[attr.feature] : scope.histData[attr.feature];
-            scope.probabilities = Object.entries(histData.target_distrib).map(_ => [_[0], _[1][binIndex]]);
-            scope.probabilities.sort(function(a, b) {
-                return b[1] - a[1];
-            });
-            scope.probabilities = scope.probabilities.slice(0, 5).map(_ => [_[0], _[1]]);
+            const probaError = histData.target_distrib["Wrong prediction"];
+            if (probaError) {
+                scope.localError = probaError[binIndex] * 100;
+            } else {
+                scope.localError = 0;
+            }
             scope.samples = [histData.count[binIndex],
                             histData.count[binIndex]/scope.selectedNode.samples[0]];
             if (histData.bin_value) {
@@ -23,7 +24,7 @@ app.directive('tooltipHistogram', function() {
 
             d3.select(element[0].children[0])
             .attr("width", 190)
-            .attr("height", 60 + scope.probabilities.length * 22);
+            .attr("height", 80);
         }
     };
 });
@@ -137,7 +138,7 @@ app.directive("histogram", function (Format, $compile) {
                         });
                         dataWhole.push(bar);
                     });
-                    yAxis.ticks(5)
+                    yAxis.ticks(5);
                     y.domain([0, 1]);
                     x.domain(values.mid);
                 } else {
@@ -174,7 +175,7 @@ app.directive("histogram", function (Format, $compile) {
                         });
                         dataWhole.push(bar);
                     });
-                    yAxis.ticks(5)
+                    yAxis.ticks(5);
                     y.domain([0, 1]);
                     x.domain(values.bin_value);
                 }

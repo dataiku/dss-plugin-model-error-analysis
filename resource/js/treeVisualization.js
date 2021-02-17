@@ -9,7 +9,8 @@ app.directive('tooltipTree', function() {
             scope.probabilities = node.probabilities;
             scope.samples = node.samples;
             scope.globalError = node.global_error * 100;
-            const probaError = (scope.probabilities.find(_ => _[0] === "Wrong prediction") || [0, 0])[1]*100;
+            scope.localError = (scope.probabilities.find(_ => _[0] === "Wrong prediction") || [0, 0])[1]*100;
+
 
             scope.inRightPanel = attr.hasOwnProperty("rightPanel");
 

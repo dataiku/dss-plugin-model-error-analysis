@@ -88,12 +88,10 @@ select {
 
 .toolbar-header {
     padding: 10px 20px;
-    height: 20px;
+    height: 60px;
     display: flex;
-    background-color: var(--grey-lighten-7);
-    align-items: center;
     border-bottom: 1px solid var(--grey-lighten-5);
-    cursor: pointer;
+    flex-direction: column;
 }
 
 .toolbar-header:hover .link-show-more {
@@ -101,7 +99,12 @@ select {
 }
 
 .toolbar-header--expanded {
-    height: 160px;
+    height: 200px;
+    justify-content: space-between;
+}
+
+.toolbar-header__row {
+    display: flex;
     justify-content: space-between;
 }
 
@@ -114,8 +117,9 @@ select {
     text-decoration: underline;
 }
 
-.link:hover > i {
+.chevron-no-decoration {
     text-decoration: none;
+    margin-left: 5px;
 }
 
 .expandable-introduction-text {
@@ -149,6 +153,7 @@ select {
 
 .metric {
     display: flex;
+    text-align: justify;
 }
 
 .metrics .metric {
@@ -169,50 +174,33 @@ select {
 }
 
 .tree-legend-container {
-    position: absolute;
-    left: 20px;
-    top: 10px;
-    height: 70px;
-    width: 300px;
     display: flex;
-    flex-direction: column;
     justify-content: space-between;
 }
 
 .tree-legend {
     display: flex;
     align-items: center;
-    cursor: auto;
-    opacity: .5;
-}
-
-.tree-legend:hover, .tree-legend--show {
-    opacity: 1;
 }
 
 .tree-legend_node {
     width: 30px;
-    height: 30px;
+    height: 12px;
     background: var(--error-red);
-    border: 1px solid var(--grey-lighten-5);
     display: flex;
     justify-content: center;
+    align-items: center;
 }
 
-.tree-legend_node__value {
-    padding-top: 4px;
-}
-
-.tree-legend_node-desc {
+.tree-legend-desc {
     margin-left: 10px;
+    margin-right: 10px;
+    display: flex;
+    flex-direction: column;
 }
 
-.tree-legend_node-desc-full {
-    display: none;
-}
-
-.tree-legend-container:hover .tree-legend_node-desc-full, .tree-legend--show .tree-legend_node-desc-full {
-    display: unset;
+.tree-legend-desc-short {
+    font-weight: bold;
 }
 
 .tree-legend_pie {
@@ -224,23 +212,16 @@ select {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    position: absolute;
-    right: 20px;
-    top: 10px;
-    width: 80px;
-    font-size: 20px;
 }
 
 .zoom-icon {
-    border: 1px solid var(--grey-lighten-5);
-    background: var(--white);
-    padding: 6px;
-    opacity: .5;
     cursor: pointer;
+    font-size: 20px;
+    margin-left: 10px;
 }
 
-.zoom-icon:hover, .zoom-icon--show {
-    opacity: 1;
+.zoom-icon:hover {
+    opacity: .7;
 }
 
 .empty-panel {
