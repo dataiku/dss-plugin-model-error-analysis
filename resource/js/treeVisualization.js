@@ -1,48 +1,4 @@
 'use strict';
-app.directive('tooltipTree', function() {
-    return {
-        scope: true,
-        restrict: "C",
-        templateUrl: "/plugins/model-error-analysis/resource/templates/tooltip.html",
-        link: function(scope, element, attr) {
-            const node = scope.treeData[attr.node];
-            scope.probabilities = node.probabilities;
-            scope.samples = node.samples;
-            scope.globalError = node.global_error * 100;
-            scope.localError = (scope.probabilities.find(_ => _[0] === "Wrong prediction") || [0, 0])[1]*100;
-
-
-            scope.inRightPanel = attr.hasOwnProperty("rightPanel");
-
-            d3.select(element[0].children[0])
-            .attr("x", scope.inRightPanel ? 0 : -30)
-            .attr("y", scope.inRightPanel ? 0 : -25)
-            .attr("height", scope.inRightPanel ? "100%" : 100)
-            .attr("width", scope.inRightPanel ? "100%" : 260);
-
-            // Compute the position of each group on the pie
-            const pie = d3.layout.pie()
-                .value(function(d) {return d[1];});
-            const proba = pie(scope.probabilities);
-
-            // Build the pie chart
-            d3.select(scope.inRightPanel ? "#tooltip-right-panel" : "#tooltip-" + node.node_id)
-            .append("g")
-            .attr("transform", scope.inRightPanel ? "translate(50, 50)" : "translate(10, 20)")
-            .selectAll('.camembert')
-            .data(proba)
-            .enter()
-            .append('path')
-            .attr('d', d3.svg.arc()
-                .innerRadius(0)
-                .outerRadius(scope.inRightPanel ? 40 : 30)
-            )
-            .attr('fill', d => d.data[0] === "Wrong prediction" ? scope.colors[d.data[0]] : "none")
-            .attr('stroke', d => scope.colors[d.data[0]]);
-        }
-    };
-});
-
 app.service("TreeUtils", function() {
     const computeLocalError = function(d) {
         return (d.probabilities.find(_ => _[0] === "Wrong prediction") || [0, 0])[1]
@@ -51,17 +7,17 @@ app.service("TreeUtils", function() {
     const addNode = function(svgParentElem, radius, getLocalErrorFunc, labelTextFunc, select=false) {
         svgParentElem.append("circle")
         .classed("node__background", true)
-        .classed("selected", select)
+        .classed("legend-tree", select)
         .attr("cx", radius)
         .attr("cy", radius)
         .attr("r", radius);
 
         svgParentElem.append("path")
         .classed("node__gauge", true)
-        .classed("selected", select)
+        .classed("legend-tree", select)
         .attr("d", function(d) {
             const localError = getLocalErrorFunc(d);
-            const innerRadius = radius - 2;
+            const innerRadius = radius - 1;
             const theta = Math.PI*(-localError+.5);
             const start = {
                 x: innerRadius*Math.cos(theta) + radius,
@@ -103,6 +59,7 @@ app.service("TreeInteractions", function($timeout, $http, Format, TreeUtils) {
             zoom();
     });
 
+    // TODO
     const nodeValues = function(d) {
         if (d.values) {
             if (d.others) {
@@ -236,7 +193,7 @@ app.service("TreeInteractions", function($timeout, $http, Format, TreeUtils) {
     }
 
     const centerOnNode = function(selectedNode, unzoom) {
-        const scale = unzoom ? 1 : zoomListener.scale(),
+        const scale = unzoom ? .8 : zoomListener.scale(),
             treePanel = d3.select(".tree").node().getBoundingClientRect();
 
         const x = treePanel.width / 2 - selectedNode.x * scale,
@@ -248,25 +205,24 @@ app.service("TreeInteractions", function($timeout, $http, Format, TreeUtils) {
         zoomListener.translate([x, y]).scale(scale);
     }
 
-    const select = function(id, scope, unzoom, noRecenter) {
-        if(scope.selectedNode) {
-            delete scope.selectedNode.editLabel;
-        }
+    const select = function(id, scope, unzoom) {
         if (scope.selectedNode) {
-            update(scope);
+            update(scope); // TODO: find a better way
             hideUnselected();
+            d3.select("#node--right-panel").remove();
         }
         hideUnhovered();
         showSelected(id, scope);
         shift(id, scope, "selected");
         scope.selectedNode = scope.treeData[id];
+        const node = d3.select(".placeholder-node svg").append("g").attr("id", "node--right-panel");
+        TreeUtils.addNode(node, 30, d=>scope.selectedNode.localError,  d=> Format.toFixedIfNeeded(scope.selectedNode.localError*100, 2, true), true);
+
         scope.histData = {};
         scope.loadingHistogram = true;
         loadHistograms(scope, id);
 
-        if (!noRecenter) {
-            centerOnNode(scope.selectedNode, unzoom);
-        }
+        centerOnNode(scope.selectedNode, unzoom);
     }
 
     const loadHistograms = function(scope, id) {
@@ -356,7 +312,7 @@ app.service("TreeInteractions", function($timeout, $http, Format, TreeUtils) {
         const nodes = nodeEnter.append("g").classed("node", true)
         .on("click", function(d) {
             if (scope.selectedNode && scope.selectedNode.node_id == d.node_id) return;
-            $timeout(select(d.node_id, scope));
+            $timeout(select(d.node_id, scope, true));
         }).on("mouseenter", function(d) {
             if (currentPath.has(d.node_id)) return;
             showHovered(d.node_id, scope);
@@ -367,7 +323,7 @@ app.service("TreeInteractions", function($timeout, $http, Format, TreeUtils) {
             hideUnhovered();
         });
 
-        TreeUtils.addNode(nodes, radius, TreeUtils.computeLocalError, d=> Format.toFixedIfNeeded(TreeUtils.computeLocalError(d), 2, true));
+        TreeUtils.addNode(nodes, radius, d=>d.localError, d=> Format.toFixedIfNeeded(d.localError*100, 2, true));
 
         nodeEnter.filter(d => d.node_id > 0)
         .append("text")

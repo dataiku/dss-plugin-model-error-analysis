@@ -5,7 +5,6 @@ app.directive('tooltipHistogram', function() {
         restrict: "C",
         templateUrl: "/plugins/model-error-analysis/resource/templates/tooltip.html",
         link: function(scope, element, attr) {
-            scope.inHistogram = true;
             const binIndex = parseInt(attr.binIndex);
             const histData = attr.wholeData ? scope.histDataWholeSet[attr.feature] : scope.histData[attr.feature];
             const probaError = histData.target_distrib["Wrong prediction"];

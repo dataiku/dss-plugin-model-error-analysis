@@ -420,6 +420,23 @@ div[histogram] {
     flex: 0 0 auto;
 }
 
+.selected-node-info {
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid var(--grey-lighten-6);
+    margin-bottom: 10px;
+    text-align: justify;
+}
+
+.selected-node-info p {
+    margin-top: 0;
+}
+
+.placeholder-node {
+    width: 65px;
+    height: 65px;
+}
+
 .section-title {
     font-weight: lighter;
     height:16px;
@@ -509,7 +526,7 @@ div[histogram] {
     stroke-width: 2px;
 }
 
-.node__background.selected, .node__background.hovered {
+.node__background.selected, .node__background.hovered, .node__background.legend-tree {
     fill: var(--grey-lighten-5);
 }
 
@@ -517,7 +534,7 @@ div[histogram] {
     fill: #F0B8C0; /*TODO*/
 }
 
-.node__gauge.selected, .node__gauge.hovered {
+.node__gauge.selected, .node__gauge.hovered, .node__gauge.legend-tree {
     fill: var(--error-red);
 }
 
@@ -573,19 +590,6 @@ div[histogram] {
     flex-direction: row-reverse;
 }
 
-.tooltip-rp-container {
-    height: 100px;
-    padding: 0;
-    border: none;
-    text-align: justify;
-    padding: 0 10px 0 0;
-}
-
-.tooltip-tree-container {
-    box-shadow: 2px 5px 4px var(--grey-lighten-6);
-    width: 90%;
-}
-
 .tooltip-histogram-container {
     width: 85%;
 }
@@ -599,14 +603,6 @@ div[histogram] {
 
 .tooltip-histogram-main {
     width: 100%;
-}
-
-.tooltip-tree {
-    visibility: hidden;
-}
-
-.tooltip-tree.selected, .tooltip-tree.hovered {
-    visibility: visible;
 }
 
 /*MODALS*/

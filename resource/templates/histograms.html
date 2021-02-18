@@ -1,17 +1,17 @@
 <div class="decision-rule-section">
-    <div>
-        <div class="placeholder">
-
+    <div class="selected-node-info">
+        <div class="placeholder-node">
+            <svg height="100%" width="100%"></svg>
         </div>
         <div>
             <p>
                 <strong>{{ selectedNode.samples[0] }}</strong> samples (<strong>{{ toFixedIfNeeded(selectedNode.samples[1], 2, true) }}%</strong> of the whole dataset).
             </p>
             <p>
-                Global error (% wrong predictions over total) is <strong>{{ toFixedIfNeeded(selectedNode.global_error, 2, true) }}%</strong>.
+                Global error (% wrong predictions over total) is <strong>{{ toFixedIfNeeded(selectedNode.global_error*100, 2, true) }}%</strong>.
             </p>
             <p>
-                Local error (% wrong predictions over node samples) is <strong>{{ toFixedIfNeeded(selectedNode.localError, 2, true) }}%</strong>.
+                Local error (% wrong predictions over node samples) is <strong>{{ toFixedIfNeeded(selectedNode.localError*100, 2, true) }}%</strong>.
             </p>
         </div>
     </div>

@@ -27,6 +27,9 @@
 
         const create = function(data) {
             $scope.treeData = data.nodes;
+            angular.forEach($scope.treeData, function(node) {
+                node.localError = TreeUtils.computeLocalError(node);
+            });
             $scope.features = data.features;
             $scope.rankedFeatures = data.rankedFeatures;
             $scope.metrics = {
