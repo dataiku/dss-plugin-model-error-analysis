@@ -47,6 +47,8 @@ app.directive("histogram", function (Format, $compile) {
             const y = d3.scale.linear().range([height, 0]);
             const xAxis = d3.svg.axis().scale(x).orient("bottom");
             const yAxis = d3.svg.axis().scale(y).orient("left");
+            yAxis.ticks(5);
+            y.domain([0, 100]);
 
             const addInteractions = function(groups, onWholeSet) {
                 groups.on("mouseenter", function(d) {
@@ -108,14 +110,15 @@ app.directive("histogram", function (Format, $compile) {
                         let y0 = 0;
                         predArray.forEach(function(prediction) {
                             if (values.target_distrib[prediction][idx]) {
+                                const height = values.target_distrib[prediction][idx]*100;
                                 bar.data.push({
                                     x: mid,
-                                    y: values.target_distrib[prediction][idx],
+                                    y: height,
                                     y0: y0,
                                     color: $scope.colors[prediction],
                                     interval: `[${values.bin_edge[idx]}, ${values.bin_edge[idx+1]})`
                                 });
-                                y0 += values.target_distrib[prediction][idx];
+                                y0 += height;
                             }
                         });
                         data.push(bar);
@@ -124,21 +127,20 @@ app.directive("histogram", function (Format, $compile) {
                         const bar = {data: [], idx};
                         let y0 = 0;
                         predArray.forEach(function(prediction) {
+                            const height = valuesWhole.target_distrib[prediction][idx]*100;
                             if (valuesWhole.target_distrib[prediction][idx]) {
                                 bar.data.push({
                                     x: mid,
-                                    y: valuesWhole.target_distrib[prediction][idx],
+                                    y: height,
                                     y0: y0,
                                     color: $scope.colors[prediction],
                                     interval: `[${valuesWhole.bin_edge[idx]}, ${valuesWhole.bin_edge[idx+1]})`
                                 });
-                                y0 += valuesWhole.target_distrib[prediction][idx];
+                                y0 += height;
                             }
                         });
                         dataWhole.push(bar);
                     });
-                    yAxis.ticks(5);
-                    y.domain([0, 1]);
                     x.domain(values.mid);
                 } else {
                     values.bin_value.forEach(function(bin_value, idx) {
@@ -146,13 +148,14 @@ app.directive("histogram", function (Format, $compile) {
                         let y0 = 0;
                         predArray.forEach(function(prediction) {
                             if (values.target_distrib[prediction][idx]) {
+                                const height = values.target_distrib[prediction][idx]*100;
                                 bar.data.push({
                                     x: bin_value,
-                                    y: values.target_distrib[prediction][idx],
+                                    y: height,
                                     y0: y0,
                                     color: $scope.colors[prediction]
                                 });
-                                y0 += values.target_distrib[prediction][idx];
+                                y0 += height;
                             }
                         });
                         data.push(bar);
@@ -163,19 +166,18 @@ app.directive("histogram", function (Format, $compile) {
                         let y0 = 0;
                         predArray.forEach(function(prediction) {
                             if (valuesWhole.target_distrib[prediction][idx]) {
+                                const height = valuesWhole.target_distrib[prediction][idx]*100;
                                 bar.data.push({
                                     x: bin_value,
-                                    y: valuesWhole.target_distrib[prediction][idx],
+                                    y: height,
                                     y0: y0,
                                     color: $scope.colors[prediction]
                                 });
-                                y0 += valuesWhole.target_distrib[prediction][idx];
+                                y0 += height;
                             }
                         });
                         dataWhole.push(bar);
                     });
-                    yAxis.ticks(5);
-                    y.domain([0, 1]);
                     x.domain(values.bin_value);
                 }
                 histSvg.append("g")

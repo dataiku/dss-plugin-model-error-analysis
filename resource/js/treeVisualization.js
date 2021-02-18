@@ -1,5 +1,5 @@
 'use strict';
-app.service("TreeUtils", function() {
+app.service("TreeUtils", function(Format) {
     const computeLocalError = function(d) {
         return (d.probabilities.find(_ => _[0] === "Wrong prediction") || [0, 0])[1]
     };
@@ -27,6 +27,9 @@ app.service("TreeUtils", function() {
                 x: -innerRadius*Math.cos(theta) + radius,
                 y: start.y
             };
+            if (end.x === start.x) {
+                end.x -= .0001;
+            }
             const largeArcFlag = theta > 0 ? 0 : 1;
             return `M ${start.x} ${start.y} A ${innerRadius} ${innerRadius} 0 ${largeArcFlag} 1 ${end.x} ${end.y}`;
         });
@@ -38,28 +41,7 @@ app.service("TreeUtils", function() {
         .text(d => labelTextFunc(d));
 
     };
-    return {
-        addNode,
-        computeLocalError
-    }
-});
 
-app.service("TreeInteractions", function($timeout, $http, Format, TreeUtils) {
-    let svg, tree, currentPath = new Set();
-    const radius = 20, maxZoom = 3;
-
-    const zoom = function() {
-        svg.attr("transform",  "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")")
-    };
-
-    const zoomListener = d3.behavior.zoom()
-        .on("zoom", function() {
-            const svgArea = svg.node().getBoundingClientRect().width * svg.node().getBoundingClientRect().height;
-            zoomListener.scaleExtent([svgArea < 100 ? zoomListener.scale() :  0, maxZoom])
-            zoom();
-    });
-
-    // TODO
     const nodeValues = function(d) {
         if (d.values) {
             if (d.others) {
@@ -93,6 +75,28 @@ app.service("TreeInteractions", function($timeout, $http, Format, TreeUtils) {
             numerical: true
         }
     }
+    return {
+        addNode,
+        computeLocalError,
+        decisionRule,
+        nodeValues
+    }
+});
+
+app.service("TreeInteractions", function($timeout, $http, Format, TreeUtils) {
+    let svg, tree, currentPath = new Set();
+    const radius = 20, maxZoom = 3;
+
+    const zoom = function() {
+        svg.attr("transform",  "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")")
+    };
+
+    const zoomListener = d3.behavior.zoom()
+        .on("zoom", function() {
+            const svgArea = svg.node().getBoundingClientRect().width * svg.node().getBoundingClientRect().height;
+            zoomListener.scaleExtent([svgArea < 100 ? zoomListener.scale() :  0, maxZoom])
+            zoom();
+    });
 
     const shift = function(id, scope, classLink, unspread) {
         let nodes = Array.from(scope.treeData[0].children_ids);
@@ -147,7 +151,7 @@ app.service("TreeInteractions", function($timeout, $http, Format, TreeUtils) {
             }
 
             if (node_id > 0) {
-                scope.decisionRule.unshift(decisionRule(node.node().__data__));
+                scope.decisionRule.unshift(TreeUtils.decisionRule(node.node().__data__));
             }
             currentPath.add(node_id);
             node_id = node.node().__data__.parent_id;
@@ -331,7 +335,7 @@ app.service("TreeInteractions", function($timeout, $http, Format, TreeUtils) {
         .attr("text-anchor","middle")
         .attr("x", radius)
         .attr("y", - 10)
-        .text(d => nodeValues(d));
+        .text(d => TreeUtils.nodeValues(d));
 
         nodeEnter.filter(d => d.children_ids.length)
         .append("text")

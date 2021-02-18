@@ -117,7 +117,7 @@ select {
     text-decoration: underline;
 }
 
-.chevron-no-decoration {
+.link .chevron-no-decoration {
     text-decoration: none;
     margin-left: 5px;
 }
