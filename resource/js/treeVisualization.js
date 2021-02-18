@@ -356,8 +356,9 @@ app.service("TreeInteractions", function($timeout, $http, Format, TreeUtils) {
         });
 
         // add new edges
-        edges.enter().insert("path", "g")
-        .attr("class", "edge")
+        const edgeContainer = edges.enter().insert("g", "g");
+
+        edgeContainer.append("path").attr("class", "edge")
         .attr("id", d => "edge-" + d.target.node_id)
         .attr("d", function(d) {
             return d3.svg.diagonal()({
@@ -366,6 +367,12 @@ app.service("TreeInteractions", function($timeout, $http, Format, TreeUtils) {
             });
         })
         .attr("stroke-width", d => 1+100*d.target.global_error / 5);
+
+        edgeContainer.append("text").append("textPath")
+        .attr("href", d => "#edge-" + d.target.node_id)
+        .attr("startOffset", "50%")
+        .attr("side", d => d.target.x < d.source.x ? "right": "left")
+        .text(d => Format.toFixedIfNeeded(d.target.global_error*100, 2, true));
     }
 
     return {
