@@ -516,6 +516,14 @@ div[histogram] {
     stroke: #F0B8C0;
 }
 
+.edge--no-error {
+    stroke: var(--grey-lighten-6);
+}
+
+.edge--no-error.hovered {
+    stroke: var(--grey-lighten-5);
+}
+
 .node {
     cursor: pointer;
 }

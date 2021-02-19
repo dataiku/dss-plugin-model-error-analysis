@@ -125,8 +125,10 @@ app.service("TreeInteractions", function($timeout, $http, Format, TreeUtils) {
                     });
                 }
                 linkParentToNode.attr("d", function(d) {
-                    return d3.svg.diagonal()({source: {x: d.source.x + radius, y: d.source.y},
-                        target: {x: d.target.x + radius, y: d.target.y}});
+                    return d3.svg.diagonal()({
+                        source: {x: d.source.x + radius, y: d.source.y + radius},
+                        target: {x: d.target.x + radius, y: d.target.y + radius}
+                    });
                 });
             }
         }
@@ -350,8 +352,8 @@ app.service("TreeInteractions", function($timeout, $http, Format, TreeUtils) {
         // update pre-existing edges
         edges.attr("d", function(d) {
             return d3.svg.diagonal()({
-                source: {x: d.source.x + radius, y: d.source.y},
-                target: {x: d.target.x + radius, y: d.target.y}
+                source: {x: d.source.x + radius, y: d.source.y + radius},
+                target: {x: d.target.x + radius, y: d.target.y + radius}
             });
         });
 
@@ -360,13 +362,14 @@ app.service("TreeInteractions", function($timeout, $http, Format, TreeUtils) {
 
         edgeContainer.append("path").attr("class", "edge")
         .attr("id", d => "edge-" + d.target.node_id)
+        .classed("edge--no-error", d => !d.target.global_error)
         .attr("d", function(d) {
             return d3.svg.diagonal()({
-                source: {x: d.source.x + radius, y: d.source.y},
-                target: {x: d.target.x + radius, y: d.target.y}
+                source: {x: d.source.x + radius, y: d.source.y + radius},
+                target: {x: d.target.x + radius, y: d.target.y + radius}
             });
         })
-        .attr("stroke-width", d => 1+100*d.target.global_error / 5);
+        .attr("stroke-width", d => 1+radius*2*d.target.global_error);
 
         edgeContainer.append("text").append("textPath")
         .attr("href", d => "#edge-" + d.target.node_id)
