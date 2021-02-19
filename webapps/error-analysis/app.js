@@ -2,7 +2,7 @@
     'use strict';
 
     app.controller("MeaController", function($scope, ModalService) {
-        $scope.config = {};
+        $scope.modelId = dataiku.getWebAppConfig().modelId;
         $scope.modal = {};
         $scope.removeModal = function(event) {
             if (ModalService.remove($scope.modal)(event)) {

@@ -11,22 +11,21 @@
                 <div class="expandable-introduction-text" ng-class="{'expandable-introduction-text--expanded': !hideText}">
                     <div class="expand-text">
                         <span class="link" ng-click="hideText = !hideText">
-                            How does it work ?
-                            <i class="chevron-no-decoration" ng-class="{'icon-chevron-down': hideText, 'icon-chevron-up': !hideText}"></i>
+                            How does it work ?<i class="chevron-no-decoration" ng-class="{'icon-chevron-down': hideText, 'icon-chevron-up': !hideText}"></i>
                         </span>
                     </div>
                     <div class="introduction-text" ng-if="!hideText">
                         <p>
-                            Model Error Analysis highlights the subpopulations where your model (the primary model) makes the majority of errors.
+                            Model Error Analysis highlights the samples where your original model (id: {{ modelId }}) makes most of its errors.
                         </p>
                         <p>
-                            A Decision Tree has been trained with the primary model correctness as the target, on its test set.  
-                            If the primary model is a classification, a prediction is considered correct if the predicted value is the correct class.
-                            If the primary model is a regression, a prediction is considered correct if the predicted value is not too far from the correct one.
+                            The Decision Tree in the view below is another model that has been trained on the test set of the original one, to predict whether the original model correctly predicts its own target.  
+                            If the original model is a classification, a prediction is correct if the original model predicts the correct class.
+                            If the original model is a regression, a prediction is correct if the original model predicts a value within a threshold of the correct one.
                         </p>
                         <p>
-                            The nodes of the tree hence partition the primary model test samples into groups with similar feature values and correctness.
-                            Selecting a node will show you detailed statistics regarding the errors in the node subset compared to the whole set.
+                            The nodes of the tree bin the test samples of the original model into subsets sharing similar feature values.
+                            Selecting a node will display detailed statistics regarding the errors in the subset defined by the node, compared to the whole set.
                             See the <a class="link">Plugin documentation&nbsp;<i class="icon-external-link"></i></a>.
                         </p>
                     </div>
@@ -36,16 +35,16 @@
                         <span class="metric__value" ng-show="metrics && metrics.estimated">{{ toFixedIfNeeded(metrics.estimated, 3, true) }}</span>
                         <span class="metric__value" ng-show="!metrics ||  !metrics.estimated">&hellip;</span>
                         <div>
-                            <div class="metric__name">Estimated accuracy</div>
-                            <span class="metric__explanation" ng-if="!hideText">Proportion of samples the primary model predicts correctly</span>
+                            <div class="metric__name">Original model accuracy</div>
+                            <span class="metric__explanation" ng-if="!hideText">Actual proportion of correct predictions by the original model</span>
                         </div>
                     </div>
                     <div class="metric">
                         <span class="metric__value" ng-show="metrics && metrics.actual">{{ toFixedIfNeeded(metrics.actual, 3, true) }}</span>
                         <span class="metric__value" ng-show="!metrics || !metrics.actual">&hellip;</span>
                         <div>
-                            <div class="metric__name">Actual accuracy</div>
-                            <span class="metric__explanation" ng-if="!hideText">Proportion of samples the Decision Tree predicts as correct predictions</span>
+                            <div class="metric__name">Predicted accuracy</div>
+                            <span class="metric__explanation" ng-if="!hideText">Predicted proportion of correct predictions by the original model</span>
                         </div>
                     </div>
                 </div>
