@@ -99,7 +99,7 @@ select {
 }
 
 .toolbar-header--expanded {
-    height: 200px;
+    height: 210px;
     justify-content: space-between;
 }
 
