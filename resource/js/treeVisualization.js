@@ -98,42 +98,6 @@ app.service("TreeInteractions", function($timeout, $http, Format, TreeUtils) {
             zoom();
     });
 
-    const shift = function(id, scope, classLink, unspread) {
-        let nodes = Array.from(scope.treeData[0].children_ids);
-        const shiftRight = new Set();
-        while (nodes.length) {
-            const node = scope.treeData[nodes.shift()];
-            if (node.parent_id != id) {
-                nodes = nodes.concat(node.children_ids);
-            }
-
-            const linkParentToNode = d3.select("#edge-" + node.node_id);
-            if (linkParentToNode.classed(classLink)) {
-                shiftRight.add(node.parent_id);
-            } else {
-                if (node.parent_id != id) {
-                    let delta;
-                    if (shiftRight.has(node.parent_id)) {
-                        delta = 120 + 40*node.depth;
-                        shiftRight.add(node.node_id);
-                    } else {
-                        delta = -80 - 30*node.depth;
-                    }
-                    node.x = node.x + (unspread ? -delta : delta);
-                    d3.select("#node-" + node.node_id).attr("transform", function(d) {
-                        return "translate(" + d.x + "," + d.y + ")";
-                    });
-                }
-                linkParentToNode.attr("d", function(d) {
-                    return d3.svg.diagonal()({
-                        source: {x: d.source.x + radius, y: d.source.y + radius},
-                        target: {x: d.target.x + radius, y: d.target.y + radius}
-                    });
-                });
-            }
-        }
-    }
-
     const hideUnselected = function() {
         d3.selectAll(".selected").classed("selected", false);
         d3.select(".node--selected").classed("node--selected", false);
@@ -213,13 +177,11 @@ app.service("TreeInteractions", function($timeout, $http, Format, TreeUtils) {
 
     const select = function(id, scope, unzoom) {
         if (scope.selectedNode) {
-            update(scope); // TODO: find a better way
             hideUnselected();
             d3.select("#node--right-panel").remove();
         }
         hideUnhovered();
         showSelected(id, scope);
-        shift(id, scope, "selected");
         scope.selectedNode = scope.treeData[id];
         const node = d3.select(".placeholder-node svg").append("g").attr("id", "node--right-panel");
         TreeUtils.addNode(node, 30, d=>scope.selectedNode.localError,  d=> Format.toFixedIfNeeded(scope.selectedNode.localError*100, 2, true), true);
@@ -246,7 +208,7 @@ app.service("TreeInteractions", function($timeout, $http, Format, TreeUtils) {
     }
 
     const addHatchMask = function(hatchSize = 5) {
-        //Create hatched pattern
+        // Create hatched pattern
         const defs = svg.append("defs");
         defs.append("pattern")
             .attr("id", "hatch-pattern")
@@ -299,16 +261,9 @@ app.service("TreeInteractions", function($timeout, $http, Format, TreeUtils) {
           d.y = d.depth * 180;
         });
 
-        const nodeContainer = svg.selectAll("g.node-container")
-        .data(nodeData, d => d.node_id);
-
-        // update pre-existing nodes
-        nodeContainer.attr("transform", function(d) {
-            return "translate(" + d.x + "," + d.y + ")";
-        });
-
-        // add new nodes
-        const nodeEnter = nodeContainer.enter().append("g")
+        // Add new nodes
+        const nodeEnter = svg.selectAll("g.node-container").data(nodeData, d => d.node_id)
+        .enter().append("g")
         .classed("node-container", true)
         .attr("id", d => "node-" + d.node_id)
         .attr("transform", function(d) {
@@ -322,10 +277,8 @@ app.service("TreeInteractions", function($timeout, $http, Format, TreeUtils) {
         }).on("mouseenter", function(d) {
             if (currentPath.has(d.node_id)) return;
             showHovered(d.node_id, scope);
-            shift(d.node_id, scope, "hovered");
         }).on("mouseleave", function(d) {
             if (currentPath.has(d.node_id))return;
-            shift(d.node_id, scope, "hovered", true);
             hideUnhovered();
         });
 
@@ -347,18 +300,8 @@ app.service("TreeInteractions", function($timeout, $http, Format, TreeUtils) {
         .attr("y", radius*2 + 20)
         .text(d => Format.ellipsis(scope.treeData[d.children_ids[0].toString()].feature, 20));
 
-        const edges = svg.selectAll(".edge").data(edgeData, d => d.target.node_id);
-
-        // update pre-existing edges
-        edges.attr("d", function(d) {
-            return d3.svg.diagonal()({
-                source: {x: d.source.x + radius, y: d.source.y + radius},
-                target: {x: d.target.x + radius, y: d.target.y + radius}
-            });
-        });
-
-        // add new edges
-        const edgeContainer = edges.enter().insert("g", "g");
+        // Add new edges
+        const edgeContainer = svg.selectAll(".edge").data(edgeData, d => d.target.node_id).enter().insert("g", "g");
 
         edgeContainer.append("path").attr("class", "edge")
         .attr("id", d => "edge-" + d.target.node_id)
@@ -374,8 +317,14 @@ app.service("TreeInteractions", function($timeout, $http, Format, TreeUtils) {
         edgeContainer.append("text").append("textPath")
         .attr("href", d => "#edge-" + d.target.node_id)
         .attr("startOffset", "50%")
-        .attr("side", d => d.target.x < d.source.x ? "right": "left")
-        .text(d => Format.toFixedIfNeeded(d.target.global_error*100, 2, true));
+        .text(d => Format.toFixedIfNeeded(d.target.global_error*100, 2, true))
+
+        edgeContainer.select("text").filter(d => d.target.x < d.source.x)
+        .attr("transform", function(d) {
+            const box = this.getBBox();
+            const thickness = 1+radius*2*d.target.global_error;
+            return `translate(${box.width-thickness} ${box.height-thickness}) rotate(180 ${box.x} ${box.y})`;
+        });
     }
 
     return {
