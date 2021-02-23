@@ -88,7 +88,6 @@ select {
 
 .toolbar-header {
     padding: 10px 20px;
-    height: 60px;
     display: flex;
     border-bottom: 1px solid var(--grey-lighten-5);
     flex-direction: column;
@@ -99,7 +98,6 @@ select {
 }
 
 .toolbar-header--expanded {
-    height: 210px;
     justify-content: space-between;
 }
 
@@ -127,8 +125,8 @@ select {
 }
 
 .expandable-introduction-text--expanded {
-    width: 60%;
-    height: inherit;
+    flex: 1 0 auto;
+    padding-right: 20px;
 }
 
 .introduction-text {
@@ -139,7 +137,7 @@ select {
 
 .metrics {
     display: flex;
-    width: 50%;
+    min-width: 350px;
     justify-content: space-between;
 }
 
@@ -147,8 +145,7 @@ select {
     display: flex;
     flex-direction: column;
     justify-content: space-around;
-    width: 35%;
-    height: 90%;
+    flex: 0 0 auto;
 }
 
 .metric {
