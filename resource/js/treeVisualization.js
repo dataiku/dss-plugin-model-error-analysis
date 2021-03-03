@@ -187,19 +187,24 @@ app.service("TreeInteractions", function($timeout, $http, Format, TreeUtils) {
         TreeUtils.addNode(node, 30, d=>scope.selectedNode.localError,  d=> Format.toFixedIfNeeded(scope.selectedNode.localError*100, 2, true), true);
 
         scope.histData = {};
-        scope.loadingHistogram = true;
-        loadHistograms(scope, id);
-
+        if (id == 0) {
+            scope.histData = scope.histDataWholeSet;
+        } else {
+            scope.loadingHistogram = true;
+            loadHistograms(scope, id);
+        }
+        
         centerOnNode(scope.selectedNode, unzoom);
     }
 
     const loadHistograms = function(scope, id) {
         $http.get(getWebAppBackendUrl("select-node/"+id))
             .then(function(response) {
-                if (id == 0) {
+                if (id == 0 && !scope.histDataWholeSet) {
                     scope.histDataWholeSet = response.data;
+                } else {
+                    scope.histData = response.data;
                 }
-                scope.histData = response.data;
                 scope.loadingHistogram = false;
             }, function(e) {
                 scope.loadingHistogram = false;
