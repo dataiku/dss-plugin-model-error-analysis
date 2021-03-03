@@ -52,8 +52,15 @@
             <div class="toolbar-header__row">
                 <div class="tree-legend-container">
                     <div class="tree-legend">
-                        <div class="tree-legend_item tree-legend_node">
-                            <span>X</span>
+                        <div class="tree-legend_item tree-legend_edge">
+                            <svg height="100%" width="100%">
+                                <g>
+                                    <path id="edge-legend" d="M0,0 C0,12 24,12 24,28"></path>
+                                    <text>
+                                        <textPath href="#edge-legend" startOffset="50%">X</textPath>
+                                    </text>
+                                </g>   
+                            </svg>
                         </div>
                         <div class="tree-legend-desc">
                             <span class="tree-legend-desc-short">Global error</span>

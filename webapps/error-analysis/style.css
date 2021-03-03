@@ -180,13 +180,15 @@ select {
     align-items: center;
 }
 
-.tree-legend_node {
-    width: 30px;
-    height: 12px;
-    background: var(--error-red);
-    display: flex;
-    justify-content: center;
-    align-items: center;
+.tree-legend_edge {
+    width: 32px;
+    height: 32px;
+}
+
+#edge-legend {
+    stroke: var(--error-red);
+    stroke-width: 9;
+    fill: none;
 }
 
 .tree-legend-desc {
