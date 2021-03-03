@@ -137,7 +137,7 @@ select {
 
 .metrics {
     display: flex;
-    min-width: 350px;
+    min-width: 390px;
     justify-content: space-between;
 }
 

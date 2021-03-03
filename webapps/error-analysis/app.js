@@ -31,8 +31,8 @@
             $scope.features = data.features;
             $scope.rankedFeatures = data.rankedFeatures;
             $scope.metrics = {
-                actual: data.actualAccuracy,
-                estimated: data.estimatedAccuracy
+                actual: 1 - data.actualAccuracy,
+                estimated: 1 - data.estimatedAccuracy
             }
             targetValues = data.target_values;
             TreeInteractions.createTree($scope);
