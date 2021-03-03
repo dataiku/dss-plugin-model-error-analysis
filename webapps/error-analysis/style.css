@@ -145,7 +145,7 @@ select {
     display: flex;
     flex-direction: column;
     justify-content: space-around;
-    flex: 0 0 auto;
+    flex: 0 auto;
 }
 
 .metric {

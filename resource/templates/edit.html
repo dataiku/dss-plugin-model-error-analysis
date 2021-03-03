@@ -32,19 +32,19 @@
                 </div>
                 <div ng-class="{'metrics': hideText, 'metrics--expanded': !hideText}">
                     <div class="metric">
-                        <span class="metric__value" ng-show="metrics && metrics.estimated">{{ toFixedIfNeeded(metrics.estimated, 3, true) }}</span>
+                        <span class="metric__value" ng-show="metrics && metrics.estimated">{{ toFixedIfNeeded(1 - metrics.estimated, 3, true) }}</span>
                         <span class="metric__value" ng-show="!metrics ||  !metrics.estimated">&hellip;</span>
                         <div>
-                            <div class="metric__name">Original model accuracy</div>
-                            <span class="metric__explanation" ng-if="!hideText">Actual proportion of correct predictions by the original model</span>
+                            <div class="metric__name">Original model error rate</div>
+                            <span class="metric__explanation" ng-if="!hideText">Actual proportion of wrong predictions from the original model (id: {{modelId}})</span>
                         </div>
                     </div>
                     <div class="metric">
-                        <span class="metric__value" ng-show="metrics && metrics.actual">{{ toFixedIfNeeded(metrics.actual, 3, true) }}</span>
+                        <span class="metric__value" ng-show="metrics && metrics.actual">{{ toFixedIfNeeded(1 - metrics.actual, 3, true) }}</span>
                         <span class="metric__value" ng-show="!metrics || !metrics.actual">&hellip;</span>
                         <div>
-                            <div class="metric__name">Predicted accuracy</div>
-                            <span class="metric__explanation" ng-if="!hideText">Predicted proportion of correct predictions by the original model</span>
+                            <div class="metric__name">Predicted error rate</div>
+                            <span class="metric__explanation" ng-if="!hideText">Predicted proportion of wrong predictions from the original model (id :{{modelId}})</span>
                         </div>
                     </div>
                 </div>
