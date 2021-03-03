@@ -414,20 +414,23 @@ div[histogram] {
     overflow-y: auto;
 }
 
-.decision-rule-section {
+.selected-node-info {
     padding: 16px;
     flex: 0 0 auto;
 }
 
-.selected-node-info {
+.decision-rule-section {
+    border-top: 1px solid var(--grey-lighten-6);
+    padding-top: 10px;
+}
+
+.statistics-section {
     display: flex;
     align-items: center;
-    border-bottom: 1px solid var(--grey-lighten-6);
-    margin-bottom: 10px;
     text-align: justify;
 }
 
-.selected-node-info p {
+.statistics-section p {
     margin-top: 0;
 }
 
