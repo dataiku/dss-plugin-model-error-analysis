@@ -1,7 +1,7 @@
 (function() {
     'use strict';
 
-    app.controller("MeaController", function($scope, ModalService) {
+    app.controller("MeaController", function($scope, $http, ModalService, TreeInteractions, TreeUtils, Format) {
         $scope.modelId = dataiku.getWebAppConfig().modelId;
         $scope.modal = {};
         $scope.removeModal = function(event) {
@@ -10,9 +10,7 @@
             }
         };
         $scope.createModal = ModalService.create($scope.modal);
-    });
 
-    app.controller("EditController", function($scope, $http, TreeInteractions, TreeUtils, Format) {
         $scope.loadingHistogram = true;
         let targetValues;
 
