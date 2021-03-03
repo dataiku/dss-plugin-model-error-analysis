@@ -80,10 +80,9 @@ select {
 .tree-visualization {
     height: 100%;
     border-right: 1px solid var(--grey-lighten-5);
-}
-
-.tree-visualization--tree {
     width: calc(100% - 400px);
+    display: flex;
+    flex-direction: column;
 }
 
 .toolbar-header {
@@ -339,7 +338,7 @@ div[histogram] {
 
 .tree {
     width: 100%;
-    height: calc(100% - 40px);
+    flex: 1 0 auto;
     cursor: grab;
     position: relative;
 }
