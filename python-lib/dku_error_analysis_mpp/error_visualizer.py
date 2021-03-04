@@ -178,7 +178,8 @@ class DkuErrorVisualizer(_BaseErrorVisualizer):
             root_hist_data_all_features = {}
 
         for leaf_id in leaf_nodes:
-            for feature_name in ranked_features:
+            for feature in ranked_features:
+                feature_name = feature["name"]
                 leaf = self._tree.get_node(leaf_id)
                 node_summary = 'Leaf {} ({}: {:.3f}'.format(leaf.id, *leaf.probabilities[0])
                 if len(leaf.probabilities) > 1:

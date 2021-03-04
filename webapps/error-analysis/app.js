@@ -12,7 +12,6 @@
         $scope.createModal = ModalService.create($scope.modal);
 
         $scope.loadingHistogram = true;
-        let targetValues;
 
         $scope.colors = { // TODO
             "Wrong prediction": "#CE1228",
@@ -28,13 +27,11 @@
             angular.forEach($scope.treeData, function(node) {
                 node.localError = TreeUtils.computeLocalError(node);
             });
-            $scope.features = data.features;
             $scope.rankedFeatures = data.rankedFeatures;
             $scope.metrics = {
                 actual: 1 - data.actualAccuracy,
                 estimated: 1 - data.estimatedAccuracy
             }
-            targetValues = data.target_values;
             TreeInteractions.createTree($scope);
             $scope.loadingTree = false;
         }

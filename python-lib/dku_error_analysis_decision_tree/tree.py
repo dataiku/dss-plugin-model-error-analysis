@@ -17,9 +17,9 @@ class InteractiveTree(object):
 
     num_features: dict, a map from feature names to the mean of the feature if can be treated as numerical
 
-    leaves: set, set of leaves id
+    ranked_features: list of dict with three keys (name - name of the feature; numerical - whether the feature is numerical; rank - the feature importance)
 
-    target_values: list, a list of the values the target can take
+    leaves: set, set of leaves id
 
     """
     def __init__(self, df, target, ranked_features, num_features):
@@ -29,10 +29,15 @@ class InteractiveTree(object):
         except KeyError:
             raise Exception("The target %s is not one of the columns of the dataset" % target)
         self.target = target
-        self.target_values = list(df[target].unique())
         self.num_features = num_features # TODO: remove this arg (see handling of missing features)
         self.nodes = {}
-        self.ranked_features = ranked_features
+        self.ranked_features = []
+        for idx, ranked_feature in enumerate(ranked_features):
+            self.ranked_features.append({
+                "rank": idx,
+                "name": ranked_feature,
+                "numerical": ranked_feature in num_features
+            })
         self.df = df
         self.bins = {}
         self.leaves = set()

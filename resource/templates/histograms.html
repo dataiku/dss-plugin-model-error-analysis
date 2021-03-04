@@ -60,19 +60,19 @@
         </div>
     </div>
     <div class="histograms">  
-        <div ng-repeat="feature in rankedFeatures">
+        <div ng-repeat="feature in rankedFeatures | orderBy: 'rank'" ng-if="histData[feature.name]">
             <div class="header header-feature">
                 <div class="header-feature-desc  header-div header-div--uppercase">
-                    <i class="icon-font" ng-show="!features.hasOwnProperty(feature)"></i>
-                    <div class="numerical" ng-show="features.hasOwnProperty(feature)">#</div>
-                    <div class="ellipsed-text" title="{{feature}}">&emsp;{{feature}}</div>
+                    <i class="icon-font" ng-show="!feature.numerical"></i>
+                    <div class="numerical" ng-show="feature.numerical">#</div>
+                    <div class="ellipsed-text" title="{{feature.name}}">&emsp;{{feature.name}}</div>
                 </div>
             </div>
 
-            <div class="histogram-placeholder histogram-placeholder-empty" ng-if="histData[feature].count.length == 0">
+            <div class="histogram-placeholder histogram-placeholder-empty" ng-if="histData[feature.name].count.length == 0">
                 <em>No values</em>
             </div>
-            <div histogram="{{feature}}" class="histogram-placeholder" ng-if="histData[feature].count.length > 0">
+            <div histogram="{{feature.name}}" class="histogram-placeholder" ng-if="histData[feature.name].count.length > 0">
                 <div class="histogram-svg"></div>
             </div>
         </div>
