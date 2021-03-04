@@ -8,7 +8,7 @@ app.directive('tooltipHistogram', function() {
             const binIndex = parseInt(attr.binIndex);
             const histData = attr.wholeData ? scope.histDataWholeSet[attr.feature] : scope.histData[attr.feature];
             const probaError = histData.target_distrib["Wrong prediction"];
-            if (probaError) {
+            if (probaError && probaError[binIndex]) {
                 scope.localError = probaError[binIndex] * 100;
             } else {
                 scope.localError = 0;
