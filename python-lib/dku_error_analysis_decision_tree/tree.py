@@ -15,18 +15,14 @@ class InteractiveTree(object):
 
     nodes: dict, a map from ids to the corresponding nodes in the tree
 
-    features: dict, a map from feature names to the number of usage in the various splits of the tree (useful for recipes) \
-            and the mean of the feature if can be treated as numerical
+    num_features: dict, a map from feature names to the mean of the feature if can be treated as numerical
 
     leaves: set, set of leaves id
 
     target_values: list, a list of the values the target can take
 
-    sample_method: string, the method used for sampling
-
-    sample_size: positive integer, the number of rows for the sampling
     """
-    def __init__(self, df, target, ranked_features, features):
+    def __init__(self, df, target, ranked_features, num_features):
         try:
             df = df.dropna(subset=[target])
             df.loc[:, target] = df.loc[:, target].apply(safe_str) # for classification
@@ -34,7 +30,7 @@ class InteractiveTree(object):
             raise Exception("The target %s is not one of the columns of the dataset" % target)
         self.target = target
         self.target_values = list(df[target].unique())
-        self.features = features
+        self.num_features = num_features # TODO: remove this arg (see handling of missing features)
         self.nodes = {}
         self.ranked_features = ranked_features
         self.df = df
@@ -111,12 +107,6 @@ class InteractiveTree(object):
         else:
             node.set_node_info(samples, self.get_node(0).samples[0], sorted_proba, prediction, error)
 
-    def jsonify(self):
-        return {"target": self.target,
-                "target_values": self.target_values,
-                "features": self.features,
-                "nodes": self.jsonify_nodes()}
-
     def jsonify_nodes(self):
         jsonified_tree = {}
         for key, node in self.nodes.items():
@@ -158,7 +148,7 @@ class InteractiveTree(object):
             node = self.get_node(node_id)
             if node.get_type() == Node.TYPES.NUM:
                 # TODO: change with ch49216
-                df = node.apply_filter(df, self.features.get(node.feature, {"mean": None})["mean"])
+                df = node.apply_filter(df, self.num_features.get(node.feature, {"mean": None})["mean"])
             else:
                 df = node.apply_filter(df)
             node_id = node.parent_id
@@ -169,10 +159,10 @@ class InteractiveTree(object):
         filtered_df = self.get_filtered_df(node, self.df)
         column = filtered_df[col]
         target_column = filtered_df[self.target]
-        if col in self.features:
+        if col in self.num_features:
             bins = self.bins.get(col)
             if bins is None:
-                mean = self.features[col]["mean"]
+                mean = self.num_features[col]["mean"]
                 bins, bin_edges = pd.cut(self.df[col].fillna(mean), bins=min(nr_bins, self.df[col].nunique()), retbins=True, include_lowest=True, right=False)
                 if i > 0:
                     bins = pd.cut(column.fillna(mean), bins=bin_edges, right=False)
