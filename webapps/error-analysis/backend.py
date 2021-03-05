@@ -22,11 +22,25 @@ VERSION_ID = get_webapp_config()["versionId"]
 
 class TreeHandler(object):
     def __init__(self):
-        self.features = []
-        self.selected_features = []
+        self.set_tree(None)
 
     def set_tree(self, tree):
+        self.selected_feature_ids = set()
+        self.already_fetched_locally = set()
+        self.already_fetched_globally = set()
+        self.current_node_id = None
         self.tree = tree
+
+    def set_current_node_id(self, node_id):
+        self.current_node_id = node_id
+        self.already_fetched_locally = set()
+
+    def set_selected_feature_ids(self, feature_ids):
+        new_ids = feature_ids - self.selected_feature_ids
+        if self.current_node_id is not None:
+            self.already_fetched_locally |= new_ids
+        self.selected_feature_ids = feature_ids
+        return new_ids - self.already_fetched_globally
 
 handler = TreeHandler()
 
@@ -66,11 +80,13 @@ def load():
 @app.route("/select-node/<int:node_id>")
 def get_stats_node(node_id):
     try:
-        tree = handler.tree
+        handler.set_current_node_id(node_id)
         result = {}
-        for feature in tree.ranked_features[:ErrorAnalyzerConstants.TOP_K_FEATURES]:
-            feature_name = feature["name"]
-            result[feature_name] = tree.get_stats(node_id, feature_name)
+        for idx in handler.selected_feature_ids:
+            if idx not in handler.already_fetched_locally:
+                feature_name = handler.tree.ranked_features[idx]["name"]
+                result[feature_name] = handler.tree.get_stats(node_id, feature_name)
+                handler.already_fetched_locally.add(idx)
         return jsonify(result)
     except:
         LOGGER.error(traceback.format_exc())
@@ -79,9 +95,14 @@ def get_stats_node(node_id):
 @app.route("/select-features", methods=["POST"])
 def select_features():
     try:
-        tree = handler.tree
-        features = json.loads(request.data)["features"]
-        pass
+        feature_ids = set(json.loads(request.data)["feature_ids"])
+        global_data_to_fetch = handler.set_selected_feature_ids(feature_ids)
+        result = {}
+        for idx in global_data_to_fetch:
+            feature_name = handler.tree.ranked_features[idx]["name"]
+            result[feature_name] = handler.tree.get_stats(0, feature_name)
+            handler.already_fetched_globally.add(idx)
+        return jsonify(result)
     except:
         LOGGER.error(traceback.format_exc())
         return traceback.format_exc(), 500

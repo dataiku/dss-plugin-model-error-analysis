@@ -60,7 +60,7 @@
         </div>
     </div>
     <div class="histograms">  
-        <div ng-repeat="feature in rankedFeatures | orderBy: 'rank'" ng-if="histData[feature.name]">
+        <div ng-repeat="feature in rankedFeatures | orderBy: 'rank'" ng-if="feature.$selected">
             <div class="header header-feature">
                 <div class="header-feature-desc  header-div header-div--uppercase">
                     <i class="icon-font" ng-show="!feature.numerical"></i>

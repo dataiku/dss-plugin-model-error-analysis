@@ -189,7 +189,7 @@ app.service("TreeInteractions", function($timeout, $http, Format, TreeUtils) {
         scope.histData = {};
         if (id == 0) {
             scope.histData = scope.histDataWholeSet;
-        } else {
+        } else {        
             scope.loadingHistogram = true;
             loadHistograms(scope, id);
         }
@@ -200,11 +200,7 @@ app.service("TreeInteractions", function($timeout, $http, Format, TreeUtils) {
     const loadHistograms = function(scope, id) {
         $http.get(getWebAppBackendUrl("select-node/"+id))
             .then(function(response) {
-                if (id == 0 && !scope.histDataWholeSet) {
-                    scope.histDataWholeSet = response.data;
-                } else {
-                    scope.histData = response.data;
-                }
+                Object.assign(scope.histData, response.data);
                 scope.loadingHistogram = false;
             }, function(e) {
                 scope.loadingHistogram = false;
@@ -254,7 +250,6 @@ app.service("TreeInteractions", function($timeout, $http, Format, TreeUtils) {
         svg = svg.append("g");
 
         update(scope);
-        loadHistograms(scope, 0);
         zoomFit(true);
     }
 

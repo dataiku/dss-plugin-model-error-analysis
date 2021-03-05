@@ -2,7 +2,6 @@
     'use strict';
 
     app.controller("MeaController", function($scope, $http, ModalService, TreeInteractions, TreeUtils, Format) {
-        $scope.modelId = dataiku.getWebAppConfig().modelId;
         $scope.modal = {};
         $scope.removeModal = function(event) {
             if (ModalService.remove($scope.modal)(event)) {
@@ -10,24 +9,27 @@
             }
         };
         $scope.createModal = ModalService.create($scope.modal);
-
-        $scope.loadingHistogram = true;
-
+        
+        $scope.modelId = dataiku.getWebAppConfig().modelId;
         $scope.colors = { // TODO
             "Wrong prediction": "#CE1228",
             "Correct prediction": "#CCC"
         };
-
+        
         const radius = 16;
         const node = d3.select(".tree-legend_pie svg").append("g");
         TreeUtils.addNode(node, radius, d=>.4, d=>"X", true);
-
+        
+        const DEFAULT_MAX_NR_FEATURES = 5;
         const create = function(data) {
             $scope.treeData = data.nodes;
             angular.forEach($scope.treeData, function(node) {
                 node.localError = TreeUtils.computeLocalError(node);
             });
             $scope.rankedFeatures = data.rankedFeatures;
+            $scope.rankedFeatures.forEach(function(rankedFeature, idx) {
+                rankedFeature.$selected = idx < DEFAULT_MAX_NR_FEATURES;
+            });
             $scope.metrics = {
                 actual: 1 - data.actualAccuracy,
                 estimated: 1 - data.estimatedAccuracy
@@ -36,18 +38,31 @@
             $scope.loadingTree = false;
         }
 
-        $scope.load = function() {
+        const load = function() {
             $scope.loadingTree = true;
             $http.get(getWebAppBackendUrl("load"))
             .then(function(response) {
                 create(response.data);
+                $scope.histDataWholeSet = {};
+                selectFeatures();
             }, function(e) {
                 $scope.loadingTree = false;
                 $scope.createModal.error(e.data);
             });
         }
 
-        $scope.load();
+        const selectFeatures = function() {
+            const ids = $scope.rankedFeatures.filter(_ => _.$selected).map(_ => _.rank);
+            $http.post(getWebAppBackendUrl("select-features"), {"feature_ids": ids})
+            .then(function(response) {
+                Object.assign($scope.histDataWholeSet, response.data);
+            }, function(e) {
+                $scope.loadingTree = false;
+                $scope.createModal.error(e.data);
+            });
+        }
+
+        load();
 
         $scope.zoomFit = function() {
             TreeInteractions.zoomFit();
