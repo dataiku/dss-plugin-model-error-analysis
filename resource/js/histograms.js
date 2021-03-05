@@ -5,14 +5,14 @@ app.directive('tooltipHistogram', function() {
         restrict: "C",
         templateUrl: "/plugins/model-error-analysis/resource/templates/tooltip.html",
         link: function(scope, element, attr) {
-            scope.inHistogram = true;
             const binIndex = parseInt(attr.binIndex);
             const histData = attr.wholeData ? scope.histDataWholeSet[attr.feature] : scope.histData[attr.feature];
-            scope.probabilities = Object.entries(histData.target_distrib).map(_ => [_[0], _[1][binIndex]]);
-            scope.probabilities.sort(function(a, b) {
-                return b[1] - a[1];
-            });
-            scope.probabilities = scope.probabilities.slice(0, 5).map(_ => [_[0], _[1]]);
+            const probaError = histData.target_distrib["Wrong prediction"];
+            if (probaError) {
+                scope.localError = probaError[binIndex] * 100;
+            } else {
+                scope.localError = 0;
+            }
             scope.samples = [histData.count[binIndex],
                             histData.count[binIndex]/scope.selectedNode.samples[0]];
             if (histData.bin_value) {
@@ -23,7 +23,7 @@ app.directive('tooltipHistogram', function() {
 
             d3.select(element[0].children[0])
             .attr("width", 190)
-            .attr("height", 60 + scope.probabilities.length * 22);
+            .attr("height", 80);
         }
     };
 });
@@ -47,15 +47,17 @@ app.directive("histogram", function (Format, $compile) {
             const y = d3.scale.linear().range([height, 0]);
             const xAxis = d3.svg.axis().scale(x).orient("bottom");
             const yAxis = d3.svg.axis().scale(y).orient("left");
+            yAxis.ticks(5);
+            y.domain([0, 100]);
 
             const addInteractions = function(groups, onWholeSet) {
-                groups.on("mouseenter", function(d, i) {
+                groups.on("mouseenter", function(d) {
                     histSvg.append("g")
                     .classed("tooltip", true)
                     .classed("tooltip-histogram", true)
                     .attr("feature", feature)
                     .attr("whole-data", onWholeSet)
-                    .attr("bin-index", i)
+                    .attr("bin-index", d.idx)
                     .call(function() {
                         $compile(this[0])($scope);
                     });
@@ -80,7 +82,7 @@ app.directive("histogram", function (Format, $compile) {
 
             const addGroupProperties = function(groups, wholeData) {
                 groups.selectAll("rect")
-                .data(d => d)
+                .data(d => d.data)
                 .enter()
                 .append("rect")
                 .attr("fill", d => d.color)
@@ -104,73 +106,78 @@ app.directive("histogram", function (Format, $compile) {
                 const dataWhole = [];
                 if (feature in $scope.features) {
                     values.mid.forEach(function(mid, idx) {
-                        const bar = [];
+                        const bar = {data: [], idx};
                         let y0 = 0;
                         predArray.forEach(function(prediction) {
                             if (values.target_distrib[prediction][idx]) {
-                                bar.push({x: mid,
-                                    y: values.target_distrib[prediction][idx],
+                                const height = values.target_distrib[prediction][idx]*100;
+                                bar.data.push({
+                                    x: mid,
+                                    y: height,
                                     y0: y0,
                                     color: $scope.colors[prediction],
                                     interval: `[${values.bin_edge[idx]}, ${values.bin_edge[idx+1]})`
                                 });
-                                y0 += values.target_distrib[prediction][idx];
+                                y0 += height;
                             }
                         });
                         data.push(bar);
                     });
                     valuesWhole.mid.forEach(function(mid, idx) {
-                        const bar = [];
+                        const bar = {data: [], idx};
                         let y0 = 0;
                         predArray.forEach(function(prediction) {
+                            const height = valuesWhole.target_distrib[prediction][idx]*100;
                             if (valuesWhole.target_distrib[prediction][idx]) {
-                                bar.push({x: mid,
-                                    y: valuesWhole.target_distrib[prediction][idx],
+                                bar.data.push({
+                                    x: mid,
+                                    y: height,
                                     y0: y0,
                                     color: $scope.colors[prediction],
                                     interval: `[${valuesWhole.bin_edge[idx]}, ${valuesWhole.bin_edge[idx+1]})`
                                 });
-                                y0 += valuesWhole.target_distrib[prediction][idx];
+                                y0 += height;
                             }
                         });
                         dataWhole.push(bar);
                     });
-                    yAxis.ticks(5)
-                    y.domain([0, 1]);
                     x.domain(values.mid);
                 } else {
                     values.bin_value.forEach(function(bin_value, idx) {
-                        const bar = [];
+                        const bar = {data: [], idx};
                         let y0 = 0;
                         predArray.forEach(function(prediction) {
                             if (values.target_distrib[prediction][idx]) {
-                                bar.push({x: bin_value,
-                                    y: values.target_distrib[prediction][idx],
+                                const height = values.target_distrib[prediction][idx]*100;
+                                bar.data.push({
+                                    x: bin_value,
+                                    y: height,
                                     y0: y0,
                                     color: $scope.colors[prediction]
                                 });
-                                y0 += values.target_distrib[prediction][idx];
+                                y0 += height;
                             }
                         });
                         data.push(bar);
                     });
-                    values.bin_value.forEach(function(bin_value, idx) { // TODO
-                        const bar = [];
+                    values.bin_value.forEach(function(bin_value) {
+                        const idx = valuesWhole.bin_value.indexOf(bin_value);
+                        const bar = {data: [], idx};
                         let y0 = 0;
                         predArray.forEach(function(prediction) {
                             if (valuesWhole.target_distrib[prediction][idx]) {
-                                bar.push({x: bin_value,
-                                    y: valuesWhole.target_distrib[prediction][idx],
+                                const height = valuesWhole.target_distrib[prediction][idx]*100;
+                                bar.data.push({
+                                    x: bin_value,
+                                    y: height,
                                     y0: y0,
                                     color: $scope.colors[prediction]
                                 });
-                                y0 += valuesWhole.target_distrib[prediction][idx];
+                                y0 += height;
                             }
                         });
                         dataWhole.push(bar);
                     });
-                    yAxis.ticks(5)
-                    y.domain([0, 1]);
                     x.domain(values.bin_value);
                 }
                 histSvg.append("g")
@@ -215,7 +222,7 @@ app.directive("histogram", function (Format, $compile) {
                 addInteractions(groupsWhole, true);
             }
 
-            $scope.$watch("selectedNode", function(nv) {
+            $scope.$watch("selectedNode", function(nv) { // TODO
                 if (nv) {
                     histSvg.selectAll("rect").remove();
                     histSvg.selectAll("g").remove();
