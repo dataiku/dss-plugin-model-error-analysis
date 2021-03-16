@@ -271,10 +271,42 @@ select {
     padding: 16px;
 }
 
-.legend-description {
+.feature-selector {
     flex: 1 0 auto;
     display: flex;
     align-items: center;
+    position: relative;
+    cursor: pointer;
+}
+
+.feature-selector__body {
+    overflow-y: auto;
+    position: absolute;
+    top: 25px;
+    left: -10px;
+    background: var(--white);
+    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+    width: 200px;
+    max-height: 250px;
+}
+
+.feature-selector-row {
+    padding: 5px;
+    display: flex;
+    align-items: center;
+    height: 20px;
+}
+
+.feature-selector-row:hover {
+    background: var(--blue-lighten-5);
+}
+
+.feature-selector-row .icon-font, .feature-selector-row .numerical {
+    width: 12px;
+}
+
+.feature-selector-row .icon-font {
+    font-size: 11px;
 }
 
 .legend-details {
@@ -285,10 +317,6 @@ select {
     display: flex;
     width: 100%;
     align-items: baseline;
-}
-
-.header-feature-desc > .numerical {
-    font-size: 18px;
 }
 
 div[histogram] {
@@ -451,11 +479,14 @@ div[histogram] {
 
 .icon-font {
     color: #ffc241;
-    width: 20px !important;
 }
 
 .numerical {
     color: #3075ae;
+    font-size: 17px;
+}
+
+.header__icon.numerical, .header__icon.icon-font {
     width: 20px;
 }
 

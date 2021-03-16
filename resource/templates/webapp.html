@@ -59,7 +59,7 @@
                                     <text>
                                         <textPath href="#edge-legend" startOffset="50%">X</textPath>
                                     </text>
-                                </g>   
+                                </g>
                             </svg>
                         </div>
                         <div class="tree-legend-desc">
@@ -104,7 +104,7 @@
             <spinner ng-if="loadingTree"></spinner>
         </div>
     </div>
-    <div class="histogram-panel" ng-include="'/plugins/model-error-analysis/resource/templates/histograms.html'" ng-show="selectedNode && !loadingHistogram"></div>
+    <div class="histogram-panel" ng-include="'/plugins/model-error-analysis/resource/templates/histograms.html'" ng-show="selectedNode"></div>
     <div class="histogram-panel--empty empty-panel" ng-show="!selectedNode">
         Select a node
     </div>

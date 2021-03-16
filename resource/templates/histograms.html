@@ -39,8 +39,17 @@
 
 <div class="histograms-container">
     <div class="legend-container">
-        <div class="legend-description">
-            Prediction distribution
+        <div class="feature-selector">
+            <span class="feature-selector__title" ng-click="openFeatureSelector()">Feature distribution <i class="icon-caret-down"></i></span>
+            <div class="feature-selector__body" ng-if="featureSelectorShown">
+                <div class="feature-selector-row" ng-click="feature.$selected = !feature.$selected" ng-repeat="feature in rankedFeatures">
+                    <input type="checkbox" ng-model="feature.$selected" ng-click="$event.stopPropagation()">
+                    &nbsp;
+                    <i class="icon-font" ng-show="!feature.numerical"></i>
+                    <div class="numerical" ng-show="feature.numerical">#</div>
+                    <div class="ellipsed-text">&nbsp;{{ feature.name }}</div>
+                </div>
+            </div>
         </div>
         <div class="legend-details">
             <svg height="20px" width="50%">
@@ -63,16 +72,18 @@
         <div ng-repeat="feature in rankedFeatures | orderBy: 'rank'" ng-if="feature.$selected">
             <div class="header header-feature">
                 <div class="header-feature-desc  header-div header-div--uppercase">
-                    <i class="icon-font" ng-show="!feature.numerical"></i>
-                    <div class="numerical" ng-show="feature.numerical">#</div>
+                    <i class="icon-font header__icon" ng-show="!feature.numerical"></i>
+                    <div class="numerical header__icon" ng-show="feature.numerical">#</div>
                     <div class="ellipsed-text" title="{{feature.name}}">&emsp;{{feature.name}}</div>
                 </div>
             </div>
-
-            <div class="histogram-placeholder histogram-placeholder-empty" ng-if="histData[feature.name].count.length == 0">
+            <div class="histogram-placeholder histogram-placeholder-empty" ng-if="histData[feature.name] && histData[feature.name].count.length == 0">
                 <em>No values</em>
             </div>
-            <div histogram="{{feature.name}}" class="histogram-placeholder" ng-if="histData[feature.name].count.length > 0">
+            <div class="histogram-placeholder" ng-if="!histData[feature.name]">
+                <spinner></spinner>
+            </div>
+            <div histogram="{{feature.name}}" class="histogram-placeholder" ng-if="histData[feature.name] && histData[feature.name].count.length > 0">
                 <div class="histogram-svg"></div>
             </div>
         </div>
