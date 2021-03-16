@@ -6,6 +6,7 @@ import dataiku
 from dataiku.customwebapp import get_webapp_config
 from dataiku.core.dkujson import DKUJSONEncoder
 
+from dku_error_analysis_decision_tree.tree_handler import TreeHandler
 from dku_error_analysis_model_parser.model_metadata import get_model_handler
 from dku_error_analysis_model_parser.model_accessor import ModelAccessor
 from dku_error_analysis_mpp.dku_error_analyzer import DkuErrorAnalyzer
@@ -19,28 +20,6 @@ logging.basicConfig(level=logging.INFO, format="Error Analysis Plugin %(levelnam
 # initialization of the backend
 MODEL_ID = get_webapp_config()["modelId"]
 VERSION_ID = get_webapp_config()["versionId"]
-
-class TreeHandler(object):
-    def __init__(self):
-        self.set_tree(None)
-
-    def set_tree(self, tree):
-        self.selected_feature_ids = set()
-        self.already_fetched_locally = set()
-        self.already_fetched_globally = set()
-        self.current_node_id = None
-        self.tree = tree
-
-    def set_current_node_id(self, node_id):
-        self.current_node_id = node_id
-        self.already_fetched_locally = set()
-
-    def set_selected_feature_ids(self, feature_ids):
-        new_ids = feature_ids - self.selected_feature_ids
-        if self.current_node_id is not None:
-            self.already_fetched_locally |= new_ids
-        self.selected_feature_ids = feature_ids
-        return new_ids - self.already_fetched_globally
 
 handler = TreeHandler()
 
@@ -80,14 +59,7 @@ def load():
 @app.route("/select-node/<int:node_id>")
 def get_stats_node(node_id):
     try:
-        handler.set_current_node_id(node_id)
-        result = {}
-        for idx in handler.selected_feature_ids:
-            if idx not in handler.already_fetched_locally:
-                feature_name = handler.tree.ranked_features[idx]["name"]
-                result[feature_name] = handler.tree.get_stats(node_id, feature_name)
-                handler.already_fetched_locally.add(idx)
-        return jsonify(result)
+        return jsonify(handler.get_stats_node(node_id))
     except:
         LOGGER.error(traceback.format_exc())
         return traceback.format_exc(), 500
@@ -97,12 +69,7 @@ def select_features():
     try:
         feature_ids = set(json.loads(request.data)["feature_ids"])
         global_data_to_fetch = handler.set_selected_feature_ids(feature_ids)
-        result = {}
-        for idx in global_data_to_fetch:
-            feature_name = handler.tree.ranked_features[idx]["name"]
-            result[feature_name] = handler.tree.get_stats(0, feature_name)
-            handler.already_fetched_globally.add(idx)
-        return jsonify(result)
+        return jsonify(handler.get_stats_root(global_data_to_fetch))
     except:
         LOGGER.error(traceback.format_exc())
         return traceback.format_exc(), 500
