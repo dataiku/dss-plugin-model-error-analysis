@@ -147,7 +147,7 @@ app.directive("histogram", function (Format, $compile) {
                         const bar = {data: [], idx};
                         let y0 = 0;
                         const idxWhole = valuesWhole.bin_value.indexOf(bin_value);
-                        const barWhole = {data: [], idxWhole};
+                        const barWhole = {data: [], idx: idxWhole};
                         let y0Whole = 0;
                         predArray.forEach(function(prediction) {
                             if (values.target_distrib[prediction][idx]) {
