@@ -1,7 +1,8 @@
 'use strict';
 app.service("TreeUtils", function(Format) {
+    const WRONG_PREDICTION = "Wrong prediction";
     const computeLocalError = function(d) {
-        return (d.probabilities.find(_ => _[0] === "Wrong prediction") || [0, 0])[1]
+        return (d.probabilities.find(_ => _[0] === WRONG_PREDICTION) || [0, 0])[1]
     };
 
     const addNode = function(svgParentElem, radius, getLocalErrorFunc, labelTextFunc, select=false) {
@@ -79,7 +80,8 @@ app.service("TreeUtils", function(Format) {
         addNode,
         computeLocalError,
         decisionRule,
-        nodeValues
+        nodeValues,
+        WRONG_PREDICTION
     }
 });
 

@@ -1,5 +1,5 @@
 'use strict';
-app.directive('tooltipHistogram', function() {
+app.directive('tooltipHistogram', function(TreeUtils) {
     return {
         scope: true,
         restrict: "C",
@@ -8,7 +8,7 @@ app.directive('tooltipHistogram', function() {
             const binIndex = parseInt(attr.binIndex);
             scope.globalData = attr.wholeData;
             const histData = scope.globalData ? scope.histDataWholeSet[attr.feature] : scope.histData[attr.feature];
-            const probaError = histData.target_distrib["Wrong prediction"];
+            const probaError = histData.target_distrib[TreeUtils.WRONG_PREDICTION];
             if (probaError && probaError[binIndex]) {
                 scope.localError = probaError[binIndex] * 100;
             } else {
@@ -29,7 +29,7 @@ app.directive('tooltipHistogram', function() {
     };
 });
 
-app.directive("histogram", function (Format, $compile) {
+app.directive("histogram", function (Format, TreeUtils, $compile) {
     return {
         scope: true,
         link: function ($scope, elem, attrs) {
@@ -86,7 +86,7 @@ app.directive("histogram", function (Format, $compile) {
                 .data(d => d.data)
                 .enter()
                 .append("rect")
-                .attr("class", d => d.pred === "Wrong prediction" ? "rect--error" : "rect--correct")
+                .attr("class", d => d.pred === TreeUtils.WRONG_PREDICTION ? "rect--error" : "rect--correct")
                 .attr("x", d => x(d.x) + (wholeData? x.rangeBand()/2 : 0))
                 .attr("y", d => y(d.y0 + d.y))
                 .attr("height", d => y(d.y0) - y(d.y0 + d.y))
@@ -94,12 +94,7 @@ app.directive("histogram", function (Format, $compile) {
             }
 
             function update() {
-                let predArray;
-                if ($scope.selectedNode.probabilities[0][0] == "Wrong prediction") {
-                    predArray = ["Wrong prediction", "Correct prediction"]
-                } else {
-                    predArray = ["Correct prediction", "Wrong prediction"]
-                }
+                let predArray = $scope.selectedNode.probabilities.map(_ => _[0]);
 
                 const values = $scope.histData[feature.name];
                 const valuesWhole = $scope.histDataWholeSet[feature.name];
@@ -128,8 +123,8 @@ app.directive("histogram", function (Format, $compile) {
                         const bar = {data: [], idx};
                         let y0 = 0;
                         predArray.forEach(function(prediction) {
-                            const height = valuesWhole.target_distrib[prediction][idx]*100;
                             if (valuesWhole.target_distrib[prediction][idx]) {
+                                const height = valuesWhole.target_distrib[prediction][idx]*100;
                                 bar.data.push({
                                     x: mid,
                                     y: height,
