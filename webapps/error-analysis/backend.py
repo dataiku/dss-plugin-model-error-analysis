@@ -30,8 +30,7 @@ def check_confidence(summary):
         # TODO: add message in UI (ch49209)
         LOGGER.warning("Warning: the built MPP might not be representative of the primary model performances.")
 
-def get_error_analyzer(model_handler):
-    model_accessor = ModelAccessor(model_handler)
+def get_error_analyzer(model_accessor):
     dku_error_analyzer = DkuErrorAnalyzer(model_accessor)
 
     dku_error_analyzer.fit()
@@ -41,15 +40,17 @@ def get_error_analyzer(model_handler):
 @app.route("/load", methods=["GET"])
 def load():
     try:
-        model_handler = get_model_handler(dataiku.Model(MODEL_ID), VERSION_ID)
-        analyzer = get_error_analyzer(model_handler)
+        model = dataiku.Model(MODEL_ID)
+        model_accessor = ModelAccessor(get_model_handler(model, VERSION_ID))
+        analyzer = get_error_analyzer(model_accessor)
         summary = analyzer.mpp_summary(output_dict=True)
         check_confidence(summary)
-        tree = analyzer.tree
-        handler.set_tree(tree)
+        handler.set_tree(analyzer.tree)
 
-        return jsonify(nodes=tree.jsonify_nodes(),
-            rankedFeatures=tree.ranked_features,
+        return jsonify(nodes=handler.tree.jsonify_nodes(),
+            modelName=model.get_name(),
+            isRegression=model_accessor.is_regression(),
+            rankedFeatures=handler.tree.ranked_features,
             estimatedAccuracy=summary[ErrorAnalyzerConstants.PRIMARY_MODEL_PREDICTED_ACCURACY],
             actualAccuracy=summary[ErrorAnalyzerConstants.PRIMARY_MODEL_TRUE_ACCURACY])
     except:

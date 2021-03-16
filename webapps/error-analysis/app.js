@@ -9,9 +9,7 @@
             }
         };
         $scope.createModal = ModalService.create($scope.modal);
-        
-        $scope.modelId = dataiku.getWebAppConfig().modelId;
-        
+
         const radius = 16;
         const node = d3.select(".tree-legend_pie svg").append("g");
         TreeUtils.addNode(node, radius, d=>.4, d=>"X", true);
@@ -30,6 +28,8 @@
                 actual: 1 - data.actualAccuracy,
                 estimated: 1 - data.estimatedAccuracy
             }
+            $scope.isRegression = data.isRegression;
+            $scope.originalModelName = data.modelName;
             TreeInteractions.createTree($scope);
             $scope.loadingTree = false;
         }
