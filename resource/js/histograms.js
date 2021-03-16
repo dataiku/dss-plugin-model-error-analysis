@@ -6,7 +6,8 @@ app.directive('tooltipHistogram', function() {
         templateUrl: "/plugins/model-error-analysis/resource/templates/tooltip.html",
         link: function(scope, element, attr) {
             const binIndex = parseInt(attr.binIndex);
-            const histData = attr.wholeData ? scope.histDataWholeSet[attr.feature] : scope.histData[attr.feature];
+            scope.globalData = attr.wholeData;
+            const histData = scope.globalData ? scope.histDataWholeSet[attr.feature] : scope.histData[attr.feature];
             const probaError = histData.target_distrib["Wrong prediction"];
             if (probaError && probaError[binIndex]) {
                 scope.localError = probaError[binIndex] * 100;
@@ -14,7 +15,7 @@ app.directive('tooltipHistogram', function() {
                 scope.localError = 0;
             }
             scope.samples = [histData.count[binIndex],
-                            histData.count[binIndex]/scope.selectedNode.samples[0]];
+                            histData.count[binIndex]/scope.selectedNode.samples[0]*100];
             if (histData.bin_value) {
                 scope.binName = histData.bin_value[binIndex];
             } else {
@@ -85,7 +86,7 @@ app.directive("histogram", function (Format, $compile) {
                 .data(d => d.data)
                 .enter()
                 .append("rect")
-                .attr("fill", d => d.color)
+                .attr("class", d => d.pred === "Wrong prediction" ? "rect--error" : "rect--correct")
                 .attr("x", d => x(d.x) + (wholeData? x.rangeBand()/2 : 0))
                 .attr("y", d => y(d.y0 + d.y))
                 .attr("height", d => y(d.y0) - y(d.y0 + d.y))
@@ -115,7 +116,7 @@ app.directive("histogram", function (Format, $compile) {
                                     x: mid,
                                     y: height,
                                     y0: y0,
-                                    color: $scope.colors[prediction],
+                                    pred: prediction,
                                     interval: `[${values.bin_edge[idx]}, ${values.bin_edge[idx+1]})`
                                 });
                                 y0 += height;
@@ -133,7 +134,7 @@ app.directive("histogram", function (Format, $compile) {
                                     x: mid,
                                     y: height,
                                     y0: y0,
-                                    color: $scope.colors[prediction],
+                                    pred: prediction,
                                     interval: `[${valuesWhole.bin_edge[idx]}, ${valuesWhole.bin_edge[idx+1]})`
                                 });
                                 y0 += height;
@@ -156,7 +157,7 @@ app.directive("histogram", function (Format, $compile) {
                                     x: bin_value,
                                     y: height,
                                     y0: y0,
-                                    color: $scope.colors[prediction]
+                                    pred: prediction
                                 });
                                 y0 += height;
                             }
@@ -166,7 +167,7 @@ app.directive("histogram", function (Format, $compile) {
                                     x: bin_value,
                                     y: height,
                                     y0: y0Whole,
-                                    color: $scope.colors[prediction]
+                                    pred: prediction
                                 });
                                 y0Whole += height;
                             }

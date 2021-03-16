@@ -7,7 +7,7 @@
             <div class="section-inline">
                 <div class="section-title">
                     Wrong prediction
-                    <span class="bullet" ng-style="{'background-color': '#CE1228'}"></span>
+                    <span class="bullet bullet--error {{globalData ? 'bullet--global-data' : ''}}"></span>
                 </div>
                 <div class="info">
                     <span class="no-wrap-text small-text">{{ toFixedIfNeeded(localError, 2, true) }}%</span>

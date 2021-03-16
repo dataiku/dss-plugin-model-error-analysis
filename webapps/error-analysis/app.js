@@ -11,10 +11,6 @@
         $scope.createModal = ModalService.create($scope.modal);
         
         $scope.modelId = dataiku.getWebAppConfig().modelId;
-        $scope.colors = { // TODO
-            "Wrong prediction": "#CE1228",
-            "Correct prediction": "#CCC"
-        };
         
         const radius = 16;
         const node = d3.select(".tree-legend_pie svg").append("g");
@@ -67,11 +63,12 @@
             });
         }
 
-        $scope.openFeatureSelector = function() {
-            if ($scope.featureSelectorShown) {
+        $scope.interactWithFeatureSelector = function(openedSelector, event) {
+            if (event && event.keyCode != 27) return;
+            if (openedSelector) {
                 selectFeatures();
             }
-            $scope.featureSelectorShown = !$scope.featureSelectorShown;
+            $scope.featureSelectorShown = !openedSelector;
         }
 
         const loadHistograms = function() {

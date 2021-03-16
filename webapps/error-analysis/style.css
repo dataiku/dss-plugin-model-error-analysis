@@ -276,10 +276,18 @@ select {
     display: flex;
     align-items: center;
     position: relative;
+}
+
+.feature-selector__title {
     cursor: pointer;
 }
 
+.feature-selector__title:hover {
+    color: var(--grey-lighten-3);
+}
+
 .feature-selector__body {
+    cursor: pointer;
     overflow-y: auto;
     position: absolute;
     top: 25px;
@@ -394,6 +402,14 @@ div[histogram] {
     border-radius: 5px;
     display: flex;
     align-self: center;
+}
+
+.bullet--error {
+    background-color: var(--error-red);
+}
+
+.bullet--global-data {
+    mask: url(#hatch-mask);
 }
 
 .info {
@@ -602,6 +618,18 @@ div[histogram] {
     mask: url(#hatch-mask);
 }
 
+.color-bar {
+    height: 20px;
+    width: 8px;
+}
+
+.color-bar--error, .rect--error {
+    fill: var(--error-red);
+}
+
+.color-bar--correct, .rect--correct {
+    fill: var(--grey-lighten-5);
+}
 .x-axis__text {
     text-anchor: middle;
 }
