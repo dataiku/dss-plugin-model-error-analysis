@@ -52,17 +52,38 @@
         }
 
         const selectFeatures = function() {
-            const ids = $scope.rankedFeatures.filter(_ => _.$selected).map(_ => _.rank);
-            $http.post(getWebAppBackendUrl("select-features"), {"feature_ids": ids})
+            const selectedFeatures = $scope.rankedFeatures.filter(_ => _.$selected);
+            if (!selectedFeatures.length) return;
+            $http.post(getWebAppBackendUrl("select-features"), {"feature_ids": selectedFeatures.map(_ => _.rank)})
             .then(function(response) {
                 Object.assign($scope.histDataWholeSet, response.data);
+                if (selectedFeatures.filter(_ => !$scope.histData[_.name]).length) {
+                    loadHistograms();
+                }
             }, function(e) {
                 $scope.loadingTree = false;
                 $scope.createModal.error(e.data);
             });
         }
 
-        load();
+        $scope.openFeatureSelector = function() {
+            if ($scope.featureSelectorShown) {
+                $scope.loadingHistogram = true;
+                selectFeatures();
+            }
+            $scope.featureSelectorShown = !$scope.featureSelectorShown;
+        }
+
+        const loadHistograms = function() {
+            $http.get(getWebAppBackendUrl("select-node/" + $scope.selectedNode.node_id))
+                .then(function(response) {
+                    Object.assign($scope.histData, response.data);
+                    $scope.loadingHistogram = false;
+                }, function(e) {
+                    $scope.loadingHistogram = false;
+                    $scope.createModal.error(e.data);
+                });
+        }
 
         $scope.zoomFit = function() {
             TreeInteractions.zoomFit();
@@ -83,5 +104,7 @@
             }
             return Format.toFixedIfNeeded(number, decimals);
         }
+
+        load();
     });
 })();
