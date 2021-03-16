@@ -190,7 +190,6 @@ app.service("TreeInteractions", function($timeout, $http, Format, TreeUtils) {
         if (id == 0) {
             scope.histData = scope.histDataWholeSet;
         } else {        
-            scope.loadingHistogram = true;
             loadHistograms(scope, id);
         }
         
@@ -201,9 +200,7 @@ app.service("TreeInteractions", function($timeout, $http, Format, TreeUtils) {
         $http.get(getWebAppBackendUrl("select-node/"+id))
             .then(function(response) {
                 Object.assign(scope.histData, response.data);
-                scope.loadingHistogram = false;
             }, function(e) {
-                scope.loadingHistogram = false;
                 scope.createModal.error(e.data);
             });
     }

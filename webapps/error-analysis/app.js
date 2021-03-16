@@ -44,6 +44,7 @@
             .then(function(response) {
                 create(response.data);
                 $scope.histDataWholeSet = {};
+                $scope.histData = {};
                 selectFeatures();
             }, function(e) {
                 $scope.loadingTree = false;
@@ -57,7 +58,7 @@
             $http.post(getWebAppBackendUrl("select-features"), {"feature_ids": selectedFeatures.map(_ => _.rank)})
             .then(function(response) {
                 Object.assign($scope.histDataWholeSet, response.data);
-                if (selectedFeatures.filter(_ => !$scope.histData[_.name]).length) {
+                if ($scope.selectedNode && selectedFeatures.filter(_ => !$scope.histData[_.name]).length) {
                     loadHistograms();
                 }
             }, function(e) {
@@ -68,7 +69,6 @@
 
         $scope.openFeatureSelector = function() {
             if ($scope.featureSelectorShown) {
-                $scope.loadingHistogram = true;
                 selectFeatures();
             }
             $scope.featureSelectorShown = !$scope.featureSelectorShown;
@@ -78,9 +78,7 @@
             $http.get(getWebAppBackendUrl("select-node/" + $scope.selectedNode.node_id))
                 .then(function(response) {
                     Object.assign($scope.histData, response.data);
-                    $scope.loadingHistogram = false;
                 }, function(e) {
-                    $scope.loadingHistogram = false;
                     $scope.createModal.error(e.data);
                 });
         }
