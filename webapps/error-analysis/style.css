@@ -92,10 +92,6 @@ select {
     flex-direction: column;
 }
 
-.toolbar-header:hover .link-show-more {
-    text-decoration: underline;
-}
-
 .toolbar-header--expanded {
     justify-content: space-between;
 }
@@ -111,11 +107,10 @@ select {
 }
 
 .link:hover {
-    text-decoration: underline;
+    color: var(--blue-lighten-3);
 }
 
-.link .chevron-no-decoration {
-    text-decoration: none;
+.link .chevron {
     margin-left: 5px;
 }
 
@@ -248,7 +243,6 @@ select {
     font-size: 16px;
     font-weight: bold;
     height: 20px;
-    color: var(--grey-lighten-2);
 }
 
 .header-div--uppercase {
@@ -261,9 +255,13 @@ select {
     margin: 0 5%;
 }
 
-.header-decision-rule {
-    width: 50%;
+.decision-rule__header {
     font-weight: 500;
+}
+
+.decision-rule__subheader {
+    font-weight: 400;
+    font-size: 14px;
 }
 
 .legend-container {
@@ -280,6 +278,8 @@ select {
 
 .feature-selector__title {
     cursor: pointer;
+    font-weight: 500;
+    font-size: 14px;
 }
 
 .feature-selector__title:hover {
@@ -463,8 +463,9 @@ div[histogram] {
 }
 
 .decision-rule-section {
-    border-top: 1px solid var(--grey-lighten-6);
-    padding-top: 10px;
+    border-bottom: 1px solid var(--grey-lighten-6);
+    margin-bottom: 10px;
+    padding-bottom: 10px;
 }
 
 .statistics-section {

@@ -1,25 +1,15 @@
 <div class="selected-node-info">
-    <div class="statistics-section">
-        <div class="placeholder-node">
-            <svg height="100%" width="100%"></svg>
-        </div>
-        <div>
-            <p>
-                <strong>{{ selectedNode.samples[0] }}</strong> samples (<strong>{{ toFixedIfNeeded(selectedNode.samples[1], 2, true) }}%</strong> of the whole dataset).
-            </p>
-            <p>
-                Global error (% wrong predictions over total) is <strong>{{ toFixedIfNeeded(selectedNode.global_error*100, 2, true) }}%</strong>.
-            </p>
-            <p>
-                Local error (% wrong predictions over node samples) is <strong>{{ toFixedIfNeeded(selectedNode.localError*100, 2, true) }}%</strong>.
-            </p>
-        </div>
-    </div>
     <div class="decision-rule-section" ng-if="decisionRule.length > 0">
         <div class="header">
-            <div class="header-decision-rule header-div">
-                Decision rule
+            <div class="decision-rule__header header-div">
+                Selected samples
             </div>
+        </div>
+        <p>
+            <strong>{{ selectedNode.samples[0] }}</strong> samples at the selected node (<strong>{{ toFixedIfNeeded(selectedNode.samples[1], 2, true) }}%</strong> of the whole data).
+        </p>
+        <div class="decision-rule__subheader">
+            Defined by
         </div>
         <div class="info-section" ng-class="{'info-section--expanded': displayRule}">
             <div class="info" ng-repeat="rule in decisionRule" title="{{ rule.left + ' ' + rule.middle + ' ' + rule.right }}">
@@ -31,8 +21,21 @@
         </div>
         <div ng-show="decisionRule.length > 3">
             <span class="link" ng-click="displayRule = !displayRule">
-                Show {{ displayRule ? 'less' : 'more' }}<i class="chevron-no-decoration" ng-class="{'icon-chevron-down': !displayRule, 'icon-chevron-up': displayRule}"></i>
+                Show {{ displayRule ? 'less' : 'more' }}<i class="chevron" ng-class="{'icon-chevron-down': !displayRule, 'icon-chevron-up': displayRule}"></i>
             </span>
+        </div>
+    </div>
+    <div class="statistics-section">
+        <div class="placeholder-node">
+            <svg height="100%" width="100%"></svg>
+        </div>
+        <div>
+            <p>
+                <strong>{{ toFixedIfNeeded(selectedNode.localError*100, 2, true) }}%</strong> of the selected samples are wrong predictions.
+            </p>
+            <p>
+                They represent <strong>{{ toFixedIfNeeded(selectedNode.global_error*100, 2, true) }}%</strong> of all the wrong predictions.
+            </p>
         </div>
     </div>
 </div>
@@ -52,18 +55,18 @@
             </div>
         </div>
         <div class="legend-details">
-            <svg height="20px" width="50%">
+            <svg height="20px" width="120px">
                 <g>
                     <rect class="color-bar color-bar--error" x="4"></rect>
                     <rect class="color-bar color-bar--correct" x="12"> </rect>
-                    <text x="24" y="15">Local (this node)</text>
+                    <text x="24" y="15">Selected samples</text>
                 </g>
             </svg>
-            <svg height="20px" width="50%">
+            <svg height="20px" width="90px">
                 <g>
                     <rect class="color-bar color-bar--error color-bar__global-legend" x="4"></rect>
                     <rect class="color-bar color-bar--correct color-bar__global-legend" x="12"> </rect>
-                    <text x="24" y="15">Global (whole set)</text>
+                    <text x="24" y="15">All samples</text>
                 </g>
             </svg>
         </div>
@@ -71,7 +74,7 @@
     <div class="histograms">  
         <div ng-repeat="feature in rankedFeatures | orderBy: 'rank'" ng-if="feature.$selected">
             <div class="header header-feature">
-                <div class="header-feature-desc  header-div header-div--uppercase">
+                <div class="header-feature-desc header-div header-div--uppercase">
                     <i class="icon-font header__icon" ng-show="!feature.numerical"></i>
                     <div class="numerical header__icon" ng-show="feature.numerical">#</div>
                     <div class="ellipsed-text" title="{{feature.name}}">&emsp;{{feature.name}}</div>

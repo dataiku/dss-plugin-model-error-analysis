@@ -11,7 +11,7 @@
                 <div class="expandable-introduction-text" ng-class="{'expandable-introduction-text--expanded': !hideText}">
                     <div class="expand-text">
                         <span class="link" ng-click="hideText = !hideText">
-                            How does it work ?<i class="chevron-no-decoration" ng-class="{'icon-chevron-down': hideText, 'icon-chevron-up': !hideText}"></i>
+                            How does it work ?<i class="chevron" ng-class="{'icon-chevron-down': hideText, 'icon-chevron-up': !hideText}"></i>
                         </span>
                     </div>
                     <div class="introduction-text" ng-if="!hideText">
@@ -63,8 +63,7 @@
                             </svg>
                         </div>
                         <div class="tree-legend-desc">
-                            <span class="tree-legend-desc-short">Global error</span>
-                            <span class="tree-legend-desc-full" ng-if="!hideText">(% wrong predictions over total)</span>
+                            <span class="tree-legend-desc-full">% of all the wrong predictions in the selected samples</span>
                         </div>
                     </div>
                     <div class="tree-legend">
@@ -72,8 +71,7 @@
                             <svg height="100%" width="100%"></svg>
                         </div>
                         <div class="tree-legend-desc">
-                            <span class="tree-legend-desc-short">Local error</span>
-                            <span class="tree-legend-desc-full" ng-if="!hideText">(% wrong predictions over node samples)</span>
+                            <span class="tree-legend-desc-full">% of selected samples that are wrong predictions</span>
                         </div>
                     </div>
                 </div>
