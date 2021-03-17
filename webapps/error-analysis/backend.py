@@ -6,7 +6,7 @@ import dataiku
 from dataiku.customwebapp import get_webapp_config
 from dataiku.core.dkujson import DKUJSONEncoder
 
-from dku_error_analysis_model_parser.model_accessor import ModelAccessor
+from dku_error_analysis_model_parser.model_handler_utils import get_model_handler
 from dku_error_analysis_decision_tree.tree_handler import TreeHandler
 
 app.json_encoder = DKUJSONEncoder
@@ -23,11 +23,11 @@ handler = TreeHandler()
 @app.route("/original-model-info", methods=["GET"])
 def get_original_model_info():
     try:
-        original_model_accessor = ModelAccessor(MODEL, VERSION_ID)
-        handler.set_error_analyzer(original_model_accessor)
+        original_model_handler = get_model_handler(MODEL, VERSION_ID)
+        handler.set_error_analyzer(original_model_handler)
 
         return jsonify(modelName=MODEL.get_name(),
-            isRegression=original_model_accessor.is_regression())
+            isRegression='REGRESSION' in original_model_handler.get_prediction_type())
     except:
         LOGGER.error(traceback.format_exc())
         return traceback.format_exc(), 500

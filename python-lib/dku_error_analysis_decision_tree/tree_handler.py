@@ -38,8 +38,8 @@ class TreeHandler(object):
 
         return summary[ErrorAnalyzerConstants.PRIMARY_MODEL_TRUE_ACCURACY] # TODO: compute proper value
 
-    def set_error_analyzer(self, original_model_accessor):
-        self.analyzer = DkuErrorAnalyzer(original_model_accessor)
+    def set_error_analyzer(self, original_model_handler):
+        self.analyzer = DkuErrorAnalyzer(original_model_handler)
 
     def set_current_node_id(self, node_id):
         self.current_node_id = node_id
