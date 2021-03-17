@@ -37,21 +37,32 @@ def get_error_analyzer(model_accessor):
     dku_error_analyzer.parse_tree()
     return dku_error_analyzer
 
-@app.route("/load", methods=["GET"])
-def load():
+@app.route("/original-model-info", methods=["GET"])
+def get_original_model_info():
     try:
         model = dataiku.Model(MODEL_ID)
         model_accessor = ModelAccessor(get_model_handler(model, VERSION_ID))
-        analyzer = get_error_analyzer(model_accessor)
+        handler.set_original_model_accessor(model_accessor)
+
+        return jsonify(modelName=model.get_name(), isRegression=model_accessor.is_regression())
+    except:
+        LOGGER.error(traceback.format_exc())
+        return traceback.format_exc(), 500
+
+@app.route("/load", methods=["GET"])
+def load():
+    try:
+        if handler.original_model_accessor is None: # TODO
+            model = dataiku.Model(MODEL_ID)
+            model_accessor = ModelAccessor(get_model_handler(model, VERSION_ID))
+            handler.set_original_model_accessor(model_accessor)
+        analyzer = get_error_analyzer(handler.original_model_accessor)
         summary = analyzer.mpp_summary(output_dict=True)
         check_confidence(summary)
         handler.set_tree(analyzer.tree)
 
         return jsonify(nodes=handler.tree.jsonify_nodes(),
-            modelName=model.get_name(),
-            isRegression=model_accessor.is_regression(),
             rankedFeatures=handler.tree.ranked_features,
-            estimatedAccuracy=summary[ErrorAnalyzerConstants.PRIMARY_MODEL_PREDICTED_ACCURACY],
             actualAccuracy=summary[ErrorAnalyzerConstants.PRIMARY_MODEL_TRUE_ACCURACY])
     except:
         LOGGER.error(traceback.format_exc())

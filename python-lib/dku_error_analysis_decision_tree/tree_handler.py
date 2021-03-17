@@ -2,11 +2,15 @@ class TreeHandler(object):
     def __init__(self):
         self.set_tree(None)
 
+    def set_original_model_accessor(self, model_accessor):
+        self.original_model_accessor = model_accessor
+
     def set_tree(self, tree):
         self.selected_feature_ids = set()
         self.already_fetched_locally = set()
         self.already_fetched_globally = set()
         self.current_node_id = None
+        self.original_model_accessor = None
         self.tree = tree
 
     def set_current_node_id(self, node_id):

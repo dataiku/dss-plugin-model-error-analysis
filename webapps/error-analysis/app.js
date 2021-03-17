@@ -24,12 +24,7 @@
             $scope.rankedFeatures.forEach(function(rankedFeature, idx) {
                 rankedFeature.$selected = idx < DEFAULT_MAX_NR_FEATURES;
             });
-            $scope.metrics = {
-                actual: 1 - data.actualAccuracy,
-                estimated: 1 - data.estimatedAccuracy
-            }
-            $scope.isRegression = data.isRegression;
-            $scope.originalModelName = data.modelName;
+            $scope.actualErrorRate =  1 - data.actualAccuracy;
             TreeInteractions.createTree($scope);
             $scope.loadingTree = false;
         }
@@ -100,6 +95,13 @@
             return Format.toFixedIfNeeded(number, decimals);
         }
 
-        load();
+        $http.get(getWebAppBackendUrl("original-model-info")).then(function(response) {
+            $scope.isRegression = response.data.isRegression;
+            $scope.originalModelName = response.data.modelName;
+            load();
+        }, function(e) {
+            $scope.createModal.error(e.data);
+        });
+
     });
 })();

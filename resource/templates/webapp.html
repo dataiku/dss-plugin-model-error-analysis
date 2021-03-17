@@ -16,7 +16,7 @@
         </p>
         <p>
             This decision tree is another model that predicts whether your original model <strong ng-if="originalModelName">({{ originalModelName }})</strong> wrongly predicts its own target.
-            <span ng-if="!isRegression">A prediction from your original model is considered wrong if the predicted class is not the correct one.</span>
+            <span ng-if="isRegression == false">A prediction from your original model is considered wrong if the predicted class is not the correct one.</span>
             <span ng-if="isRegression">A prediction from your original model is considered wrong if the predicted value is too far from the correct one (threshold used: 0.1).</span> <!-- TODO -->
         </p>
         <p>
@@ -32,8 +32,8 @@
             <div class="toolbar-header__row">
                 <div class="metrics">
                     <div class="metric">
-                        <div class="metric__value" ng-show="metrics && metrics.actual">{{ toFixedIfNeeded(100*metrics.actual, 2, true) }}%</div>
-                        <div class="metric__value" ng-show="!metrics ||  !metrics.actual">&hellip;%</div>
+                        <div class="metric__value" ng-show="actualErrorRate">{{ toFixedIfNeeded(100*actualErrorRate, 2, true) }}%</div>
+                        <div class="metric__value" ng-show="!actualErrorRate">&hellip;%</div>
                         <div>
                             Actual proportion of wrong predictions from the original model (Original model error rate)
                         </div>
