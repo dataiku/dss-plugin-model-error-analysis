@@ -1,20 +1,21 @@
 'use strict';
-app.directive('tooltipHistogram', function() {
+app.directive('tooltipHistogram', function(TreeUtils) {
     return {
         scope: true,
         restrict: "C",
         templateUrl: "/plugins/model-error-analysis/resource/templates/tooltip.html",
         link: function(scope, element, attr) {
             const binIndex = parseInt(attr.binIndex);
-            const histData = attr.wholeData ? scope.histDataWholeSet[attr.feature] : scope.histData[attr.feature];
-            const probaError = histData.target_distrib["Wrong prediction"];
-            if (probaError) {
+            scope.globalData = attr.wholeData;
+            const histData = scope.globalData ? scope.histDataWholeSet[attr.feature] : scope.histData[attr.feature];
+            const probaError = histData.target_distrib[TreeUtils.WRONG_PREDICTION];
+            if (probaError && probaError[binIndex]) {
                 scope.localError = probaError[binIndex] * 100;
             } else {
                 scope.localError = 0;
             }
             scope.samples = [histData.count[binIndex],
-                            histData.count[binIndex]/scope.selectedNode.samples[0]];
+                            histData.count[binIndex]/scope.selectedNode.samples[0]*100];
             if (histData.bin_value) {
                 scope.binName = histData.bin_value[binIndex];
             } else {
@@ -28,11 +29,11 @@ app.directive('tooltipHistogram', function() {
     };
 });
 
-app.directive("histogram", function (Format, $compile) {
+app.directive("histogram", function (Format, TreeUtils, $compile) {
     return {
         scope: true,
         link: function ($scope, elem, attrs) {
-            const feature = attrs.histogram;
+            const feature = $scope.rankedFeatures.find(_ => _.name === attrs.histogram);
             const margin = {top: 15, bottom: 40, left: 30, right: 20},
                 width = 415 - margin.left - margin.right,
                 height = 195 - margin.top - margin.bottom;
@@ -55,7 +56,7 @@ app.directive("histogram", function (Format, $compile) {
                     histSvg.append("g")
                     .classed("tooltip", true)
                     .classed("tooltip-histogram", true)
-                    .attr("feature", feature)
+                    .attr("feature", feature.name)
                     .attr("whole-data", onWholeSet)
                     .attr("bin-index", d.idx)
                     .call(function() {
@@ -85,7 +86,7 @@ app.directive("histogram", function (Format, $compile) {
                 .data(d => d.data)
                 .enter()
                 .append("rect")
-                .attr("fill", d => d.color)
+                .attr("class", d => d.pred === TreeUtils.WRONG_PREDICTION ? "rect--error" : "rect--correct")
                 .attr("x", d => x(d.x) + (wholeData? x.rangeBand()/2 : 0))
                 .attr("y", d => y(d.y0 + d.y))
                 .attr("height", d => y(d.y0) - y(d.y0 + d.y))
@@ -93,18 +94,13 @@ app.directive("histogram", function (Format, $compile) {
             }
 
             function update() {
-                let predArray;
-                if ($scope.selectedNode.probabilities[0][0] == "Wrong prediction") {
-                    predArray = ["Wrong prediction", "Correct prediction"]
-                } else {
-                    predArray = ["Correct prediction", "Wrong prediction"]
-                }
+                let predArray = $scope.selectedNode.probabilities.map(_ => _[0]);
 
-                const values = $scope.histData[feature];
-                const valuesWhole = $scope.histDataWholeSet[feature];
+                const values = $scope.histData[feature.name];
+                const valuesWhole = $scope.histDataWholeSet[feature.name];
                 const data = [];
                 const dataWhole = [];
-                if (feature in $scope.features) {
+                if (feature.numerical) {
                     values.mid.forEach(function(mid, idx) {
                         const bar = {data: [], idx};
                         let y0 = 0;
@@ -115,7 +111,7 @@ app.directive("histogram", function (Format, $compile) {
                                     x: mid,
                                     y: height,
                                     y0: y0,
-                                    color: $scope.colors[prediction],
+                                    pred: prediction,
                                     interval: `[${values.bin_edge[idx]}, ${values.bin_edge[idx+1]})`
                                 });
                                 y0 += height;
@@ -127,13 +123,13 @@ app.directive("histogram", function (Format, $compile) {
                         const bar = {data: [], idx};
                         let y0 = 0;
                         predArray.forEach(function(prediction) {
-                            const height = valuesWhole.target_distrib[prediction][idx]*100;
                             if (valuesWhole.target_distrib[prediction][idx]) {
+                                const height = valuesWhole.target_distrib[prediction][idx]*100;
                                 bar.data.push({
                                     x: mid,
                                     y: height,
                                     y0: y0,
-                                    color: $scope.colors[prediction],
+                                    pred: prediction,
                                     interval: `[${valuesWhole.bin_edge[idx]}, ${valuesWhole.bin_edge[idx+1]})`
                                 });
                                 y0 += height;
@@ -143,9 +139,12 @@ app.directive("histogram", function (Format, $compile) {
                     });
                     x.domain(values.mid);
                 } else {
-                    values.bin_value.forEach(function(bin_value, idx) {
+                    values.bin_value.slice(0,10).forEach(function(bin_value, idx) {
                         const bar = {data: [], idx};
                         let y0 = 0;
+                        const idxWhole = valuesWhole.bin_value.indexOf(bin_value);
+                        const barWhole = {data: [], idx: idxWhole};
+                        let y0Whole = 0;
                         predArray.forEach(function(prediction) {
                             if (values.target_distrib[prediction][idx]) {
                                 const height = values.target_distrib[prediction][idx]*100;
@@ -153,32 +152,25 @@ app.directive("histogram", function (Format, $compile) {
                                     x: bin_value,
                                     y: height,
                                     y0: y0,
-                                    color: $scope.colors[prediction]
+                                    pred: prediction
                                 });
                                 y0 += height;
+                            }
+                            if (valuesWhole.target_distrib[prediction][idxWhole]) {
+                                const height = valuesWhole.target_distrib[prediction][idxWhole]*100;
+                                barWhole.data.push({
+                                    x: bin_value,
+                                    y: height,
+                                    y0: y0Whole,
+                                    pred: prediction
+                                });
+                                y0Whole += height;
                             }
                         });
                         data.push(bar);
+                        dataWhole.push(barWhole);
                     });
-                    values.bin_value.forEach(function(bin_value) {
-                        const idx = valuesWhole.bin_value.indexOf(bin_value);
-                        const bar = {data: [], idx};
-                        let y0 = 0;
-                        predArray.forEach(function(prediction) {
-                            if (valuesWhole.target_distrib[prediction][idx]) {
-                                const height = valuesWhole.target_distrib[prediction][idx]*100;
-                                bar.data.push({
-                                    x: bin_value,
-                                    y: height,
-                                    y0: y0,
-                                    color: $scope.colors[prediction]
-                                });
-                                y0 += height;
-                            }
-                        });
-                        dataWhole.push(bar);
-                    });
-                    x.domain(values.bin_value);
+                    x.domain(values.bin_value.slice(0,10));
                 }
                 histSvg.append("g")
                     .attr("class", "x axis")

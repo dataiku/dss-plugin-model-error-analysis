@@ -1,7 +1,8 @@
 'use strict';
 app.service("TreeUtils", function(Format) {
+    const WRONG_PREDICTION = "Wrong prediction";
     const computeLocalError = function(d) {
-        return (d.probabilities.find(_ => _[0] === "Wrong prediction") || [0, 0])[1]
+        return (d.probabilities.find(_ => _[0] === WRONG_PREDICTION) || [0, 0])[1]
     };
 
     const addNode = function(svgParentElem, radius, getLocalErrorFunc, labelTextFunc, select=false) {
@@ -79,7 +80,8 @@ app.service("TreeUtils", function(Format) {
         addNode,
         computeLocalError,
         decisionRule,
-        nodeValues
+        nodeValues,
+        WRONG_PREDICTION
     }
 });
 
@@ -187,22 +189,20 @@ app.service("TreeInteractions", function($timeout, $http, Format, TreeUtils) {
         TreeUtils.addNode(node, 30, d=>scope.selectedNode.localError,  d=> Format.toFixedIfNeeded(scope.selectedNode.localError*100, 2, true), true);
 
         scope.histData = {};
-        scope.loadingHistogram = true;
-        loadHistograms(scope, id);
-
+        if (id == 0) {
+            scope.histData = scope.histDataWholeSet;
+        } else {        
+            loadHistograms(scope, id);
+        }
+        
         centerOnNode(scope.selectedNode, unzoom);
     }
 
     const loadHistograms = function(scope, id) {
         $http.get(getWebAppBackendUrl("select-node/"+id))
             .then(function(response) {
-                if (id == 0) {
-                    scope.histDataWholeSet = response.data;
-                }
-                scope.histData = response.data;
-                scope.loadingHistogram = false;
+                Object.assign(scope.histData, response.data);
             }, function(e) {
-                scope.loadingHistogram = false;
                 scope.createModal.error(e.data);
             });
     }
@@ -249,7 +249,6 @@ app.service("TreeInteractions", function($timeout, $http, Format, TreeUtils) {
         svg = svg.append("g");
 
         update(scope);
-        loadHistograms(scope, 0);
         zoomFit(true);
     }
 

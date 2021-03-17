@@ -39,40 +39,54 @@
 
 <div class="histograms-container">
     <div class="legend-container">
-        <div class="legend-description">
-            Prediction distribution
+        <div class="feature-selector" ng-click="$event.stopPropagation()">
+            <span class="feature-selector__title" ng-click="interactWithFeatureSelector(featureSelectorShown)">Feature distribution <i ng-class="{'icon-caret-down': !featureSelectorShown, 'icon-caret-up': featureSelectorShown}"></i></span>
+            <div class="feature-selector__body" ng-if="featureSelectorShown">
+                <div class="feature-selector-row" ng-click="feature.$selected = !feature.$selected" ng-repeat="feature in rankedFeatures">
+                    <input type="checkbox" ng-model="feature.$selected" ng-click="$event.stopPropagation()">
+                    &nbsp;
+                    <i class="icon-font" ng-show="!feature.numerical"></i>
+                    <div class="numerical" ng-show="feature.numerical">#</div>
+                    <div class="ellipsed-text">&nbsp;{{ feature.name }}</div>
+                </div>
+            </div>
         </div>
         <div class="legend-details">
             <svg height="20px" width="50%">
                 <g>
-                    <rect height="20" width="8" x="4" fill="{{colors['Wrong prediction']}}"></rect>
-                    <rect height="20" width="8" x="12" fill="{{colors['Correct prediction']}}"> </rect>
+                    <rect class="color-bar color-bar--error" x="4"></rect>
+                    <rect class="color-bar color-bar--correct" x="12"> </rect>
                     <text x="24" y="15">Local (this node)</text>
                 </g>
             </svg>
             <svg height="20px" width="50%">
                 <g>
-                    <rect class="color-bar__global-legend" height="20" width="8" x="4" fill="{{colors['Wrong prediction']}}"></rect>
-                    <rect class="color-bar__global-legend" height="20" width="8" x="12" fill="{{colors['Correct prediction']}}"> </rect>
+                    <rect class="color-bar color-bar--error color-bar__global-legend" x="4"></rect>
+                    <rect class="color-bar color-bar--correct color-bar__global-legend" x="12"> </rect>
                     <text x="24" y="15">Global (whole set)</text>
                 </g>
             </svg>
         </div>
     </div>
     <div class="histograms">  
-        <div ng-repeat="feature in rankedFeatures">
+        <div ng-repeat="feature in rankedFeatures | orderBy: 'rank'" ng-if="feature.$selected">
             <div class="header header-feature">
                 <div class="header-feature-desc  header-div header-div--uppercase">
-                    <i class="icon-font" ng-show="!features.hasOwnProperty(feature)"></i>
-                    <div class="numerical" ng-show="features.hasOwnProperty(feature)">#</div>
-                    <div class="ellipsed-text" title="{{feature}}">&emsp;{{feature}}</div>
+                    <i class="icon-font header__icon" ng-show="!feature.numerical"></i>
+                    <div class="numerical header__icon" ng-show="feature.numerical">#</div>
+                    <div class="ellipsed-text" title="{{feature.name}}">&emsp;{{feature.name}}</div>
                 </div>
             </div>
-
-            <div class="histogram-placeholder histogram-placeholder-empty" ng-if="histData[feature].count.length == 0">
+            <div class="histogram-placeholder histogram-placeholder-empty" ng-if="histData[feature.name] && histData[feature.name].count.length == 0">
                 <em>No values</em>
             </div>
-            <div histogram="{{feature}}" class="histogram-placeholder" ng-if="histData[feature].count.length > 0">
+            <div class="histogram-placeholder histogram-placeholder-empty" ng-if="!histData[feature.name] && featureSelectorShown">
+                <em>Chart data not yet loaded</em>
+            </div>
+            <div class="histogram-placeholder" ng-if="!histData[feature.name] && !featureSelectorShown">
+                <spinner></spinner>
+            </div>
+            <div histogram="{{feature.name}}" class="histogram-placeholder" ng-if="histData[feature.name] && histData[feature.name].count.length > 0">
                 <div class="histogram-svg"></div>
             </div>
         </div>

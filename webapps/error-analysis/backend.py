@@ -1,16 +1,16 @@
-import traceback
-import logging
-from flask import jsonify
+import traceback, logging, json
+from flask import jsonify, request
+
 import dataiku
 
 from dataiku.customwebapp import get_webapp_config
 from dataiku.core.dkujson import DKUJSONEncoder
 
+from dku_error_analysis_decision_tree.tree_handler import TreeHandler
 from dku_error_analysis_model_parser.model_metadata import get_model_handler
 from dku_error_analysis_model_parser.model_accessor import ModelAccessor
 from dku_error_analysis_mpp.dku_error_analyzer import DkuErrorAnalyzer
 from dku_error_analysis_utils import ErrorAnalyzerConstants
-
 
 app.json_encoder = DKUJSONEncoder
 
@@ -21,7 +21,7 @@ logging.basicConfig(level=logging.INFO, format="Error Analysis Plugin %(levelnam
 MODEL_ID = get_webapp_config()["modelId"]
 VERSION_ID = get_webapp_config()["versionId"]
 
-TREE = []
+handler = TreeHandler()
 
 def check_confidence(summary):
     confidence_decision = summary[ErrorAnalyzerConstants.CONFIDENCE_DECISION]
@@ -46,12 +46,10 @@ def load():
         summary = analyzer.mpp_summary(output_dict=True)
         check_confidence(summary)
         tree = analyzer.tree
-        TREE.append(tree)
+        handler.set_tree(tree)
 
         return jsonify(nodes=tree.jsonify_nodes(),
-            target_values=tree.target_values,
-            features=tree.features,
-            rankedFeatures=tree.ranked_features[:ErrorAnalyzerConstants.TOP_K_FEATURES],
+            rankedFeatures=tree.ranked_features,
             estimatedAccuracy=summary[ErrorAnalyzerConstants.PRIMARY_MODEL_PREDICTED_ACCURACY],
             actualAccuracy=summary[ErrorAnalyzerConstants.PRIMARY_MODEL_TRUE_ACCURACY])
     except:
@@ -61,11 +59,17 @@ def load():
 @app.route("/select-node/<int:node_id>")
 def get_stats_node(node_id):
     try:
-        tree = TREE[0]
-        result = {}
-        for feat in tree.ranked_features[:ErrorAnalyzerConstants.TOP_K_FEATURES]:
-            result[feat] = tree.get_stats(node_id, feat)
-        return jsonify(result)
+        return jsonify(handler.get_stats_node(node_id))
+    except:
+        LOGGER.error(traceback.format_exc())
+        return traceback.format_exc(), 500
+
+@app.route("/select-features", methods=["POST"])
+def select_features():
+    try:
+        feature_ids = set(json.loads(request.data)["feature_ids"])
+        global_data_to_fetch = handler.set_selected_feature_ids(feature_ids)
+        return jsonify(handler.get_stats_root(global_data_to_fetch))
     except:
         LOGGER.error(traceback.format_exc())
         return traceback.format_exc(), 500

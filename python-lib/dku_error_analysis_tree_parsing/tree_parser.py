@@ -98,11 +98,11 @@ class TreeParser(object):
         return self.preprocessed_feature_mapping.get(preprocessed_name, self.SplitParameters(Node.TYPES.NUM, preprocessed_name, threshold))
 
     def build_tree(self, df, feature_list, target=ErrorAnalyzerConstants.ERROR_COLUMN):
-        features = {}
+        num_features = {}
         for name, settings in self.model_handler.get_preproc_handler().collector_data.get('per_feature').items():
             avg = settings.get('stats').get('average')
             if avg is not None: # TODO AGU: add cases where missing is not replaced by mean (ch49216)
-                features[name] = {
+                num_features[name] = {
                     'mean':  avg
                 }
 
@@ -115,5 +115,5 @@ class TreeParser(object):
             return accumulated_list
 
         ranked_features = list(reduce(get_unique_ranked_features, ranked_feature_ids, []))
-        tree = InteractiveTree(df, target, ranked_features, features)
+        tree = InteractiveTree(df, target, ranked_features, num_features)
         return tree
