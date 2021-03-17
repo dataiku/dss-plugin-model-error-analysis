@@ -14,7 +14,7 @@
                         <div class="metric__value" ng-show="actualErrorRate">{{ toFixedIfNeeded(100*actualErrorRate, 2, true) }}%</div>
                         <div class="metric__value" ng-show="!actualErrorRate">&hellip;%</div>
                         <div>
-                            Actual proportion of wrong predictions from the original model (Original model error rate)
+                            Original model error rate
                         </div>
                     </div>
                 </div>
@@ -33,7 +33,8 @@
                             </svg>
                         </div>
                         <div class="tree-legend-desc">
-                            <span class="tree-legend-desc-full">% of all the wrong predictions in the selected samples</span>
+                            <div class="tree-legend-desc__title">Fraction of total error</div>
+                            <div>(wrong predictions in selected samples / total wrong predictions)</div>
                         </div>
                     </div>
                     <div class="tree-legend">
@@ -41,7 +42,8 @@
                             <svg height="100%" width="32px"></svg>
                         </div>
                         <div class="tree-legend-desc">
-                            <span class="tree-legend-desc-full">% of selected samples that are wrong predictions</span>
+                            <div class="tree-legend-desc__title">Local error</div>
+                            <div>(wrong predictions in selected samples / number of selected samples)</div>
                         </div>
                     </div>
                 </div>

@@ -4,7 +4,7 @@
             <div class="header header-div top-header">
                 <div class="decision-rule__header">Selected samples</div>
                 <div>
-                    <span ng-show="helpHovered">Help</span>
+                    <span ng-show="helpHovered" class="help-text">Help</span>
                     <i ng-mouseover="helpHovered = true"
                     ng-mouseleave="helpHovered = false"
                     class="icon-question-sign interaction-icon"
@@ -42,7 +42,7 @@
                     <strong>{{ toFixedIfNeeded(selectedNode.localError*100, 2, true) }}%</strong> of the selected samples are wrong predictions.
                 </p>
                 <p>
-                    They represent <strong>{{ toFixedIfNeeded(selectedNode.global_error*100, 2, true) }}%</strong> of all the wrong predictions.
+                    They represent <strong>{{ toFixedIfNeeded(selectedNode.global_error*100, 2, true) }}%</strong> of total wrong predictions.
                 </p>
             </div>
         </div>
@@ -108,7 +108,7 @@
     <div class="header header-div top-header">
         <div>How does it work ?</div>
         <div ng-show="selectedNode">
-            <span ng-show="helpHovered">Close help</span>
+            <span ng-show="helpHovered" class="help-text">Close help</span>
             <i class="icon-question-sign interaction-icon"
             ng-mouseover="helpHovered = true"
             ng-mouseleave="helpHovered = false"

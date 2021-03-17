@@ -157,8 +157,8 @@ select {
     flex-direction: column;
 }
 
-.tree-legend-desc-short {
-    font-weight: bold;
+.tree-legend-desc__title {
+    font-weight: 500;
 }
 
 .tree-legend_pie {
@@ -230,6 +230,10 @@ select {
 
 .top-header {
     justify-content: space-between;
+}
+
+.help-text {
+    font-size: 14px;
 }
 
 .interaction-icon {
