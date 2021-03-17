@@ -2,7 +2,7 @@ body{
     font-family: var(--font-family);
     background-color : var(--grey-lighten-7);
     overflow : hidden;
-    font-size: 12px;
+    font-size: 14px;
 }
 
 input::-webkit-outer-spin-button,
@@ -80,13 +80,13 @@ select {
 .tree-visualization {
     height: 100%;
     border-left: 1px solid var(--grey-lighten-5);
-    width: calc(100% - 400px);
+    flex: 1 1 auto;
     display: flex;
     flex-direction: column;
 }
 
 .toolbar-header {
-    padding: 11px 16px 16px 16px;
+    padding: 11px 16px 5px 16px;
     display: flex;
     border-bottom: 1px solid var(--grey-lighten-5);
     flex-direction: column;
@@ -108,6 +108,10 @@ select {
 
 .link:hover {
     color: var(--blue-lighten-3);
+}
+
+.chevron {
+   margin-left: 5px;
 }
 
 .metrics {
@@ -184,20 +188,30 @@ select {
 
 .histogram-panel {
     height: 100%;
-    width: 400px;
-    display: flex;
-    flex-direction: column;
+    width: min(400px, 30%);
 }
 
-.histogram-panel--empty {
-    width: 380px;
+.histogram-panel-selected-samples {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.histogram-panel-empty {
+    width: calc(100% - 32px);
     padding: 16px;
     text-align: justify;
-    font-size: 14px;
+    height: calc(100% - 32px);
+}
+
+.plugin-explanation {
+    padding-top: 10px;
+    overflow-y: auto;
 }
 
 .header {
     display: flex;
+    align-items: center;
 }
 
 .header-div {
@@ -211,9 +225,19 @@ select {
 }
 
 .header-feature {
-    display: flex;
-    align-items: center;
     margin: 0 5%;
+}
+
+.top-header {
+    justify-content: space-between;
+}
+
+.interaction-icon {
+    cursor: pointer;
+}
+
+.interaction-icon:hover {
+    color: var(--grey-lighten-4);
 }
 
 .decision-rule__header {
@@ -222,7 +246,7 @@ select {
 
 .decision-rule__subheader {
     font-weight: 400;
-    font-size: 14px;
+    font-size: 16px;
 }
 
 .legend-container {
@@ -240,7 +264,7 @@ select {
 .feature-selector__title {
     cursor: pointer;
     font-weight: 500;
-    font-size: 14px;
+    font-size: 16px;
 }
 
 .feature-selector__title:hover {
@@ -429,20 +453,20 @@ div[histogram] {
     flex: 0 0 auto;
 }
 
-.decision-rule-section {
+.selected-samples-section {
     border-bottom: 1px solid var(--grey-lighten-6);
     margin-bottom: 10px;
     padding-bottom: 10px;
 }
 
-.statistics-section {
+.show-more {
+    padding-top: 5px;
+}
+
+.error-section {
     display: flex;
     align-items: center;
     text-align: justify;
-}
-
-.statistics-section p {
-    margin-top: 0;
 }
 
 .placeholder-node {
@@ -575,7 +599,7 @@ div[histogram] {
 }
 
 .axis text {
-    font-size: 9px;
+    font-size: 10px;
 }
 
 .histogram__bar:hover {

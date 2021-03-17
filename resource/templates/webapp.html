@@ -5,28 +5,7 @@
          ng-keyup="$event.keyCode == 27 && removeModal()"
          ng-click="removeModal($event)">
     </div>
-    <div class="histogram-panel" ng-include="'/plugins/model-error-analysis/resource/templates/histograms.html'" ng-show="selectedNode"></div>
-    <div class="histogram-panel histogram-panel--empty" ng-show="!selectedNode">
-        <div class="header-div">
-            How does it work ?
-        </div>
-        <p>
-            Model Error Analysis provides insights on features critically correlated with a model failures.
-            This can give directions to improve model design, enhance data collection, or select critical samples for manual inspection.
-        </p>
-        <p>
-            This decision tree is another model that predicts whether your original model <strong ng-if="originalModelName">({{ originalModelName }})</strong> wrongly predicts its own target.
-            <span ng-if="isRegression == false">A prediction from your original model is considered wrong if the predicted class is not the correct one.</span>
-            <span ng-if="isRegression">A prediction from your original model is considered wrong if the predicted value is too far from the correct one (threshold used: 0.1).</span> <!-- TODO -->
-        </p>
-        <p>
-            The tree has been trained on the test set of your original model, meaning its nodes represent subsets of these test samples with similar feature values. This way, Model Error Analysis highlights the samples where your original model makes most of its wrong predictions.
-        </p>
-        <p>
-            Select a node to display more information on its samples.
-            See the <a class="link">Plugin documentation&nbsp;<i class="icon-external-link"></i></a> for more information.
-        </p>
-    </div>
+    <div class="histogram-panel no-shrink-no-grow" ng-include="'/plugins/model-error-analysis/resource/templates/histograms.html'"></div>
     <div class="tree-visualization">
         <div class="toolbar-header">
             <div class="toolbar-header__row">
