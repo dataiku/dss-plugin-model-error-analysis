@@ -53,14 +53,6 @@ class DkuErrorAnalyzer(ErrorAnalyzer):
     def tree_parser(self):
         return self._tree_parser
 
-    @property
-    def features_dict(self):
-        return self._model_accessor.get_per_feature()
-
-    @property
-    def error_df(self):
-        return self._error_df
-
     def fit(self):
         """
         Trains a Decision Tree to discriminate between samples that are correctly predicted or wrongly predicted
