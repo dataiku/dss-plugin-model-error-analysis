@@ -1,17 +1,45 @@
+import logging
+from dku_error_analysis_mpp.dku_error_analyzer import DkuErrorAnalyzer
+from dku_error_analysis_utils import ErrorAnalyzerConstants
+
+LOGGER = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO, format="Error Analysis Plugin %(levelname)s - %(message)s")
+
 class TreeHandler(object):
     def __init__(self):
-        self.set_tree(None)
+        self.initialize()
+        self.analyzer = None
 
-    def set_original_model_accessor(self, model_accessor):
-        self.original_model_accessor = model_accessor
-
-    def set_tree(self, tree):
+    def initialize(self):
         self.selected_feature_ids = set()
         self.already_fetched_locally = set()
         self.already_fetched_globally = set()
         self.current_node_id = None
-        self.original_model_accessor = None
-        self.tree = tree
+
+    @property
+    def tree(self):
+        if self.analyzer is not None:
+            return self.analyzer.tree
+
+    def train_mpp(self):
+        """
+        Fit the Decision Tree and parse it so it can be viewed in the webapp
+
+        :return: The accuracy of the original model, computed on the part of the test set used to train the MPP 
+        """
+        self.analyzer.fit()
+        self.analyzer.parse_tree()
+
+        summary = self.analyzer.mpp_summary(output_dict=True)
+        confidence_decision = summary[ErrorAnalyzerConstants.CONFIDENCE_DECISION]
+        if not confidence_decision:
+            # TODO: add message in UI
+            LOGGER.warning("Warning: the built MPP might not be representative of the original model performances.")
+
+        return summary[ErrorAnalyzerConstants.PRIMARY_MODEL_TRUE_ACCURACY] # TODO: compute proper value
+
+    def set_error_analyzer(self, original_model_accessor):
+        self.analyzer = DkuErrorAnalyzer(original_model_accessor)
 
     def set_current_node_id(self, node_id):
         self.current_node_id = node_id

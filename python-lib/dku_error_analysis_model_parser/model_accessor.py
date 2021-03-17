@@ -1,17 +1,29 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-import logging
+import logging, sys
+from dku_error_analysis_utils import safe_str
+
+from dataiku.doctor.posttraining.model_information_handler import PredictionModelInformationHandler
+
 logger = logging.getLogger(__name__)
 
-
 class ModelAccessor(object):
+    def __init__(self, model, version_id=None):
+        params = model.get_predictor(version_id).params
 
-    def __init__(self, model_handler):
-        self.model_handler = model_handler
-        # check missing model_handler
-        if self.model_handler is None:
-            raise ValueError('model_handler object is not specified')
+        assert params.core_params.get("taskType") == "PREDICTION", "Model error analysis view can only be used with prediction models"
+
+        try:
+            self.model_handler = PredictionModelInformationHandler(params.split_desc, params.core_params, params.model_folder, params.model_folder)
+        except Exception as e:
+            from future.utils import raise_
+            if "ordinal not in range(128)" in safe_str(e):
+                raise_(Exception, "The plugin is using a python3 code-env, cannot load a python2 model.", sys.exc_info()[2])
+            elif safe_str(e) == "non-string names in Numpy dtype unpickling":
+                raise_(Exception, "The plugin is using a python2 code-env, cannot load a python3 model.", sys.exc_info()[2])
+            else:
+                raise_(Exception, "Fail to load saved model: {}".format(e), sys.exc_info()[2])
 
     def is_regression(self):
         """
