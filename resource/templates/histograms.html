@@ -6,7 +6,7 @@
             </div>
         </div>
         <p>
-            <strong>{{ selectedNode.samples[0] }}</strong> samples at the selected node (<strong>{{ toFixedIfNeeded(selectedNode.samples[1], 2, true) }}%</strong> of the whole data).
+            <strong>{{ selectedNode.samples[0] }}</strong> samples at the selected node (<strong>{{ toFixedIfNeeded(selectedNode.samples[1], 2, true) }}%</strong> of all the samples).
         </p>
         <div class="decision-rule__subheader">
             Defined by
@@ -74,10 +74,10 @@
     <div class="histograms">  
         <div ng-repeat="feature in rankedFeatures | orderBy: 'rank'" ng-if="feature.$selected">
             <div class="header header-feature">
-                <div class="header-feature-desc header-div header-div--uppercase">
+                <div class="header-feature-desc header-div header-div--bolder">
                     <i class="icon-font header__icon" ng-show="!feature.numerical"></i>
                     <div class="numerical header__icon" ng-show="feature.numerical">#</div>
-                    <div class="ellipsed-text" title="{{feature.name}}">&emsp;{{feature.name}}</div>
+                    <div class="ellipsed-text" title="{{feature.name}}">{{feature.name}}</div>
                 </div>
             </div>
             <div class="histogram-placeholder histogram-placeholder-empty" ng-if="histData[feature.name] && histData[feature.name].count.length == 0">

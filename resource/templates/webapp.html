@@ -5,35 +5,32 @@
          ng-keyup="$event.keyCode == 27 && removeModal()"
          ng-click="removeModal($event)">
     </div>
+    <div class="histogram-panel" ng-include="'/plugins/model-error-analysis/resource/templates/histograms.html'" ng-show="selectedNode"></div>
+    <div class="histogram-panel histogram-panel--empty" ng-show="!selectedNode">
+        <div class="header-div">
+            How does it work ?
+        </div>
+        <p>
+            Model Error Analysis provides insights on features critically correlated with a model failures.
+            This can give directions to improve model design, enhance data collection, or select critical samples for manual inspection.
+        </p>
+        <p>
+            This decision tree is another model that predicts whether your original model <strong ng-if="originalModelName">({{ originalModelName }})</strong> wrongly predicts its own target.
+            <span ng-if="!isRegression">A prediction from your original model is considered wrong if the predicted class is not the correct one.</span>
+            <span ng-if="isRegression">A prediction from your original model is considered wrong if the predicted value is too far from the correct one (threshold used: 0.1).</span> <!-- TODO -->
+        </p>
+        <p>
+            The tree has been trained on the test set of your original model, meaning its nodes represent subsets of these test samples with similar feature values. This way, Model Error Analysis highlights the samples where your original model makes most of its wrong predictions.
+        </p>
+        <p>
+            Select a node to display more information on its samples.
+            See the <a class="link">Plugin documentation&nbsp;<i class="icon-external-link"></i></a> for more information.
+        </p>
+    </div>
     <div class="tree-visualization">
         <div class="toolbar-header">
             <div class="toolbar-header__row">
-                <div class="expandable-introduction-text">
-                    <div class="expand-text">
-                        <span class="link" ng-click="hideText = !hideText">
-                            How does it work ?<i class="chevron" ng-class="{'icon-chevron-down': hideText, 'icon-chevron-up': !hideText}"></i>
-                        </span>
-                    </div>
-                    <div class="introduction-text" ng-if="!hideText">
-                        <p>
-                            Model Error Analysis provides insights on features critically correlated with a model failures.
-                            This can give directions to improve model design, enhance data collection, or select critical samples for manual inspection.
-                        </p>
-                        <p>
-                            This decision tree is another model that predicts whether your original model <strong ng-if="originalModelName">({{ originalModelName }})</strong> wrongly predicts its own target.
-                            <span ng-if="!isRegression">A prediction from your original model is considered wrong if the predicted class is not the correct one.</span>
-                            <span ng-if="isRegression">A prediction from your original model is considered wrong if the predicted value is too far from the correct one (threshold used: 0.1).</span> <!-- TODO -->
-                            The tree has been trained on the test set of your original model, meaning its nodes represent subsets of these test samples with similar feature values. This way, Model Error Analysis highlights the samples where your original model makes most of its wrong predictions.
-                        </p>
-                        <p>
-                            Select a node to display more information on its samples.
-                            See the <a class="link">Plugin documentation&nbsp;<i class="icon-external-link"></i></a> for more information.
-                        </p>
-                    </div>
-                </div>
-            </div>
-            <div class="toolbar-header__row">
-                <div ng-class="{'metrics': hideText, 'metrics--expanded': !hideText}">
+                <div class="metrics">
                     <div class="metric">
                         <div class="metric__value" ng-show="metrics && metrics.actual">{{ toFixedIfNeeded(100*metrics.actual, 2, true) }}%</div>
                         <div class="metric__value" ng-show="!metrics ||  !metrics.actual">&hellip;%</div>
@@ -70,20 +67,23 @@
                     </div>
                 </div>
             </div>
-            <div class="toolbar-header__row">
+            <div class="toolbar-header__row toolbar-header__icon-row">
                 <div class="icons-div">
-                    <span ng-if="zoomBackHovered || zoomFitHovered" class="zoom-icon__desc">
+                    <span ng-if="zoomBackHovered || zoomFitHovered">
                         {{ zoomBackHovered ? 'Zoom on selected node' : ''}}{{ zoomFitHovered ? 'See whole tree' : ''}}
                     </span>
                     <img class="zoom-icon"
                         src="/plugins/model-error-analysis/resource/img/fit.png"
-                        ng-mouseover="zoomFitHovered = true" ng-mouseleave="zoomFitHovered = false"
+                        ng-mouseover="zoomFitHovered = true"
+                        ng-mouseleave="zoomFitHovered = false"
                         ng-click="zoomFit()"
                         height="20px">
                     </img>
                     <img class="zoom-icon"
+                        ng-class="{'zoom-icon--disabled': !selectedNode}"
                         src="/plugins/model-error-analysis/resource/img/100.png"
-                        ng-mouseover="zoomBackHovered = true" ng-mouseleave="zoomBackHovered = false"
+                        ng-mouseover="zoomBackHovered = true"
+                        ng-mouseleave="zoomBackHovered = false"
                         ng-click="selectedNode && zoomBack()"
                         height="20px">
                     </img>
@@ -93,13 +93,10 @@
         <div class="tree" ng-class="{'tree--no-selection': loadingTree || !selectedNode && !hideExploreInfo}" ng-mouseover="hideExploreInfo = true" ng-mouseleave="hideExploreInfo = false">
             <div class="empty-panel"
                  ng-if="loadingTree || !selectedNode && !hideExploreInfo">
-                    Drag and zoom to explore the tree
+                    <p class="empty-panel__title">Select a node</p>
+                    <p>Drag and zoom to explore the tree</p>
             </div>
             <spinner ng-if="loadingTree"></spinner>
         </div>
-    </div>
-    <div class="histogram-panel" ng-include="'/plugins/model-error-analysis/resource/templates/histograms.html'" ng-show="selectedNode"></div>
-    <div class="histogram-panel--empty empty-panel" ng-show="!selectedNode">
-        Select a node
     </div>
 </div>

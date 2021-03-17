@@ -79,14 +79,14 @@ select {
 
 .tree-visualization {
     height: 100%;
-    border-right: 1px solid var(--grey-lighten-5);
+    border-left: 1px solid var(--grey-lighten-5);
     width: calc(100% - 400px);
     display: flex;
     flex-direction: column;
 }
 
 .toolbar-header {
-    padding: 5px 20px 10px 20px;
+    padding: 11px 16px 16px 16px;
     display: flex;
     border-bottom: 1px solid var(--grey-lighten-5);
     flex-direction: column;
@@ -95,7 +95,10 @@ select {
 .toolbar-header__row {
     display: flex;
     justify-content: space-between;
-    margin-top: 5px;
+}
+
+.toolbar-header__icon-row {
+    flex-direction: row-reverse;
 }
 
 .link {
@@ -107,31 +110,8 @@ select {
     color: var(--blue-lighten-3);
 }
 
-.link .chevron {
-    margin-left: 5px;
-}
-
-.expandable-introduction-text {
-    flex: 1 0 auto;
-    width: calc(100% - 20px);
-}
-
-.introduction-text {
-    text-align: justify;
-    margin-top: 5px;
-}
-
 .metrics {
-    display: flex;
-    min-width: 390px;
-    justify-content: space-between;
-}
-
-.metrics--expanded {
-    display: flex;
-    flex-direction: column;
-    justify-content: space-around;
-    flex: 0 auto;
+    margin-bottom: 5px;
 }
 
 .metric {
@@ -198,15 +178,8 @@ select {
     opacity: .7;
 }
 
-.empty-panel {
-    color: var(--grey-lighten-3);
-    text-align: center;
-}
-
-.histogram-panel--empty {
-    margin: auto;
-    width: 400px;
-    font-size: 32px;
+.zoom-icon--disabled {
+    cursor: not-allowed;
 }
 
 .histogram-panel {
@@ -216,18 +189,25 @@ select {
     flex-direction: column;
 }
 
+.histogram-panel--empty {
+    width: 380px;
+    padding: 16px;
+    text-align: justify;
+    font-size: 14px;
+}
+
 .header {
     display: flex;
 }
 
 .header-div {
     font-size: 16px;
-    font-weight: bold;
+    font-weight: 400;
     height: 20px;
 }
 
-.header-div--uppercase {
-    text-transform: uppercase;
+.header-div--bolder {
+    font-weight: 500;
 }
 
 .header-feature {
@@ -364,12 +344,18 @@ div[histogram] {
     cursor: grabbing;
 }
 
-.tree--no-selection .empty-panel {
+.empty-panel {
     font-size: 24px;
     position: absolute;
     left: 0;
     right: 0;
     top: 40%;
+    color: var(--grey-lighten-3);
+    text-align: center;
+}
+
+.empty-panel__title {
+    font-size: 32px;
 }
 
 .tree--no-selection .tree-svg {
