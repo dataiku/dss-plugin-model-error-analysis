@@ -266,7 +266,6 @@ select {
 .feature-selector__title {
     cursor: pointer;
     font-weight: 500;
-    font-size: 16px;
 }
 
 .feature-selector__title:hover {
@@ -304,7 +303,14 @@ select {
     font-size: 11px;
 }
 
-.legend-details {
+.legend-histograms {
+    display: flex;
+    flex-direction: column;
+    height: 50px;
+    justify-content: space-around;
+}
+
+.legend-histograms__detail {
     display: flex;
 }
 
@@ -312,10 +318,6 @@ select {
     display: flex;
     width: 100%;
     align-items: baseline;
-}
-
-div[histogram] {
-     display: flex;
 }
 
 .histogram-placeholder {
@@ -445,6 +447,7 @@ div[histogram] {
     flex: 1 1 auto;
     min-height: 0;
     border-top: 1px solid var(--grey-lighten-5);
+    padding: 8px 0;
 }
 
 .histograms {
@@ -476,6 +479,7 @@ div[histogram] {
 .placeholder-node {
     width: 65px;
     height: 65px;
+    flex: 0 0 auto;
 }
 
 .section-title {

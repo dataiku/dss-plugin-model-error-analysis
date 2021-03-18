@@ -178,6 +178,7 @@ app.service("TreeInteractions", function($timeout, $http, Format, TreeUtils) {
     }
 
     const select = function(id, scope, unzoom) {
+        scope.seeGlobalChartData = false;
         if (scope.selectedNode) {
             hideUnselected();
             d3.select("#node--right-panel").remove();
@@ -189,11 +190,11 @@ app.service("TreeInteractions", function($timeout, $http, Format, TreeUtils) {
         TreeUtils.addNode(node, 30, d=>scope.selectedNode.localError,  d=> Format.toFixedIfNeeded(scope.selectedNode.localError*100, 2, true), true);
 
         scope.histData = {};
-        if (id == 0) {
-            scope.histData = scope.histDataWholeSet;
-        } else {        
+        //if (id == 0) {
+        //    scope.histData = scope.histDataWholeSet;
+        //} else {        
             loadHistograms(scope, id);
-        }
+        //}
         
         centerOnNode(scope.selectedNode, unzoom);
     }

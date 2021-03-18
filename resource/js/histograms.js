@@ -34,13 +34,13 @@ app.directive("histogram", function (Format, TreeUtils, $compile) {
         scope: true,
         link: function ($scope, elem, attrs) {
             const feature = $scope.rankedFeatures.find(_ => _.name === attrs.histogram);
-            const margin = {top: 15, bottom: 40, left: 30, right: 20},
-                width = 415 - margin.left - margin.right,
-                height = 195 - margin.top - margin.bottom;
-
             let histSvg = d3.select(elem[0].children[0]).append("svg")
                 .attr("width", "100%")
                 .attr("height", "100%");
+
+            const margin = {top: 15, bottom: 40, left: 30, right: 20},
+                width = histSvg.node().getBoundingClientRect().width - margin.left - margin.right,
+                height = 195 - margin.top - margin.bottom;
             
             histSvg = histSvg.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
@@ -93,13 +93,10 @@ app.directive("histogram", function (Format, TreeUtils, $compile) {
                 .attr("width", x.rangeBand()/2);
             }
 
-            function update() {
+            function update(global) {
                 let predArray = $scope.selectedNode.probabilities.map(_ => _[0]);
-
-                const values = $scope.histData[feature.name];
-                const valuesWhole = $scope.histDataWholeSet[feature.name];
+                const values = global ? $scope.histDataWholeSet[feature.name] : $scope.histData[feature.name];
                 const data = [];
-                const dataWhole = [];
                 if (feature.numerical) {
                     values.mid.forEach(function(mid, idx) {
                         const bar = {data: [], idx};
@@ -119,32 +116,12 @@ app.directive("histogram", function (Format, TreeUtils, $compile) {
                         });
                         data.push(bar);
                     });
-                    valuesWhole.mid.forEach(function(mid, idx) {
-                        const bar = {data: [], idx};
-                        let y0 = 0;
-                        predArray.forEach(function(prediction) {
-                            if (valuesWhole.target_distrib[prediction][idx]) {
-                                const height = valuesWhole.target_distrib[prediction][idx]*100;
-                                bar.data.push({
-                                    x: mid,
-                                    y: height,
-                                    y0: y0,
-                                    pred: prediction,
-                                    interval: `[${valuesWhole.bin_edge[idx]}, ${valuesWhole.bin_edge[idx+1]})`
-                                });
-                                y0 += height;
-                            }
-                        });
-                        dataWhole.push(bar);
-                    });
                     x.domain(values.mid);
                 } else {
-                    values.bin_value.slice(0,10).forEach(function(bin_value, idx) {
+                    $scope.histData[feature.name].bin_value.slice(0,10).forEach(function(bin_value, idx) { // TODO: useless slice?
+                        idx = global ? values.bin_value.indexOf(bin_value) : idx;
                         const bar = {data: [], idx};
                         let y0 = 0;
-                        const idxWhole = valuesWhole.bin_value.indexOf(bin_value);
-                        const barWhole = {data: [], idx: idxWhole};
-                        let y0Whole = 0;
                         predArray.forEach(function(prediction) {
                             if (values.target_distrib[prediction][idx]) {
                                 const height = values.target_distrib[prediction][idx]*100;
@@ -156,21 +133,10 @@ app.directive("histogram", function (Format, TreeUtils, $compile) {
                                 });
                                 y0 += height;
                             }
-                            if (valuesWhole.target_distrib[prediction][idxWhole]) {
-                                const height = valuesWhole.target_distrib[prediction][idxWhole]*100;
-                                barWhole.data.push({
-                                    x: bin_value,
-                                    y: height,
-                                    y0: y0Whole,
-                                    pred: prediction
-                                });
-                                y0Whole += height;
-                            }
                         });
                         data.push(bar);
-                        dataWhole.push(barWhole);
                     });
-                    x.domain(values.bin_value.slice(0,10));
+                    x.domain($scope.histData[feature.name].bin_value.slice(0,10));
                 }
                 histSvg.append("g")
                     .attr("class", "x axis")
@@ -199,26 +165,35 @@ app.directive("histogram", function (Format, TreeUtils, $compile) {
                 .data(data)
                 .enter()
                 .append("g")
-                .classed("histogram__bar", true);
+                .attr("class", global ? "histogram__bar_global" : "histogram__bar");
 
-                const groupsWhole = histSvg.selectAll("g.bar")
-                .data(dataWhole)
-                .enter()
-                .append("g")
-                .classed("histogram__bar histogram__bar_global", true);
-
-                addGroupProperties(groups);
-                addGroupProperties(groupsWhole, true);
-
-                addInteractions(groups);
-                addInteractions(groupsWhole, true);
+                addGroupProperties(groups, global);
+                addInteractions(groups, global);
             }
 
+            const unregister = $scope.$watch("histDataWholeSet." + feature.name, function(nv) {
+                if (nv && $scope.seeGlobalChartData) {
+                    update(true);
+                    unregister();
+                }
+            });
+
+            $scope.$watch("seeGlobalChartData", function(nv) {
+                if (nv && $scope.histDataWholeSet[feature.name]) {
+                    update(true);
+                } else {
+                    histSvg.selectAll(".histogram__bar_global").remove();
+                }
+            });
+            
             $scope.$watch("selectedNode", function(nv) { // TODO
                 if (nv) {
                     histSvg.selectAll("rect").remove();
                     histSvg.selectAll("g").remove();
                     update();
+                    if ($scope.seeGlobalChartData && $scope.histDataWholeSet[feature.name]) {
+                        update(true);
+                    }
                 }
             })
         }

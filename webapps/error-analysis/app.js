@@ -47,13 +47,27 @@
             const selectedFeatures = $scope.rankedFeatures.filter(_ => _.$selected);
             if (!selectedFeatures.length) return;
             $http.post(getWebAppBackendUrl("select-features"), {"feature_ids": selectedFeatures.map(_ => _.rank)})
+            .then(function() {
+                loadHistograms(selectedFeatures);
+                fetchGlobalChartData(selectedFeatures);
+            }, function(e) {
+                $scope.createModal.error(e.data);
+            });
+        }
+
+        $scope.displayOrHideGlobalData = function() {
+            $scope.seeGlobalChartData = !$scope.seeGlobalChartData;
+            if ($scope.seeGlobalChartData) {
+                fetchGlobalChartData($scope.rankedFeatures.filter(_ => _.$selected));
+            }
+        }
+
+        const fetchGlobalChartData = function(selectedFeatures) {
+            if (!selectedFeatures.filter(_ => !$scope.histDataWholeSet[_.name]).length) return;
+            $http.get(getWebAppBackendUrl("global-chart-data"))
             .then(function(response) {
                 Object.assign($scope.histDataWholeSet, response.data);
-                if ($scope.selectedNode && selectedFeatures.filter(_ => !$scope.histData[_.name]).length) {
-                    loadHistograms();
-                }
             }, function(e) {
-                $scope.loadingTree = false;
                 $scope.createModal.error(e.data);
             });
         }
@@ -66,7 +80,8 @@
             $scope.featureSelectorShown = !openedSelector;
         }
 
-        const loadHistograms = function() {
+        const loadHistograms = function(selectedFeatures) {
+            if (!selectedFeatures.filter(_ => !$scope.histData[_.name]).length) return;
             $http.get(getWebAppBackendUrl("select-node/" + $scope.selectedNode.node_id))
                 .then(function(response) {
                     Object.assign($scope.histData, response.data);

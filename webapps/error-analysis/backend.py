@@ -76,12 +76,20 @@ def get_stats_node(node_id):
         LOGGER.error(traceback.format_exc())
         return traceback.format_exc(), 500
 
+@app.route("/global-chart-data")
+def get_global_char_data():
+    try:
+        return jsonify(handler.get_stats_root())
+    except:
+        LOGGER.error(traceback.format_exc())
+        return traceback.format_exc(), 500
+
 @app.route("/select-features", methods=["POST"])
 def select_features():
     try:
         feature_ids = set(json.loads(request.data)["feature_ids"])
-        global_data_to_fetch = handler.set_selected_feature_ids(feature_ids)
-        return jsonify(handler.get_stats_root(global_data_to_fetch))
+        handler.set_selected_feature_ids(feature_ids)
+        return "OK"
     except:
         LOGGER.error(traceback.format_exc())
         return traceback.format_exc(), 500

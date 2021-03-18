@@ -22,22 +22,18 @@ class TreeHandler(object):
         if self.current_node_id is not None:
             self.already_fetched_locally |= new_ids
         self.selected_feature_ids = feature_ids
-        return new_ids - self.already_fetched_globally
 
     def get_stats_node(self, node_id):
         self.set_current_node_id(node_id)
-        stats = {}
-        for idx in self.selected_feature_ids:
-            if idx not in self.already_fetched_locally:
-                feature_name = self.tree.ranked_features[idx]["name"]
-                stats[feature_name] = self.tree.get_stats(node_id, feature_name)
-                self.already_fetched_locally.add(idx)
-        return stats
+        return self._get_stats_node(node_id, self.already_fetched_locally)
 
-    def get_stats_root(self, global_data_to_fetch):
+    def get_stats_root(self):
+        return self._get_stats_node(0, self.already_fetched_globally)
+
+    def _get_stats_node(self, node_id, excluded_id_set):
         stats = {}
-        for idx in global_data_to_fetch:
+        for idx in self.selected_feature_ids - excluded_id_set:
             feature_name = self.tree.ranked_features[idx]["name"]
-            stats[feature_name] = self.tree.get_stats(0, feature_name)
-            self.already_fetched_globally.add(idx)
+            stats[feature_name] = self.tree.get_stats(node_id, feature_name)
+            excluded_id_set.add(idx)
         return stats
