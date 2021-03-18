@@ -86,7 +86,7 @@ select {
 }
 
 .toolbar-header {
-    padding: 3px 8px;
+    padding: 3px 8px 8px 8px;
     display: flex;
     border-bottom: 1px solid var(--grey-lighten-5);
     flex-direction: column;
@@ -168,7 +168,7 @@ select {
 
 .icons-div {
     display: flex;
-    align-items: center;
+    align-items: flex-end;
     justify-content: space-between;
 }
 
@@ -188,7 +188,7 @@ select {
 
 .histogram-panel {
     height: 100%;
-    width: min(400px, 30%);
+    width: 400px;
 }
 
 .histogram-panel-selected-samples {
@@ -305,8 +305,6 @@ select {
 
 .legend-histograms {
     display: flex;
-    flex-direction: column;
-    height: 50px;
     justify-content: space-around;
 }
 
@@ -388,6 +386,12 @@ select {
 
 .tree--no-selection .tree-svg {
     opacity: .4;
+}
+
+.zoom-description {
+    top: 8px;
+    right: 8px;
+    position: absolute;
 }
 
 .bullet {

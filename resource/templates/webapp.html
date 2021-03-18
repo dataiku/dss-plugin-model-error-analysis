@@ -47,31 +47,31 @@
                         </div>
                     </div>
                 </div>
-            </div>
-            <div class="toolbar-header__row toolbar-header__icon-row">
-                <div class="icons-div">
-                    <span ng-if="zoomBackHovered || zoomFitHovered">
-                        {{ zoomBackHovered ? 'Zoom on selected node' : ''}}{{ zoomFitHovered ? 'See whole tree' : ''}}
-                    </span>
-                    <img class="zoom-icon"
-                        src="/plugins/model-error-analysis/resource/img/fit.png"
-                        ng-mouseover="zoomFitHovered = true"
-                        ng-mouseleave="zoomFitHovered = false"
-                        ng-click="zoomFit()"
-                        height="20px">
-                    </img>
-                    <img class="zoom-icon"
-                        ng-class="{'zoom-icon--disabled': !selectedNode}"
-                        src="/plugins/model-error-analysis/resource/img/100.png"
-                        ng-mouseover="zoomBackHovered = true"
-                        ng-mouseleave="zoomBackHovered = false"
-                        ng-click="selectedNode && zoomBack()"
-                        height="20px">
-                    </img>
+                <div class="toolbar-header__row toolbar-header__icon-row">
+                    <div class="icons-div">
+                        <img class="zoom-icon"
+                            src="/plugins/model-error-analysis/resource/img/fit.png"
+                            ng-mouseover="zoomFitHovered = true"
+                            ng-mouseleave="zoomFitHovered = false"
+                            ng-click="zoomFit()"
+                            height="20px">
+                        </img>
+                        <img class="zoom-icon"
+                            ng-class="{'zoom-icon--disabled': !selectedNode}"
+                            src="/plugins/model-error-analysis/resource/img/100.png"
+                            ng-mouseover="zoomBackHovered = true"
+                            ng-mouseleave="zoomBackHovered = false"
+                            ng-click="selectedNode && zoomBack()"
+                            height="20px">
+                        </img>
+                    </div>
                 </div>
             </div>
         </div>
         <div class="tree" ng-class="{'tree--no-selection': loadingTree || !selectedNode && !hideExploreInfo}" ng-mouseover="hideExploreInfo = true" ng-mouseleave="hideExploreInfo = false">
+            <div class="zoom-description" ng-if="zoomBackHovered || zoomFitHovered">
+                {{ zoomBackHovered ? 'Zoom on selected node' : ''}}{{ zoomFitHovered ? 'See whole tree' : ''}}
+            </div>
             <div class="empty-panel"
                  ng-if="loadingTree || !selectedNode && !hideExploreInfo">
                     <p class="empty-panel__title">Select a node</p>
