@@ -59,7 +59,7 @@ select {
     padding-bottom: 1%;
     padding-top: 2%;
     margin-bottom: 2%;
-    font-size:16px;
+    font-size: 16px;
     height: 5%;
 }
 
@@ -86,7 +86,7 @@ select {
 }
 
 .toolbar-header {
-    padding: 11px 16px 5px 16px;
+    padding: 3px 8px;
     display: flex;
     border-bottom: 1px solid var(--grey-lighten-5);
     flex-direction: column;
@@ -199,7 +199,7 @@ select {
 
 .histogram-panel-empty {
     width: calc(100% - 32px);
-    padding: 16px;
+    padding: 8px 16px;
     text-align: justify;
     height: calc(100% - 32px);
 }
@@ -255,13 +255,11 @@ select {
 
 .legend-container {
     display:flex;
-    padding: 16px;
+    padding: 8px 16px;
 }
 
 .feature-selector {
     flex: 1 0 auto;
-    display: flex;
-    align-items: center;
     position: relative;
 }
 
@@ -284,7 +282,7 @@ select {
     background: var(--white);
     box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
     width: 200px;
-    max-height: 250px;
+    max-height: 200px;
 }
 
 .feature-selector-row {
@@ -442,18 +440,20 @@ div[histogram] {
 }
 
 .histograms-container {
+    display: flex;
+    flex-direction: column;
     flex: 1 1 auto;
     min-height: 0;
     border-top: 1px solid var(--grey-lighten-5);
 }
 
 .histograms {
-    height: calc(100% - 55px);
+    flex: 1 1 auto;
     overflow-y: auto;
 }
 
 .selected-node-info {
-    padding: 16px;
+    padding: 8px 16px;
     flex: 0 0 auto;
 }
 
@@ -480,7 +480,7 @@ div[histogram] {
 
 .section-title {
     font-weight: lighter;
-    height:16px;
+    height: 16px;
     display: flex;
 }
 
