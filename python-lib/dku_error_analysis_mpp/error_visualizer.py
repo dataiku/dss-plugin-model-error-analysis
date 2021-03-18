@@ -189,7 +189,7 @@ class DkuErrorVisualizer(_BaseErrorVisualizer):
                 print(node_summary)
 
                 leaf_stats = self._tree.get_stats(leaf.id, feature_name, nr_bins)
-                feature_is_numerical = feature_name in self._tree.features
+                feature_is_numerical = feature["numerical"]
                 bins = leaf_stats["bin_edge"] if feature_is_numerical else leaf_stats["bin_value"]
 
                 if show_global:
@@ -198,13 +198,13 @@ class DkuErrorVisualizer(_BaseErrorVisualizer):
                     if show_class:
                         root_hist_data = root_hist_data_all_features[feature_name]["target_distrib"]
                     else:
-                        root_hist_data = {root_prediction: root_hist_data_all_features[feature_name]["count"]/float(root_samples)}
+                        root_hist_data = {root_prediction: np.array(root_hist_data_all_features[feature_name]["count"])/float(root_samples)}
 
                 leaf_hist_data = {}
                 if show_class:
                     leaf_hist_data = leaf_stats["target_distrib"]
                 else:
-                    leaf_hist_data = {leaf.prediction: leaf_stats["count"]/float(leaf.samples[0])}
+                    leaf_hist_data = {leaf.prediction: np.array(leaf_stats["count"])/float(leaf.samples[0])}
 
                 x_ticks = _BaseErrorVisualizer._add_new_plot(figsize, bins, feature_name, leaf.id)
                 _BaseErrorVisualizer._plot_feature_distribution(x_ticks, feature_is_numerical, leaf_hist_data, root_hist_data if show_global else None)
