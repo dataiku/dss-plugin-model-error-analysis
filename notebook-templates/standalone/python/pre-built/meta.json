@@ -1,0 +1,5 @@
+// This file is the descriptor for the Python Notebook Template dss-plugin-model-error-analysis
+{
+    "label": "Model Error Analysis tutorial",
+    "shortDesc": "Example of model error analysis on a DSS model"
+}
