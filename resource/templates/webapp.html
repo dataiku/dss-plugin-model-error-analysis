@@ -1,4 +1,4 @@
-<div class="template" ng-controller="MeaController" ng-click="interactWithFeatureSelector(true)" ng-keydown="interactWithFeatureSelector(true, $event)" tabindex="0">
+<div class="template" ng-controller="MeaController" ng-click="featureSelectorShown && interactWithFeatureSelector()" ng-keydown="featureSelectorShown && event.keyCode === 27 && interactWithFeatureSelector()" tabindex="0">
     <div ng-if="modal.type"
          class="modal-background"
          tabindex=0

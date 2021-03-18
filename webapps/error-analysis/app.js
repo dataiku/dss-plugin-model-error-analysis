@@ -72,12 +72,11 @@
             });
         }
 
-        $scope.interactWithFeatureSelector = function(openedSelector, event) {
-            if (event && event.keyCode != 27) return;
-            if (openedSelector) {
+        $scope.interactWithFeatureSelector = function() {
+            if ($scope.featureSelectorShown) {
                 selectFeatures();
             }
-            $scope.featureSelectorShown = !openedSelector;
+            $scope.featureSelectorShown = !$scope.featureSelectorShown;
         }
 
         const loadHistograms = function(selectedFeatures) {

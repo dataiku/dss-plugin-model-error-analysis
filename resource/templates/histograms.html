@@ -51,7 +51,7 @@
     <div class="histograms-container">
         <div class="legend-container">
             <div class="feature-selector" ng-click="$event.stopPropagation()">
-                <span class="feature-selector__title" ng-click="interactWithFeatureSelector(featureSelectorShown)">Feature distribution <i ng-class="{'icon-caret-down': !featureSelectorShown, 'icon-caret-up': featureSelectorShown}"></i></span>
+                <span class="feature-selector__title" ng-click="interactWithFeatureSelector()">Feature distribution <i ng-class="{'icon-caret-down': !featureSelectorShown, 'icon-caret-up': featureSelectorShown}"></i></span>
                 <div class="feature-selector__body" ng-if="featureSelectorShown">
                     <div class="feature-selector-row" ng-click="feature.$selected = !feature.$selected" ng-repeat="feature in rankedFeatures">
                         <input type="checkbox" ng-model="feature.$selected" ng-click="$event.stopPropagation()">
