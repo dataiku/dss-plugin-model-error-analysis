@@ -36,7 +36,7 @@ def get_original_model_info():
 def load():
     try:
         handler.initialize()
-        accuracy = handler.train_mpp()
+        accuracy = handler.train_tree()
 
         return jsonify(nodes=handler.tree.jsonify_nodes(),
             rankedFeatures=handler.tree.ranked_features,

@@ -21,11 +21,11 @@ class TreeHandler(object):
         if self.analyzer is not None:
             return self.analyzer.tree
 
-    def train_mpp(self):
+    def train_tree(self):
         """
         Fit the Decision Tree and parse it so it can be viewed in the webapp
 
-        :return: The accuracy of the original model, computed on the part of the test set used to train the MPP 
+        :return: The accuracy of the original model, computed on the part of the test set used to train the Error Analyzer Tree
         """
         self.analyzer.fit()
         self.analyzer.parse_tree()
@@ -34,7 +34,7 @@ class TreeHandler(object):
         confidence_decision = summary[ErrorAnalyzerConstants.CONFIDENCE_DECISION]
         if not confidence_decision:
             # TODO: add message in UI
-            LOGGER.warning("Warning: the built MPP might not be representative of the original model performances.")
+            LOGGER.warning("Warning: the built Error Analyzer Tree might not be representative of the original model performances.")
 
         return summary[ErrorAnalyzerConstants.PRIMARY_MODEL_TRUE_ACCURACY] # TODO: compute proper value
 
