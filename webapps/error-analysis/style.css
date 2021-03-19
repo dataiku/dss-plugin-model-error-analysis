@@ -425,6 +425,7 @@ select {
     display: flex;
     align-content: center;
     margin-bottom: 5px;
+    line-height: 16px;
 }
 
 .info-decision-rule {
