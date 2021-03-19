@@ -90,7 +90,12 @@ app.directive("histogram", function (Format, TreeUtils, $compile) {
                 .attr("x", d => x(d.x) + (wholeData? x.rangeBand()/2 : 0))
                 .attr("y", d => y(d.y0 + d.y))
                 .attr("height", d => y(d.y0) - y(d.y0 + d.y))
-                .attr("width", x.rangeBand()/2);
+                .attr("width", wholeData ? 0 : x.rangeBand());
+
+                if (wholeData) {
+                    histSvg.selectAll(".histogram__bar").selectAll("rect").transition().duration(400).attr("width", x.rangeBand()/2);
+                    histSvg.selectAll(".histogram__bar_global").selectAll("rect").transition().duration(400).attr("width", x.rangeBand()/2);
+                }
             }
 
             function update(global) {
@@ -183,10 +188,11 @@ app.directive("histogram", function (Format, TreeUtils, $compile) {
                     update(true);
                 } else {
                     histSvg.selectAll(".histogram__bar_global").remove();
+                    histSvg.selectAll(".histogram__bar").selectAll("rect").transition().duration(400).attr("width", x.rangeBand());
                 }
             });
             
-            $scope.$watch("selectedNode", function(nv) { // TODO
+            $scope.$watch("selectedNode", function(nv) {
                 if (nv) {
                     histSvg.selectAll("rect").remove();
                     histSvg.selectAll("g").remove();
