@@ -304,12 +304,22 @@ select {
 }
 
 .legend-histograms {
+    font-size: 12px;
     display: flex;
     justify-content: space-around;
 }
 
-.legend-histograms__detail {
+.legend-histograms__global, .legend-histograms__local {
     display: flex;
+    align-items: center;
+}
+
+.legend-histograms__global {
+    cursor: pointer;
+}
+
+.legend-histograms__global--disabled {
+    color: var(--grey-lighten-3);
 }
 
 .header-feature-desc {
@@ -634,6 +644,11 @@ select {
 .color-bar--correct, .rect--correct {
     fill: var(--grey-lighten-5);
 }
+
+.color-bar__global-legend--disabled {
+    opacity: .4;
+}
+
 .x-axis__text {
     text-anchor: middle;
 }

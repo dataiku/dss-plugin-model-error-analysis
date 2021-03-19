@@ -63,23 +63,29 @@
                 </div>
             </div>
             <div class="legend-histograms">
-                <div class="legend-histograms__detail">
+                <div class="legend-histograms__local">
                     <svg height="20px" width="25px">
                         <g>
                             <rect class="color-bar color-bar--error" x="4"></rect>
                             <rect class="color-bar color-bar--correct" x="12"> </rect>
                         </g>
                     </svg>
-                    <div>Selected samples</div>
+                    <div>In selected samples</div>
                 </div>
-                <div class="legend-histograms__detail">
+                <div class="legend-histograms__global"
+                    ng-click="globalLegendIsHovered = !globalLegendIsHovered; displayOrHideGlobalData()"
+                    ng-class="{'legend-histograms__global--disabled': !!seeGlobalChartData === !!globalLegendIsHovered}" 
+                    ng-mouseenter="globalLegendIsHovered = true"
+                    ng-mouseleave="globalLegendIsHovered = false">
                     <svg height="20px" width="25px">
                         <g>
-                            <rect class="color-bar color-bar--error color-bar__global-legend" x="4"></rect>
-                            <rect class="color-bar color-bar--correct color-bar__global-legend" x="12"> </rect>
+                            <rect class="color-bar color-bar--error color-bar__global-legend" ng-class="{'color-bar__global-legend--disabled': seeGlobalChartData === globalLegendIsHovered}" x="4"></rect>
+                            <rect class="color-bar color-bar--correct color-bar__global-legend" ng-class="{'color-bar__global-legend--disabled': seeGlobalChartData === globalLegendIsHovered}" x="12"> </rect>
                         </g>
                     </svg>
-                    <div>All samples&nbsp;<i ng-click="displayOrHideGlobalData()" class="interaction-icon icon-eye-{{ seeGlobalChartData ? 'open' : 'close'}}"></i></div>
+                    <div>
+                        In all samples
+                        &nbsp;<i ng-class="{'icon-eye-open': !!seeGlobalChartData !== !!globalLegendIsHovered, 'icon-eye-close': !!seeGlobalChartData === !!globalLegendIsHovered}"></i></div>
                 </div>
             </div>
         </div>
