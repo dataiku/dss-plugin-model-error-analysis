@@ -93,8 +93,8 @@ app.directive("histogram", function (Format, TreeUtils, $compile) {
                 .attr("width", wholeData ? 0 : x.rangeBand());
 
                 if (wholeData) {
-                    histSvg.selectAll(".histogram__bar").selectAll("rect").transition().duration(400).attr("width", x.rangeBand()/2);
-                    histSvg.selectAll(".histogram__bar_global").selectAll("rect").transition().duration(400).attr("width", x.rangeBand()/2);
+                    histSvg.selectAll(".histogram__bar").selectAll("rect").transition().duration(200).attr("width", x.rangeBand()/2);
+                    histSvg.selectAll(".histogram__bar_global").selectAll("rect").transition().duration(200).attr("width", x.rangeBand()/2);
                 }
             }
 
@@ -188,7 +188,7 @@ app.directive("histogram", function (Format, TreeUtils, $compile) {
                     update(true);
                 } else {
                     histSvg.selectAll(".histogram__bar_global").remove();
-                    histSvg.selectAll(".histogram__bar").selectAll("rect").transition().duration(400).attr("width", x.rangeBand());
+                    histSvg.selectAll(".histogram__bar").selectAll("rect").transition().duration(200).attr("width", x.rangeBand());
                 }
             });
             
