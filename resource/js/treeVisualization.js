@@ -50,8 +50,10 @@ app.service("TreeUtils", function(Format) {
             }
             return Format.ellipsis(d.values.join(", "), 20);
         }
-        return ((d.hasOwnProperty("beginning") ? ("]" + Format.ellipsis(d.beginning, 8)) : "]-∞") + " ; "
-                + (d.hasOwnProperty("end") ? (Format.ellipsis(d.end, 8) + "]") : "+∞["));
+        if (d.hasOwnProperty("beginning")) {
+            return ">" + Format.noBreakingSpace + Format.toFixedIfNeeded(d.beginning, 5);
+        }
+        return "≤" + Format.noBreakingSpace + Format.toFixedIfNeeded(d.end, 5);
     }
 
     const decisionRule = function(node) {
