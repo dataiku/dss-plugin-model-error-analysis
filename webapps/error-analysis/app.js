@@ -36,7 +36,6 @@
                 create(response.data);
                 $scope.histDataWholeSet = {};
                 $scope.histData = {};
-                selectFeatures();
             }, function(e) {
                 $scope.loadingTree = false;
                 $scope.createModal.error(e.data);

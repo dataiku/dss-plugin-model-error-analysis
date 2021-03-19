@@ -6,6 +6,7 @@ LOGGER = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format="Error Analysis Plugin %(levelname)s - %(message)s")
 
 class TreeHandler(object):
+    DEFAULT_MAX_NR_FEATURES = 5
     def __init__(self):
         self.initialize()
         self.analyzer = None
@@ -29,6 +30,8 @@ class TreeHandler(object):
         """
         self.analyzer.fit()
         self.analyzer.parse_tree()
+
+        self.selected_feature_ids = set(range(min(len(self.tree.ranked_features), self.DEFAULT_MAX_NR_FEATURES)))
 
         summary = self.analyzer.mpp_summary(output_dict=True)
         confidence_decision = summary[ErrorAnalyzerConstants.CONFIDENCE_DECISION]
