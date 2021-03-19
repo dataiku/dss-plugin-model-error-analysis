@@ -49,7 +49,7 @@
             $http.post(getWebAppBackendUrl("select-features"), {"feature_ids": selectedFeatures.map(_ => _.rank)})
             .then(function() {
                 loadHistograms(selectedFeatures);
-                fetchGlobalChartData(selectedFeatures);
+                $scope.seeGlobalChartData && fetchGlobalChartData(selectedFeatures);
             }, function(e) {
                 $scope.createModal.error(e.data);
             });
