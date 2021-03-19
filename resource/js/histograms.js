@@ -101,6 +101,7 @@ app.directive("histogram", function (Format, TreeUtils, $compile) {
             function update(global) {
                 let predArray = $scope.selectedNode.probabilities.map(_ => _[0]);
                 const values = global ? $scope.histDataWholeSet[feature.name] : $scope.histData[feature.name];
+                const samples = (global ? $scope.treeData[0]: $scope.selectedNode).samples[0]
                 const data = [];
                 if (feature.numerical) {
                     values.mid.forEach(function(mid, idx) {
@@ -108,7 +109,7 @@ app.directive("histogram", function (Format, TreeUtils, $compile) {
                         let y0 = 0;
                         predArray.forEach(function(prediction) {
                             if (values.target_distrib[prediction][idx]) {
-                                const height = values.target_distrib[prediction][idx]*100;
+                                const height = values.target_distrib[prediction][idx]*100/samples;
                                 bar.data.push({
                                     x: mid,
                                     y: height,
@@ -129,7 +130,7 @@ app.directive("histogram", function (Format, TreeUtils, $compile) {
                         let y0 = 0;
                         predArray.forEach(function(prediction) {
                             if (values.target_distrib[prediction][idx]) {
-                                const height = values.target_distrib[prediction][idx]*100;
+                                const height = values.target_distrib[prediction][idx]*100/samples;
                                 bar.data.push({
                                     x: bin_value,
                                     y: height,

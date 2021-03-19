@@ -2,7 +2,7 @@
 app.service("TreeUtils", function(Format) {
     const WRONG_PREDICTION = "Wrong prediction";
     const computeLocalError = function(d) {
-        return (d.probabilities.find(_ => _[0] === WRONG_PREDICTION) || [0, 0])[1]
+        return (d.probabilities.find(_ => _[0] === WRONG_PREDICTION) || ["", 0, 0]).slice(1,3)
     };
 
     const addNode = function(svgParentElem, radius, getLocalErrorFunc, labelTextFunc, select=false) {
@@ -187,7 +187,7 @@ app.service("TreeInteractions", function($timeout, $http, Format, TreeUtils) {
         showSelected(id, scope);
         scope.selectedNode = scope.treeData[id];
         const node = d3.select(".placeholder-node svg").append("g").attr("id", "node--right-panel");
-        TreeUtils.addNode(node, 30, d=>scope.selectedNode.localError,  d=> Format.toFixedIfNeeded(scope.selectedNode.localError*100, 2, true), true);
+        TreeUtils.addNode(node, 30, d=>scope.selectedNode.localError[0],  d=> Format.toFixedIfNeeded(scope.selectedNode.localError[0]*100, 2, true), true);
 
         scope.histData = {};
         //if (id == 0) {
@@ -282,7 +282,7 @@ app.service("TreeInteractions", function($timeout, $http, Format, TreeUtils) {
             hideUnhovered();
         });
 
-        TreeUtils.addNode(nodes, radius, d=>d.localError, d=> Format.toFixedIfNeeded(d.localError*100, 2, true));
+        TreeUtils.addNode(nodes, radius, d=>d.localError[0], d=> Format.toFixedIfNeeded(d.localError[0]*100, 2, true));
 
         nodeEnter.filter(d => d.node_id > 0)
         .append("text")
