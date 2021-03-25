@@ -71,11 +71,11 @@ app.service("TreeUtils", function(Format) {
                 right: node.values.join(", ")
             }
         }
+        const sign = node.hasOwnProperty("end") ? "≤" : ">";
+        const bound = node.hasOwnProperty("end") ? node.end : node.beginning;
         return {
-            left: (node.hasOwnProperty("beginning") ? (Format.toFixedIfNeeded(node.beginning, 5) + Format.noBreakingSpace + "<") : ""),
-            middle: node.feature,
-            right: (node.hasOwnProperty("end") ? ("≤" + Format.noBreakingSpace + Format.toFixedIfNeeded(node.end, 5)) : ""),
-            numerical: true
+            left: node.feature,
+            middle: sign + Format.noBreakingSpace + Format.toFixedIfNeeded(bound, 5),
         }
     }
     return {

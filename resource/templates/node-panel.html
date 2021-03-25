@@ -21,9 +21,9 @@
                 <div class="info-section" ng-class="{'info-section--expanded': displayRule}">
                     <div class="info" ng-repeat="rule in decisionRule" title="{{ rule.left + ' ' + rule.middle + ' ' + rule.right }}">
                         <span ng-if="$index">↳&nbsp;</span>
-                        <div class="ellipsed-text" ng-class="{'no-shrink-no-grow': rule.numerical, 'no-grow': !rule.numerical}" ng-if="rule.left">{{ rule.left }}&nbsp;</div>
-                        <div class="ellipsed-text" ng-class="{'no-shrink-no-grow': !rule.numerical, 'no-grow': rule.numerical}">{{ rule.middle }}&nbsp;</div>
-                        <div class="ellipsed-text" ng-class="{'no-shrink-no-grow': rule.numerical, 'no-grow': !rule.numerical}" ng-if="rule.right">{{ rule.right }}</div>
+                        <div class="ellipsed-text" class="no-grow" ng-if="rule.left">{{ rule.left }}&nbsp;</div>
+                        <div class="ellipsed-text" class="no-shrink-no-grow">{{ rule.middle }}&nbsp;</div>
+                        <div class="ellipsed-text" class="no-grow}" ng-if="rule.right">{{ rule.right }}</div>
                     </div>
                 </div>
                 <div class="show-more" ng-show="decisionRule.length > 3">
