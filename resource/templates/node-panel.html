@@ -2,7 +2,7 @@
     <div class="node-info">
         <div class="selected-samples-section">
             <div class="header header-div top-header">
-                <div class="decision-rule__header">Selected samples</div>
+                <div class="decision-rule__header">Node samples</div>
                 <div>
                     <span ng-show="helpHovered" class="help-text">Help</span>
                     <i ng-mouseover="helpHovered = true"
@@ -12,7 +12,7 @@
                 </div>
             </div>
             <p>
-                <strong>{{ selectedNode.samples[0] }}</strong> samples at the selected node (<strong>{{ toFixedIfNeeded(selectedNode.samples[1], 2, true) }}%</strong> of all the samples).
+                <strong>{{ selectedNode.samples[0] }}</strong> samples in the node (<strong>{{ toFixedIfNeeded(selectedNode.samples[1], 2, true) }}%</strong> of all the samples).
             </p>
             <div ng-if="decisionRule.length > 0">
                 <div class="decision-rule__subheader">
@@ -39,7 +39,7 @@
             </div>
             <div>
                 <p>
-                    <strong>{{ selectedNode.localError[1] }}</strong> wrong predictions (<strong>{{ toFixedIfNeeded(selectedNode.localError[0]*100, 2, true) }}%</strong> of the selected samples).
+                    <strong>{{ selectedNode.localError[1] }}</strong> wrong predictions (<strong>{{ toFixedIfNeeded(selectedNode.localError[0]*100, 2, true) }}%</strong> of the node samples).
                 </p>
                 <p>
                     They represent <strong>{{ toFixedIfNeeded(selectedNode.global_error*100, 2, true) }}%</strong> of total wrong predictions.
@@ -70,7 +70,7 @@
                             <rect class="color-bar color-bar--correct" x="12"> </rect>
                         </g>
                     </svg>
-                    <div>In selected samples</div>
+                    <div>In node samples</div>
                 </div>
                 <div class="legend-histograms__global"
                     ng-click="globalLegendIsHovered = !globalLegendIsHovered; displayOrHideGlobalData()"
