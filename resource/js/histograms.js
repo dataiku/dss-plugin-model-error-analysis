@@ -137,13 +137,13 @@ app.directive("histogram", function (Format, TreeUtils, $compile) {
             }
 
             const unregister = $scope.$watch("histDataWholeSet." + feature.name, function(nv) {
-                if (nv && $scope.seeGlobalChartData) {
+                if (nv && $scope.leftPanel.seeGlobalChartData) {
                     update(true);
                     unregister();
                 }
             });
 
-            $scope.$watch("seeGlobalChartData", function(nv) {
+            $scope.$watch("leftPanel.seeGlobalChartData", function(nv) {
                 if (nv && $scope.histDataWholeSet[feature.name]) {
                     update(true);
                 } else {
@@ -153,7 +153,7 @@ app.directive("histogram", function (Format, TreeUtils, $compile) {
             });
             
             update();
-            if ($scope.seeGlobalChartData && $scope.histDataWholeSet[feature.name]) {
+            if ($scope.leftPanel.seeGlobalChartData && $scope.histDataWholeSet[feature.name]) {
                 update(true);
             }
         }

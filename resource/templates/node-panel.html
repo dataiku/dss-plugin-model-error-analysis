@@ -1,4 +1,4 @@
-<div class="node-panel-selected-samples" ng-show="selectedNode && !displayHelp">
+<div class="node-panel-selected-samples" ng-show="selectedNode && !leftPanel.displayHelp">
     <div class="node-info">
         <div class="selected-samples-section">
             <div class="header header-div top-header">
@@ -8,25 +8,25 @@
                     <i ng-mouseover="helpHovered = true"
                     ng-mouseleave="helpHovered = false"
                     class="icon-question-sign interaction-icon"
-                    ng-click="displayHelp = true"></i>
+                    ng-click="leftPanel.displayHelp = true"></i>
                 </div>
             </div>
             <p>
                 <strong>{{ selectedNode.samples[0] }}</strong> samples in the node (<strong>{{ toFixedIfNeeded(selectedNode.samples[1], 2, true) }}%</strong> of all the samples).
             </p>
-            <div ng-if="decisionRule.length > 0">
+            <div ng-if="leftPanel.decisionRule.length > 0">
                 <div class="decision-rule__subheader">
                     Defined by
                 </div>
                 <div class="info-section" ng-class="{'info-section--expanded': displayRule}">
-                    <div class="info" ng-repeat="rule in decisionRule" title="{{ rule.left + ' ' + rule.middle + ' ' + rule.right }}">
+                    <div class="info" ng-repeat="rule in leftPanel.decisionRule" title="{{ rule.left + ' ' + rule.middle + ' ' + rule.right }}">
                         <span ng-if="$index">↳&nbsp;</span>
                         <div class="ellipsed-text" class="no-grow" ng-if="rule.left">{{ rule.left }}&nbsp;</div>
                         <div class="ellipsed-text" class="no-shrink-no-grow">{{ rule.middle }}&nbsp;</div>
                         <div class="ellipsed-text" class="no-grow}" ng-if="rule.right">{{ rule.right }}</div>
                     </div>
                 </div>
-                <div class="show-more" ng-show="decisionRule.length > 3">
+                <div class="show-more" ng-show="leftPanel.decisionRule.length > 3">
                     <span class="link" ng-click="displayRule = !displayRule">
                         Show {{ displayRule ? 'less' : 'more' }}<i class="chevron" ng-class="{'icon-chevron-down': !displayRule, 'icon-chevron-up': displayRule}"></i>
                     </span>
@@ -74,18 +74,18 @@
                 </div>
                 <div class="legend-histograms__global"
                     ng-click="globalLegendIsHovered = !globalLegendIsHovered; displayOrHideGlobalData()"
-                    ng-class="{'legend-histograms__global--disabled': !!seeGlobalChartData === !!globalLegendIsHovered}" 
+                    ng-class="{'legend-histograms__global--disabled': !!leftPanel.seeGlobalChartData === !!globalLegendIsHovered}" 
                     ng-mouseenter="globalLegendIsHovered = true"
                     ng-mouseleave="globalLegendIsHovered = false">
                     <svg height="20px" width="25px">
                         <g>
-                            <rect class="color-bar color-bar--error color-bar__global-legend" ng-class="{'color-bar__global-legend--disabled': seeGlobalChartData === globalLegendIsHovered}" x="4"></rect>
-                            <rect class="color-bar color-bar--correct color-bar__global-legend" ng-class="{'color-bar__global-legend--disabled': seeGlobalChartData === globalLegendIsHovered}" x="12"> </rect>
+                            <rect class="color-bar color-bar--error color-bar__global-legend" ng-class="{'color-bar__global-legend--disabled': leftPanel.seeGlobalChartData === globalLegendIsHovered}" x="4"></rect>
+                            <rect class="color-bar color-bar--correct color-bar__global-legend" ng-class="{'color-bar__global-legend--disabled': leftPanel.seeGlobalChartData === globalLegendIsHovered}" x="12"> </rect>
                         </g>
                     </svg>
                     <div>
                         In all samples
-                        &nbsp;<i ng-class="{'icon-eye-open': !!seeGlobalChartData !== !!globalLegendIsHovered, 'icon-eye-close': !!seeGlobalChartData === !!globalLegendIsHovered}"></i></div>
+                        &nbsp;<i ng-class="{'icon-eye-open': !!leftPanel.seeGlobalChartData !== !!globalLegendIsHovered, 'icon-eye-close': !!leftPanel.seeGlobalChartData === !!globalLegendIsHovered}"></i></div>
                 </div>
             </div>
         </div>
@@ -116,7 +116,7 @@
         </div>
     </div>
 </div>
-<div class="node-panel-empty" ng-show="!selectedNode || displayHelp">
+<div class="help-panel" ng-show="!selectedNode || leftPanel.displayHelp">
     <div class="header header-div top-header">
         <div>How does it work ?</div>
         <div ng-show="selectedNode">
@@ -124,7 +124,7 @@
             <i class="icon-question-sign interaction-icon"
             ng-mouseover="helpHovered = true"
             ng-mouseleave="helpHovered = false"
-            ng-click="displayHelp = false"></i>
+            ng-click="leftPanel.displayHelp = false"></i>
         </div>
     </div>
     <div class="plugin-explanation">

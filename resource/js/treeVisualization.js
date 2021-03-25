@@ -5,17 +5,17 @@ app.service("TreeUtils", function(Format) {
         return (d.probabilities.find(_ => _[0] === WRONG_PREDICTION) || ["", 0, 0]).slice(1,3)
     };
 
-    const addNode = function(svgParentElem, radius, getLocalErrorFunc, labelTextFunc, select=false) {
+    const addNode = function(svgParentElem, radius, getLocalErrorFunc, inTree, label) {
         svgParentElem.append("circle")
         .classed("node__background", true)
-        .classed("legend-tree", select)
+        .classed("legend-tree", !inTree)
         .attr("cx", radius)
         .attr("cy", radius)
         .attr("r", radius);
 
         svgParentElem.append("path")
         .classed("node__gauge", true)
-        .classed("legend-tree", select)
+        .classed("legend-tree", !inTree)
         .attr("d", function(d) {
             const localError = getLocalErrorFunc(d);
             const innerRadius = radius - 1;
@@ -39,7 +39,7 @@ app.service("TreeUtils", function(Format) {
         .attr("text-anchor", "middle")
         .attr("x", radius)
         .attr("y", radius)
-        .text(d => labelTextFunc(d));
+        .text(d => label || Format.toFixedIfNeeded(getLocalErrorFunc(d)*100, 2, true));
 
     };
 
@@ -56,7 +56,7 @@ app.service("TreeUtils", function(Format) {
         return "≤" + Format.noBreakingSpace + Format.toFixedIfNeeded(d.end, 5);
     }
 
-    const decisionRule = function(node) {
+    const getDecisionRule = function(node) {
         if (node.values) {
             let middle = " is ";
             if (node.others) {
@@ -78,17 +78,29 @@ app.service("TreeUtils", function(Format) {
             middle: sign + Format.noBreakingSpace + Format.toFixedIfNeeded(bound, 5),
         }
     }
+
+    const getPath = function(node_id, treeData, noRoot) {
+        const path = [];
+        const stopId = noRoot ? 0 : -1;
+        while (node_id > stopId) {
+            path.unshift(node_id);
+            node_id = treeData[node_id].parent_id;
+        }
+        return path;
+    }
+
     return {
         addNode,
         computeLocalError,
-        decisionRule,
+        getDecisionRule,
         nodeValues,
+        getPath,
         WRONG_PREDICTION
     }
 });
 
-app.service("TreeInteractions", function($timeout, $http, Format, TreeUtils) {
-    let svg, tree, currentPath = new Set();
+app.service("TreeInteractions", function(Format, TreeUtils) {
+    let svg;
     const radius = 20, maxZoom = 3;
 
     const zoom = function() {
@@ -105,37 +117,27 @@ app.service("TreeInteractions", function($timeout, $http, Format, TreeUtils) {
     const hideUnselected = function() {
         d3.selectAll(".selected").classed("selected", false);
         d3.select(".node--selected").classed("node--selected", false);
+        d3.select("#node-panel__node").remove();
     }
 
-    const showSelected = function(id, scope) {
-        let node_id = id;
-        currentPath.clear();
-        scope.decisionRule = [];
-        while (node_id > -1) {
+    const showSelected = function(id, treeData) {
+        TreeUtils.getPath(id, treeData).forEach(function(node_id) {
             let node = d3.select("#node-" + node_id);
-            node.selectAll(".decision-rule,.feature-children,.node__background,.node__gauge").classed("selected", true).classed("hovered", false);
-            d3.select("#edge-" + node_id).classed("selected", true).classed("hovered", false);
+            node.selectAll(".decision-rule,.feature-children,.node__background,.node__gauge").classed("selected", true);
+            d3.select("#edge-" + node_id).classed("selected", true);
 
             if (node_id == id) {
                 node.select(".node__background").classed("node--selected", true);
             }
-
-            if (node_id > 0) {
-                scope.decisionRule.unshift(TreeUtils.decisionRule(node.node().__data__));
-            }
-            currentPath.add(node_id);
-            node_id = node.node().__data__.parent_id;
-        }
+        });
     }
 
-    const showHovered = function(id, scope) {
-        let node_id = id;
-        while (node_id > -1) {
+    const showHovered = function(id, treeData) {
+        TreeUtils.getPath(id, treeData).forEach(function(node_id) {
             let node = d3.select("#node-" + node_id);
             node.selectAll(".decision-rule,.feature-children,.node__gauge,.node__background").classed("hovered", true);
             d3.select("#edge-" + node_id).classed("hovered", true);
-            node_id = scope.treeData[node_id].parent_id;
-        }
+        });
     }
 
     const hideUnhovered = function() {
@@ -179,35 +181,21 @@ app.service("TreeInteractions", function($timeout, $http, Format, TreeUtils) {
         zoomListener.translate([x, y]).scale(scale);
     }
 
-    const select = function(id, scope, unzoom) {
-        scope.seeGlobalChartData = false;
-        if (scope.selectedNode) {
-            hideUnselected();
-            d3.select("#node--right-panel").remove();
-        }
+    const selectNode = function(selectedNode, treeData) {
+        hideUnselected();
         hideUnhovered();
-        showSelected(id, scope);
-        scope.selectedNode = scope.treeData[id];
-        const node = d3.select(".placeholder-node svg").append("g").attr("id", "node--right-panel");
-        TreeUtils.addNode(node, 30, d=>scope.selectedNode.localError[0],  d=> Format.toFixedIfNeeded(scope.selectedNode.localError[0]*100, 2, true), true);
+        showSelected(selectedNode.node_id, treeData);
+        
+        const node = d3.select(".placeholder-node svg").append("g").attr("id", "node-panel__node");
+        TreeUtils.addNode(node, 30, d => selectedNode.localError[0]);
 
-        scope.histData = {};
-        //if (id == 0) {
+        //if (id == 0) { // TODO
         //    scope.histData = scope.histDataWholeSet;
         //} else {        
-            loadHistograms(scope, id);
+            //loadHistograms(scope, id);
         //}
         
-        centerOnNode(scope.selectedNode, unzoom);
-    }
-
-    const loadHistograms = function(scope, id) {
-        $http.get(getWebAppBackendUrl("select-node/"+id))
-            .then(function(response) {
-                Object.assign(scope.histData, response.data);
-            }, function(e) {
-                scope.createModal.error(e.data);
-            });
+        zoomBack(selectedNode);
     }
 
     const addHatchMask = function(hatchSize = 5) {
@@ -234,11 +222,13 @@ app.service("TreeInteractions", function($timeout, $http, Format, TreeUtils) {
             .attr("fill", "url(#hatch-pattern");
     }
 
-    const createTree = function(scope) {
-        tree = d3.layout.tree()
+    let root;
+    const createTree = function(treeData, selectFunc) {
+        root = treeData[0];
+        const tree = d3.layout.tree()
             .nodeSize([140, 65])
             .children(function(d) {
-                return d.children_ids.map(_ => scope.treeData[_]);
+                return d.children_ids.map(_ => treeData[_]);
             });
 
         svg = d3.select(".tree").append("svg")
@@ -251,13 +241,12 @@ app.service("TreeInteractions", function($timeout, $http, Format, TreeUtils) {
 
         svg = svg.append("g");
 
-        update(scope);
+        update(tree, treeData, selectFunc);
         zoomFit(true);
     }
 
-    const update = function(scope) {
-        let source = scope.treeData[0];
-        const nodeData = tree.nodes(source).reverse(),
+    const update = function(tree, treeData, selectFunc) {
+        const nodeData = tree.nodes(root).reverse(),
           edgeData = tree.links(nodeData);
           nodeData.forEach(function(d) {
           d.y = d.depth * 180;
@@ -274,17 +263,16 @@ app.service("TreeInteractions", function($timeout, $http, Format, TreeUtils) {
 
         const nodes = nodeEnter.append("g").classed("node", true)
         .on("click", function(d) {
-            if (scope.selectedNode && scope.selectedNode.node_id == d.node_id) return;
-            $timeout(select(d.node_id, scope, true));
+            selectFunc(d.node_id);
         }).on("mouseenter", function(d) {
-            if (currentPath.has(d.node_id)) return;
-            showHovered(d.node_id, scope);
+            if (d3.select("#node-" + d.node_id).select(".node__gauge").classed("selected")) return;
+            showHovered(d.node_id, treeData);
         }).on("mouseleave", function(d) {
-            if (currentPath.has(d.node_id))return;
+            if (d3.select("#node-" + d.node_id).select(".node__gauge").classed("selected")) return;
             hideUnhovered();
         });
 
-        TreeUtils.addNode(nodes, radius, d=>d.localError[0], d=> Format.toFixedIfNeeded(d.localError[0]*100, 2, true));
+        TreeUtils.addNode(nodes, radius, d => d.localError[0], true);
 
         nodeEnter.filter(d => d.node_id > 0)
         .append("text")
@@ -300,7 +288,7 @@ app.service("TreeInteractions", function($timeout, $http, Format, TreeUtils) {
         .attr("text-anchor","middle")
         .attr("x", radius)
         .attr("y", radius*2 + 20)
-        .text(d => Format.ellipsis(scope.treeData[d.children_ids[0].toString()].feature, 20));
+        .text(d => Format.ellipsis(treeData[d.children_ids[0].toString()].feature, 20));
 
         // Add new edges
         const edgeContainer = svg.selectAll(".edge").data(edgeData, d => d.target.node_id).enter().insert("g", "g");
@@ -332,6 +320,7 @@ app.service("TreeInteractions", function($timeout, $http, Format, TreeUtils) {
     return {
         createTree,
         zoomFit,
-        zoomBack
+        zoomBack,
+        selectNode
     }
 });
