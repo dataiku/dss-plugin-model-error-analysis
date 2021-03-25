@@ -186,18 +186,18 @@ select {
     cursor: not-allowed;
 }
 
-.histogram-panel {
+.node-panel {
     height: 100%;
     width: 400px;
 }
 
-.histogram-panel-selected-samples {
+.node-panel-selected-samples {
     display: flex;
     flex-direction: column;
     height: 100%;
 }
 
-.histogram-panel-empty {
+.node-panel-empty {
     width: calc(100% - 32px);
     padding: 8px 16px;
     text-align: justify;
@@ -477,7 +477,7 @@ select {
     width: 400px;
 }
 
-.selected-node-info {
+.node-info {
     padding: 8px 16px;
     flex: 0 0 auto;
 }
