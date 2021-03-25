@@ -186,18 +186,18 @@ select {
     cursor: not-allowed;
 }
 
-.histogram-panel {
+.node-panel {
     height: 100%;
     width: 400px;
 }
 
-.histogram-panel-selected-samples {
+.node-panel-selected-samples {
     display: flex;
     flex-direction: column;
     height: 100%;
 }
 
-.histogram-panel-empty {
+.node-panel-empty {
     width: calc(100% - 32px);
     padding: 8px 16px;
     text-align: justify;
@@ -405,12 +405,10 @@ select {
 }
 
 .bullet {
-    width: 10px;
-    height: 10px;
-    margin-left: 5px;
+    width: 9px;
+    height: 9px;
     border-radius: 5px;
-    display: flex;
-    align-self: center;
+    display: inline-block;
 }
 
 .bullet--error {
@@ -468,9 +466,18 @@ select {
 .histograms {
     flex: 1 1 auto;
     overflow-y: auto;
+    overflow-x: hidden;
 }
 
-.selected-node-info {
+.histogram-container {
+    display: flex;
+}
+
+.histogram {
+    width: 400px;
+}
+
+.node-info {
     padding: 8px 16px;
     flex: 0 0 auto;
 }
@@ -625,8 +632,8 @@ select {
     font-size: 10px;
 }
 
-.histogram__bar:hover {
-    opacity: .7;
+.histogram__bar:hover, .histogram__bar_global:hover {
+    fill-opacity: .7;
 }
 
 .histogram__bar_global, .color-bar__global-legend {
@@ -650,18 +657,15 @@ select {
     opacity: .4;
 }
 
-.x-axis__text {
-    text-anchor: middle;
-}
-
-.y-axis__text {
-    text-anchor: end;
-}
-
 /*TOOLTIPS*/
 
 .tooltip {
     cursor: auto;
+    height: 150px;
+    width: 300px;
+    position: absolute;
+    z-index: 3000;
+    left: 410px;
 }
 
 .tooltip-title {
@@ -670,27 +674,17 @@ select {
 }
 
 .tooltip-container {
-    display: flex;
-    height: 70%;
-    padding: 10px 10px;
+    padding: 5px;
     border: 1px solid var(--grey-lighten-6);
     background: var(--white);
-    flex-direction: row-reverse;
 }
 
-.tooltip-histogram-container {
-    width: 85%;
-}
-
-.tooltip-main {
+.tooltip__body {
+    font-size: 12px;
+    text-align: justify;
     display: flex;
     flex-direction: column;
-    justify-content: space-evenly;
-    width: 70%;
-}
-
-.tooltip-histogram-main {
-    width: 100%;
+    justify-content: space-between;
 }
 
 /*MODALS*/

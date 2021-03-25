@@ -173,8 +173,7 @@ class DkuErrorVisualizer(_BaseErrorVisualizer):
         leaf_nodes = self.get_ranked_leaf_ids(leaf_selector, rank_leaves_by)
         ranked_features = self._tree.ranked_features[:top_k_features]
         if show_global:
-            if not show_class:
-                root_prediction, root_samples = self._tree.get_node(0).prediction, self._tree.get_node(0).samples[0]
+            root_samples = self._tree.get_node(0).samples[0]
             root_hist_data_all_features = {}
 
         for leaf_id in leaf_nodes:
@@ -196,13 +195,17 @@ class DkuErrorVisualizer(_BaseErrorVisualizer):
                     if feature_name not in root_hist_data_all_features:
                         root_hist_data_all_features[feature_name] = self._tree.get_stats(0, feature_name, min(len(bins), nr_bins))
                     if show_class:
-                        root_hist_data = root_hist_data_all_features[feature_name]["target_distrib"]
+                        root_hist_data = {}
+                        for class_value, bar_heights in root_hist_data_all_features[feature_name]["target_distrib"].items():
+                            root_hist_data[class_value] = np.array(bar_heights)/float(root_samples)
                     else:
-                        root_hist_data = {root_prediction: np.array(root_hist_data_all_features[feature_name]["count"])/float(root_samples)}
+                        root_hist_data, root_prediction = {}, self._tree.get_node(0).prediction
+                        root_hist_data[root_prediction] = np.array(root_hist_data_all_features[feature_name]["count"])/float(root_samples)
 
                 leaf_hist_data = {}
                 if show_class:
-                    leaf_hist_data = leaf_stats["target_distrib"]
+                    for class_value, bar_heights in leaf_stats["target_distrib"].items():
+                        leaf_hist_data[class_value] = np.array(bar_heights)/float(leaf.samples[0])
                 else:
                     leaf_hist_data = {leaf.prediction: np.array(leaf_stats["count"])/float(leaf.samples[0])}
 

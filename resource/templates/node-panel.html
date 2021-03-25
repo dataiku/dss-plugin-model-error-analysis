@@ -1,5 +1,5 @@
-<div class="histogram-panel-selected-samples" ng-show="selectedNode && !displayHelp">
-    <div class="selected-node-info">
+<div class="node-panel-selected-samples" ng-show="selectedNode && !displayHelp">
+    <div class="node-info">
         <div class="selected-samples-section">
             <div class="header header-div top-header">
                 <div class="decision-rule__header">Selected samples</div>
@@ -39,7 +39,7 @@
             </div>
             <div>
                 <p>
-                    <strong>{{ toFixedIfNeeded(selectedNode.localError*100, 2, true) }}%</strong> of the selected samples are wrong predictions.
+                    <strong>{{ selectedNode.localError[1] }}</strong> wrong predictions (<strong>{{ toFixedIfNeeded(selectedNode.localError[0]*100, 2, true) }}%</strong> of the selected samples).
                 </p>
                 <p>
                     They represent <strong>{{ toFixedIfNeeded(selectedNode.global_error*100, 2, true) }}%</strong> of total wrong predictions.
@@ -90,31 +90,33 @@
             </div>
         </div>
         <div class="histograms">  
-            <div ng-repeat="feature in rankedFeatures | orderBy: 'rank'" ng-if="feature.$selected">
-                <div class="header header-feature">
-                    <div class="header-feature-desc header-div header-div--bolder">
-                        <i class="icon-font header__icon" ng-show="!feature.numerical"></i>
-                        <div class="numerical header__icon" ng-show="feature.numerical">#</div>
-                        <div class="ellipsed-text" title="{{feature.name}}">{{feature.name}}</div>
+            <div id="{{'container-' + feature.name}}" class="histogram-container" ng-repeat="feature in rankedFeatures | orderBy: 'rank'" ng-if="feature.$selected">
+                <div class="histogram">
+                    <div class="header header-feature">
+                        <div class="header-feature-desc header-div header-div--bolder">
+                            <i class="icon-font header__icon" ng-show="!feature.numerical"></i>
+                            <div class="numerical header__icon" ng-show="feature.numerical">#</div>
+                            <div class="ellipsed-text" title="{{feature.name}}">{{ feature.name }}</div>
+                        </div>
                     </div>
-                </div>
-                <div class="histogram-placeholder histogram-placeholder-empty" ng-if="histData[feature.name] && histData[feature.name].count.length == 0">
-                    <em>No values</em>
-                </div>
-                <div class="histogram-placeholder histogram-placeholder-empty" ng-if="!histData[feature.name] && featureSelectorShown">
-                    <em>Chart data not yet loaded</em>
-                </div>
-                <div class="histogram-placeholder" ng-if="!histData[feature.name] && !featureSelectorShown">
-                    <spinner></spinner>
-                </div>
-                <div histogram="{{feature.name}}" class="histogram-placeholder" ng-if="histData[feature.name] && histData[feature.name].count.length > 0">
-                    <div class="histogram-svg"></div>
+                    <div class="histogram-placeholder histogram-placeholder-empty" ng-if="histData[feature.name] && histData[feature.name].count.length == 0">
+                        <em>No values</em>
+                    </div>
+                    <div class="histogram-placeholder histogram-placeholder-empty" ng-if="!histData[feature.name] && featureSelectorShown">
+                        <em>Chart data not yet loaded</em>
+                    </div>
+                    <div class="histogram-placeholder" ng-if="!histData[feature.name] && !featureSelectorShown">
+                        <spinner></spinner>
+                    </div>
+                    <div histogram="{{feature.name}}" class="histogram-placeholder" ng-if="histData[feature.name] && histData[feature.name].count.length > 0">
+                        <div class="histogram-svg"></div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
-<div class="histogram-panel-empty" ng-show="!selectedNode || displayHelp">
+<div class="node-panel-empty" ng-show="!selectedNode || displayHelp">
     <div class="header header-div top-header">
         <div>How does it work ?</div>
         <div ng-show="selectedNode">
