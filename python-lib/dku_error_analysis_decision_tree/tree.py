@@ -184,8 +184,6 @@ class InteractiveTree(object):
         if not column.empty:
             target_grouped = target_column.groupby(bins)
             target_distrib = target_grouped.apply(lambda x: x.value_counts())
-            #full_count = column.shape[0]
-            #target_distrib = target_distrib / full_count
             col_distrib = target_grouped.count()
             for interval, count in col_distrib.items():
                 target_distrib_dict = target_distrib[interval].to_dict() if count > 0 else {}
@@ -205,10 +203,8 @@ class InteractiveTree(object):
             "count": []
         }
         if not column.empty:
-            #full_count = column.shape[0]
             target_grouped = target_column.groupby(column.fillna("No values").apply(safe_str)) # TODO: see CH card on missing values
             target_distrib = target_grouped.value_counts(dropna=False)
-            #target_distrib = target_distrib / full_count
             col_distrib = target_grouped.count().sort_values(ascending=False)
             for value in col_distrib.index:
                 target_distrib_dict = target_distrib[value].to_dict()
