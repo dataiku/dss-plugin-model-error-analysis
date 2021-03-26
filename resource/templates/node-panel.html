@@ -18,7 +18,7 @@
                 <div class="decision-rule__subheader">
                     Defined by
                 </div>
-                <div class="info-section" ng-class="{'info-section--expanded': displayRule}">
+                <div class="info-section" ng-class="{'info-section--expanded': leftPanel.displayRule}">
                     <div class="info" ng-repeat="rule in leftPanel.decisionRule" title="{{ rule.left + ' ' + rule.middle + ' ' + rule.right }}">
                         <span ng-if="$index">↳&nbsp;</span>
                         <div class="ellipsed-text" class="no-grow" ng-if="rule.left">{{ rule.left }}&nbsp;</div>
@@ -27,8 +27,8 @@
                     </div>
                 </div>
                 <div class="show-more" ng-show="leftPanel.decisionRule.length > 3">
-                    <span class="link" ng-click="displayRule = !displayRule">
-                        Show {{ displayRule ? 'less' : 'more' }}<i class="chevron" ng-class="{'icon-chevron-down': !displayRule, 'icon-chevron-up': displayRule}"></i>
+                    <span class="link" ng-click="leftPanel.displayRule = !leftPanel.displayRule">
+                        Show {{ leftPanel.displayRule ? 'less' : 'more' }}<i class="chevron" ng-class="{'icon-chevron-down': !leftPanel.displayRule, 'icon-chevron-up': leftPanel.displayRule}"></i>
                     </span>
                 </div>
             </div>
@@ -109,6 +109,7 @@
                         <spinner></spinner>
                     </div>
                     <div histogram="{{feature.name}}" class="histogram-placeholder" ng-if="histData[feature.name] && histData[feature.name].count.length > 0">
+                        <spinner class="overlapping-spinner" ng-if="leftPanel.seeGlobalChartData && !histDataWholeSet[feature.name]"></spinner>
                         <div class="histogram-svg"></div>
                     </div>
                 </div>
