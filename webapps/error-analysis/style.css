@@ -1,8 +1,9 @@
-body{
+body {
     font-family: var(--font-family);
     background-color : var(--grey-lighten-7);
     overflow : hidden;
     font-size: 14px;
+    --red-lighten: #F0B8C0;
 }
 
 input::-webkit-outer-spin-button,
@@ -586,7 +587,7 @@ select {
 
 .edge {
     fill: none;
-    stroke: #F0B8C0;
+    stroke: var(--red-lighten);
 }
 
 .edge--no-error {
@@ -612,7 +613,7 @@ select {
 }
 
 .node__gauge {
-    fill: #F0B8C0; /*TODO*/
+    fill: var(--red-lighten);
 }
 
 .node__gauge.selected, .node__gauge.hovered, .node__gauge.legend-tree {
@@ -621,6 +622,10 @@ select {
 
 .node--selected {
     stroke: var(--blue);
+}
+
+.node__text {
+    text-shadow: 1px 1px 2px var(--grey-lighten-6), 0 0 .5em var(--grey-lighten-6), 0 0 .5em var(--grey-lighten-6);
 }
 
 /*HISTOGRAMS*/

@@ -39,6 +39,7 @@ app.service("TreeUtils", function(Format) {
         .attr("text-anchor", "middle")
         .attr("x", radius)
         .attr("y", radius)
+        .classed("node__text", true)
         .text(d => label || Format.toFixedIfNeeded(getLocalErrorFunc(d)*100, 2, true));
 
     };
