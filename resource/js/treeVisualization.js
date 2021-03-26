@@ -79,12 +79,12 @@ app.service("TreeUtils", function(Format) {
         }
     }
 
-    const getPath = function(node_id, treeData, noRoot) {
+    const getPath = function(nodeId, treeData, noRoot) {
         const path = [];
         const stopId = noRoot ? 0 : -1;
-        while (node_id > stopId) {
-            path.unshift(node_id);
-            node_id = treeData[node_id].parent_id;
+        while (nodeId > stopId) {
+            path.unshift(nodeId);
+            nodeId = treeData[nodeId].parent_id;
         }
         return path;
     }
@@ -121,22 +121,22 @@ app.service("TreeInteractions", function(Format, TreeUtils) {
     }
 
     const showSelected = function(id, treeData) {
-        TreeUtils.getPath(id, treeData).forEach(function(node_id) {
-            let node = d3.select("#node-" + node_id);
+        TreeUtils.getPath(id, treeData).forEach(function(nodeId) {
+            let node = d3.select("#node-" + nodeId);
             node.selectAll(".decision-rule,.feature-children,.node__background,.node__gauge").classed("selected", true);
-            d3.select("#edge-" + node_id).classed("selected", true);
+            d3.select("#edge-" + nodeId).classed("selected", true);
 
-            if (node_id == id) {
+            if (nodeId == id) {
                 node.select(".node__background").classed("node--selected", true);
             }
         });
     }
 
     const showHovered = function(id, treeData) {
-        TreeUtils.getPath(id, treeData).forEach(function(node_id) {
-            let node = d3.select("#node-" + node_id);
+        TreeUtils.getPath(id, treeData).forEach(function(nodeId) {
+            let node = d3.select("#node-" + nodeId);
             node.selectAll(".decision-rule,.feature-children,.node__gauge,.node__background").classed("hovered", true);
-            d3.select("#edge-" + node_id).classed("hovered", true);
+            d3.select("#edge-" + nodeId).classed("hovered", true);
         });
     }
 
