@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 import collections
 from sklearn.model_selection import train_test_split
+from dku_error_analysis_model_parser.model_handler_utils import get_original_test_df
 from dku_error_analysis_utils import ErrorAnalyzerConstants
 from dku_error_analysis_tree_parsing.tree_parser import TreeParser
 from dku_error_analysis_decision_tree.node import Node
@@ -21,17 +22,16 @@ class DkuErrorAnalyzer(ErrorAnalyzer):
     The nodes of the decision tree are different segments of errors to be studied individually.
     """
 
-    def __init__(self, model_accessor, seed=65537):
+    def __init__(self, model_handler, seed=65537):
+        if model_handler is None:
+            raise NotImplementedError('You need to define a model handler.')
 
-        if model_accessor is None:
-            raise NotImplementedError('you need to define a model accessor.')
-
-        self._model_accessor = model_accessor
-        self._target = self._model_accessor.get_target_variable()
-        self._model_predictor = self._model_accessor.get_predictor()
+        self._model_handler = model_handler
+        self._target = model_handler.get_target_variable()
+        self._model_predictor = model_handler.get_predictor()
         feature_names = self._model_predictor.get_features()
 
-        super(DkuErrorAnalyzer, self).__init__(self._model_accessor.get_clf(), feature_names, seed)
+        super(DkuErrorAnalyzer, self).__init__(model_handler.get_clf(), feature_names, seed)
 
         self._train_x = None
         self._test_x = None
@@ -52,14 +52,6 @@ class DkuErrorAnalyzer(ErrorAnalyzer):
     @property
     def tree_parser(self):
         return self._tree_parser
-
-    @property
-    def features_dict(self):
-        return self._model_accessor.get_per_feature()
-
-    @property
-    def error_df(self):
-        return self._error_df
 
     def fit(self):
         """
@@ -87,7 +79,7 @@ class DkuErrorAnalyzer(ErrorAnalyzer):
         into train and test set for the error analyzer """
         np.random.seed(self._seed)
 
-        original_df = self._model_accessor.get_original_test_df(ErrorAnalyzerConstants.MAX_NUM_ROW)
+        original_df = get_original_test_df(self._model_handler)[:ErrorAnalyzerConstants.MAX_NUM_ROW]
 
         preprocessed_x, y, input_mf_index = self._preprocess_dataframe(original_df)
 
@@ -112,7 +104,7 @@ class DkuErrorAnalyzer(ErrorAnalyzer):
         """ Parse Decision Tree and get features information used to display distributions """
         self._error_df.loc[:, ErrorAnalyzerConstants.ERROR_COLUMN] = self.error_train_y
 
-        self._tree_parser = TreeParser(self._model_accessor.model_handler, self._error_clf)
+        self._tree_parser = TreeParser(self._model_handler, self._error_clf)
         self._tree = self._tree_parser.build_tree(self._error_df, self._features_in_model_performance_predictor)
         self._tree.parse_nodes(self._tree_parser,
                                self._features_in_model_performance_predictor,

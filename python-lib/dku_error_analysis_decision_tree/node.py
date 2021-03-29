@@ -42,7 +42,9 @@ class Node(object):
 
     def set_node_info(self, samples, total_samples, probabilities, prediction, error):
         self.samples = [samples, 100.0 * samples / total_samples]
-        self.probabilities = probabilities
+        self.probabilities = []
+        for class_name, class_samples in probabilities:
+            self.probabilities.append([class_name, class_samples/float(samples), class_samples])
         self.prediction = prediction
         self.global_error = error
 
@@ -60,7 +62,7 @@ class Node(object):
         if self.parent_id >= 0:
             dot_str += self.print_decision_rule() + "\n"
         dot_str += 'global error = {:.3f}\nsamples = {}\n'.format(self.global_error, self.samples[0])
-        for prediction_class, proba in self.probabilities:
+        for prediction_class, proba, samples in self.probabilities:
             dot_str += '{}: {:.3%}\n'.format(prediction_class, proba)
         node_color = ErrorAnalyzerConstants.ERROR_TREE_COLORS[self.prediction]
         if len(self.probabilities) == 1:

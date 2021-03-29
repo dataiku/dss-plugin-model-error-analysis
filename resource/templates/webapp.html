@@ -1,50 +1,20 @@
-<div class="template" ng-controller="MeaController" ng-click="interactWithFeatureSelector(true)" ng-keydown="interactWithFeatureSelector(true, $event)" tabindex="0">
+<div class="template" ng-controller="MeaController" ng-click="featureSelectorShown && interactWithFeatureSelector()" ng-keydown="featureSelectorShown && event.keyCode === 27 && interactWithFeatureSelector()" tabindex="0">
     <div ng-if="modal.type"
          class="modal-background"
          tabindex=0
          ng-keyup="$event.keyCode == 27 && removeModal()"
          ng-click="removeModal($event)">
     </div>
+    <div class="node-panel no-shrink-no-grow" ng-include="'/plugins/model-error-analysis/resource/templates/node-panel.html'"></div>
     <div class="tree-visualization">
-        <div class="toolbar-header" ng-class="{'toolbar-header--expanded': !hideText}">
+        <div class="toolbar-header">
             <div class="toolbar-header__row">
-                <div class="expandable-introduction-text" ng-class="{'expandable-introduction-text--expanded': !hideText}">
-                    <div class="expand-text">
-                        <span class="link" ng-click="hideText = !hideText">
-                            How does it work ?<i class="chevron-no-decoration" ng-class="{'icon-chevron-down': hideText, 'icon-chevron-up': !hideText}"></i>
-                        </span>
-                    </div>
-                    <div class="introduction-text" ng-if="!hideText">
-                        <p>
-                            Model Error Analysis highlights the samples where your original model (id: {{ modelId }}) makes most of its errors.
-                        </p>
-                        <p>
-                            The Decision Tree in the view below is another model that has been trained on the test set of the original one, to predict whether the original model correctly predicts its own target.  
-                            If the original model is a classification, a prediction is correct if the original model predicts the correct class.
-                            If the original model is a regression, a prediction is correct if the original model predicts a value within a threshold of the correct one.
-                        </p>
-                        <p>
-                            The nodes of the tree split the test samples of the original model into subsets sharing similar feature values.
-                            Selecting a node will display detailed statistics regarding the errors in the subset defined by the node, compared to the whole set.
-                            See the <a class="link">Plugin documentation&nbsp;<i class="icon-external-link"></i></a>.
-                        </p>
-                    </div>
-                </div>
-                <div ng-class="{'metrics': hideText, 'metrics--expanded': !hideText}">
+                <div class="metrics">
                     <div class="metric">
-                        <span class="metric__value" ng-show="metrics && metrics.estimated">{{ toFixedIfNeeded(100*metrics.estimated, 2, true) }}%</span>
-                        <span class="metric__value" ng-show="!metrics ||  !metrics.estimated">&hellip;%</span>
+                        <div class="metric__value" ng-show="actualErrorRate">{{ toFixedIfNeeded(100*actualErrorRate, 2, true) }}%</div>
+                        <div class="metric__value" ng-show="!actualErrorRate">&hellip;%</div>
                         <div>
-                            <div class="metric__name">Original model error rate</div>
-                            <span class="metric__explanation" ng-if="!hideText">Actual proportion of wrong predictions from the original model</span>
-                        </div>
-                    </div>
-                    <div class="metric">
-                        <span class="metric__value" ng-show="metrics && metrics.actual">{{ toFixedIfNeeded(100*metrics.actual, 2, true) }}%</span>
-                        <span class="metric__value" ng-show="!metrics || !metrics.actual">&hellip;%</span>
-                        <div>
-                            <div class="metric__name">Predicted error rate</div>
-                            <span class="metric__explanation" ng-if="!hideText">Predicted proportion of wrong predictions from the original model</span>
+                            Original model error rate
                         </div>
                     </div>
                 </div>
@@ -52,8 +22,8 @@
             <div class="toolbar-header__row">
                 <div class="tree-legend-container">
                     <div class="tree-legend">
-                        <div class="tree-legend_item tree-legend_edge">
-                            <svg height="100%" width="100%">
+                        <div class="tree-legend_item">
+                            <svg height="100%" width="32px">
                                 <g>
                                     <path id="edge-legend" d="M0,0 C0,12 24,12 24,28"></path>
                                     <text>
@@ -63,49 +33,51 @@
                             </svg>
                         </div>
                         <div class="tree-legend-desc">
-                            <span class="tree-legend-desc-short">Global error</span>
-                            <span class="tree-legend-desc-full" ng-if="!hideText">(% wrong predictions over total)</span>
+                            <div class="tree-legend-desc__title">Fraction of total error</div>
+                            <div>(wrong predictions in node samples / total wrong predictions)</div>
                         </div>
                     </div>
                     <div class="tree-legend">
                         <div class="tree-legend_item tree-legend_pie">
-                            <svg height="100%" width="100%"></svg>
+                            <svg height="100%" width="32px"></svg>
                         </div>
                         <div class="tree-legend-desc">
-                            <span class="tree-legend-desc-short">Local error</span>
-                            <span class="tree-legend-desc-full" ng-if="!hideText">(% wrong predictions over node samples)</span>
+                            <div class="tree-legend-desc__title">Local error</div>
+                            <div>(wrong predictions in node samples / number of node samples)</div>
                         </div>
                     </div>
                 </div>
-                <div class="icons-div">
-                    <span ng-if="zoomBackHovered || zoomFitHovered">
-                        {{ zoomBackHovered ? 'Zoom on selected node' : ''}}{{ zoomFitHovered ? 'See whole tree' : ''}}
-                    </span>
-                    <img class="zoom-icon"
-                        src="/plugins/model-error-analysis/resource/img/fit.png"
-                        ng-mouseover="zoomFitHovered = true" ng-mouseleave="zoomFitHovered = false"
-                        ng-click="zoomFit()"
-                        height="20px">
-                    </img>
-                    <img class="zoom-icon"
-                        src="/plugins/model-error-analysis/resource/img/100.png"
-                        ng-mouseover="zoomBackHovered = true" ng-mouseleave="zoomBackHovered = false"
-                        ng-click="selectedNode && zoomBack()"
-                        height="20px">
-                    </img>
+                <div class="toolbar-header__row toolbar-header__icon-row">
+                    <div class="icons-div">
+                        <img class="zoom-icon"
+                            src="/plugins/model-error-analysis/resource/img/fit.png"
+                            ng-mouseover="zoomFitHovered = true"
+                            ng-mouseleave="zoomFitHovered = false"
+                            ng-click="zoomFit()"
+                            height="20px">
+                        </img>
+                        <img class="zoom-icon"
+                            ng-class="{'zoom-icon--disabled': !selectedNode}"
+                            src="/plugins/model-error-analysis/resource/img/100.png"
+                            ng-mouseover="zoomBackHovered = true"
+                            ng-mouseleave="zoomBackHovered = false"
+                            ng-click="selectedNode && zoomBack()"
+                            height="20px">
+                        </img>
+                    </div>
                 </div>
             </div>
         </div>
         <div class="tree" ng-class="{'tree--no-selection': loadingTree || !selectedNode && !hideExploreInfo}" ng-mouseover="hideExploreInfo = true" ng-mouseleave="hideExploreInfo = false">
+            <div class="zoom-description" ng-if="zoomBackHovered || zoomFitHovered">
+                {{ zoomBackHovered ? 'Zoom on selected node' : ''}}{{ zoomFitHovered ? 'See whole tree' : ''}}
+            </div>
             <div class="empty-panel"
                  ng-if="loadingTree || !selectedNode && !hideExploreInfo">
-                    Drag and zoom to explore the tree
+                    <p class="empty-panel__title">Select a node</p>
+                    <p>Drag and zoom to explore the tree</p>
             </div>
             <spinner ng-if="loadingTree"></spinner>
         </div>
-    </div>
-    <div class="histogram-panel" ng-include="'/plugins/model-error-analysis/resource/templates/histograms.html'" ng-show="selectedNode"></div>
-    <div class="histogram-panel--empty empty-panel" ng-show="!selectedNode">
-        Select a node
     </div>
 </div>

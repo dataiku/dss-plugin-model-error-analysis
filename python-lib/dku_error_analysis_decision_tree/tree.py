@@ -96,21 +96,21 @@ class InteractiveTree(object):
     def set_node_info(self, node):
         nr_errors = self.df[self.df[self.target] == ErrorAnalyzerConstants.WRONG_PREDICTION].shape[0]
         filtered_df = self.get_filtered_df(node, self.df)
-        probabilities = filtered_df[self.target].value_counts()
-        if ErrorAnalyzerConstants.WRONG_PREDICTION in probabilities:
-            error = probabilities[ErrorAnalyzerConstants.WRONG_PREDICTION] / float(nr_errors)
+        class_samples = filtered_df[self.target].value_counts()
+        if ErrorAnalyzerConstants.WRONG_PREDICTION in class_samples:
+            error = class_samples[ErrorAnalyzerConstants.WRONG_PREDICTION] / float(nr_errors)
         else:
             error = 0
         samples = filtered_df.shape[0]
-        sorted_proba = sorted((probabilities/samples).to_dict().items(), key=lambda x: (-x[1], x[0]))
+        sorted_class_samples = sorted((class_samples).to_dict().items(), key=lambda x: (-x[1], x[0]))
         if samples > 0:
-            prediction = sorted_proba[0][0]
+            prediction = sorted_class_samples[0][0]
         else:
             prediction = None
         if node.id == 0:
-            node.set_node_info(samples, samples, sorted_proba, prediction, error)
+            node.set_node_info(samples, samples, sorted_class_samples, prediction, error)
         else:
-            node.set_node_info(samples, self.get_node(0).samples[0], sorted_proba, prediction, error)
+            node.set_node_info(samples, self.get_node(0).samples[0], sorted_class_samples, prediction, error)
 
     def jsonify_nodes(self):
         jsonified_tree = {}
@@ -184,8 +184,6 @@ class InteractiveTree(object):
         if not column.empty:
             target_grouped = target_column.groupby(bins)
             target_distrib = target_grouped.apply(lambda x: x.value_counts())
-            full_count = column.shape[0]
-            target_distrib = target_distrib / full_count
             col_distrib = target_grouped.count()
             for interval, count in col_distrib.items():
                 target_distrib_dict = target_distrib[interval].to_dict() if count > 0 else {}
@@ -205,10 +203,8 @@ class InteractiveTree(object):
             "count": []
         }
         if not column.empty:
-            full_count = column.shape[0]
-            target_grouped = target_column.groupby(column.fillna("No values").apply(safe_str))
+            target_grouped = target_column.groupby(column.fillna("No values").apply(safe_str)) # TODO: see CH card on missing values
             target_distrib = target_grouped.value_counts(dropna=False)
-            target_distrib = target_distrib / full_count
             col_distrib = target_grouped.count().sort_values(ascending=False)
             for value in col_distrib.index:
                 target_distrib_dict = target_distrib[value].to_dict()
