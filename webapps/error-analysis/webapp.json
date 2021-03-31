@@ -1,7 +1,7 @@
 {
   "meta": {
-    "label": "Error analysis",
-    "description": "",
+    "label": "Model Error Analysis",
+    "description" : "Debug model performance with error analysis",
     "icon": "icon-sitemap"
   },
 
