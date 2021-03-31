@@ -39,9 +39,11 @@ app.service("TreeUtils", function(Format) {
         .attr("text-anchor", "middle")
         .attr("x", radius)
         .attr("y", radius)
-        .classed("node__text", true)
-        .text(d => label || Format.toFixedIfNeeded(getLocalErrorFunc(d)*100, 2, true));
-
+        .text(d => label || Format.toFixedIfNeeded(getLocalErrorFunc(d)*100, 2, true))
+        .classed("selected", true)
+        .classed("red-node__text", function() {
+            return d3.select(this).text() > 51;
+        });
     };
 
     const nodeValues = function(d) {
@@ -124,7 +126,7 @@ app.service("TreeInteractions", function(Format, TreeUtils) {
     const showSelected = function(id, treeData) {
         TreeUtils.getPath(id, treeData).forEach(function(nodeId) {
             let node = d3.select("#node-" + nodeId);
-            node.selectAll(".decision-rule,.feature-children,.node__background,.node__gauge").classed("selected", true);
+            node.selectAll(".decision-rule,.feature-children,.node__background,.node__gauge,.red-node__text").classed("selected", true);
             d3.select("#edge-" + nodeId).classed("selected", true);
 
             if (nodeId == id) {
@@ -136,7 +138,7 @@ app.service("TreeInteractions", function(Format, TreeUtils) {
     const showHovered = function(id, treeData) {
         TreeUtils.getPath(id, treeData).forEach(function(nodeId) {
             let node = d3.select("#node-" + nodeId);
-            node.selectAll(".decision-rule,.feature-children,.node__gauge,.node__background").classed("hovered", true);
+            node.selectAll(".decision-rule,.feature-children,.node__gauge,.node__background,.red-node__text").classed("hovered", true);
             d3.select("#edge-" + nodeId).classed("hovered", true);
         });
     }
