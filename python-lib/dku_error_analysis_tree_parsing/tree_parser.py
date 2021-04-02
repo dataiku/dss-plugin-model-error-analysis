@@ -28,6 +28,7 @@ class TreeParser(object):
     def add_flag_missing_value_mapping(self, step):
         self.preprocessed_feature_mapping[step._output_name()] = self.SplitParameters(Node.TYPES.CAT, step.feature, [np.nan])
 
+    # CATEGORICAL HANDLING
     def add_dummy_mapping(self, step):
         for value in step.values:
             preprocessed_name = "dummy:{}:{}".format(step.input_column_name, value)
@@ -37,11 +38,13 @@ class TreeParser(object):
             self.preprocessed_feature_mapping["dummy:{}:__Others__".format(step.input_column_name)] = self.SplitParameters(Node.TYPES.CAT, step.input_column_name, step.values)
 
     def add_impact_mapping(self, step):
-        for value in step.impact_coder._impact_map.columns.values:
+        impact_map = getattr(step.impact_coder, "_impact_map", getattr(step.impact_coder, "encoding_map", None)) # To handle DSS10 new implem
+        for value in impact_map.columns.values:
             preprocessed_name = "impact:{}:{}".format(step.column_name, value)
             display_name = "{} [{}]".format(step.column_name, value)
             self.preprocessed_feature_mapping[preprocessed_name] = self.SplitParameters(Node.TYPES.NUM, display_name, uses_preprocessed_feature=True)
 
+    # NUMERICAL HANDLING
     def add_binarize_mapping(self, step):
         self.preprocessed_feature_mapping["num_binarized:" + step._output_name()] = self.SplitParameters(Node.TYPES.NUM, step.in_col, step.threshold)
 
@@ -51,12 +54,14 @@ class TreeParser(object):
         preprocessed_name = "num_quantized:{0}:quantile:{1}".format(step.in_col, step.nb_bins)
         self.preprocessed_feature_mapping[preprocessed_name] = self.SplitParameters(Node.TYPES.NUM, step.in_col, value_func=value_func)
 
+    # VECTOR HANDLING
     def add_unfold_mapping(self, step):
         for i in range(step.vector_length):
             preprocessed_name = "unfold:{}:{}".format(step.input_column_name, i)
             display_name = "{} [element #{}]".format(step.input_column_name, i)
             self.preprocessed_feature_mapping[preprocessed_name] = self.SplitParameters(Node.TYPES.NUM, display_name, uses_preprocessed_feature=True)
 
+    # TEXT HANDLING
     def add_hashing_vect_mapping(self, step, with_svd=False):
         prefix = "thsvd" if with_svd else "hashvect"
         for i in range(step.n_features):
