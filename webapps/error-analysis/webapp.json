@@ -1,6 +1,6 @@
 {
   "meta": {
-    "label": "Model Error Analysis",
+    "label": "Model error analysis",
     "description" : "Debug model performance with error analysis",
     "icon": "icon-sitemap"
   },
@@ -12,6 +12,7 @@
   "roles": [
     {
       "type": "SAVED_MODEL",
+      "contentType": "prediction",
       "targetParamsKey": "modelId",
       "pathParamsKey": "versionId"
     }
