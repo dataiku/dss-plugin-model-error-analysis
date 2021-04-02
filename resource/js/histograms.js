@@ -117,8 +117,8 @@ app.directive("histogram", function (Format, TreeUtils, $compile) {
 
                 // Add tooltips on bar hover
                 groups.on("mouseenter", function(d) {
-                    d3.select("#container-" + feature.name).append("div")
-                    .attr("id", "tooltip-" + feature.name)
+                    d3.select("#container-" + feature.rank).append("div")
+                    .attr("id", "tooltip")
                     .attr("feature", feature.name)
                     .attr("bin-index", d.idx)
                     .attr("whole-data", global ? true : null)
@@ -129,14 +129,14 @@ app.directive("histogram", function (Format, TreeUtils, $compile) {
                 })
                 .on('mousemove', function() {
                     const topOffset = histSvg.node().getBoundingClientRect().top + d3.mouse(this)[1] - margin.top - 75;
-                    d3.select('#tooltip-' + feature.name).style("top", topOffset).style("left", margin.left + 30 + d3.mouse(this)[0]);
+                    d3.select('#tooltip').style("top", topOffset).style("left", margin.left + 30 + d3.mouse(this)[0]);
                 })
                 .on("mouseleave", function() {
-                    d3.select("#tooltip-" + feature.name).remove();
+                    d3.select("#tooltip").remove();
                 });
             }
 
-            const unregister = $scope.$watch("histDataWholeSet." + feature.name, function(nv) {
+            const unregister = $scope.$watch((scope) => scope.histDataWholeSet[feature.name], function(nv) {
                 if (nv && $scope.leftPanel.seeGlobalChartData) {
                     update(true);
                     unregister();

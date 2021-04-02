@@ -90,7 +90,7 @@
             </div>
         </div>
         <div class="histograms">  
-            <div id="{{'container-' + feature.name}}" class="histogram-container" ng-repeat="feature in rankedFeatures | orderBy: 'rank'" ng-if="feature.$selected">
+            <div id="{{'container-' + feature.rank}}" class="histogram-container" ng-repeat="feature in rankedFeatures | orderBy: 'rank'" ng-if="feature.$selected">
                 <div class="histogram">
                     <div class="header header-feature">
                         <div class="header-feature-desc header-div header-div--bolder">
