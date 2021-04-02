@@ -6,10 +6,10 @@
 
         <div class="tooltip__body">
             <div>
-                <strong>{{ samples[0] }}</strong> samples in this bin (<span ng-if="!globalData"><strong>{{ toFixedIfNeeded(samples[1], 2, true) }}%</strong> of node samples, </span><strong>{{ toFixedIfNeeded(samples[2], 2, true) }}%</strong> of all the samples).
+                <strong>{{ samples[0] }}</strong> {{ 'sample' | pluralize: selectedNode.samples[0] }} in this bin (<span ng-if="!globalData"><strong>{{ toFixedIfNeeded(samples[1], 2, true) }}%</strong> of node samples, </span><strong>{{ toFixedIfNeeded(samples[2], 2, true) }}%</strong> of all the samples).
             </div>
             <div>
-                <i class="bullet bullet--error {{ globalData? 'bullet--global-data' : '' }}"></i> <strong>{{ localError[0] }}</strong> are wrong predictions (<strong>{{ toFixedIfNeeded(localError[1], 2, true) }}%</strong> of the samples in the bin).
+                <i class="bullet bullet--error {{ globalData? 'bullet--global-data' : '' }}"></i> <strong>{{ localError[0] }}</strong> wrong {{ 'prediction' | pluralize: localError[0] }} (<strong>{{ toFixedIfNeeded(localError[1], 2, true) }}%</strong> of the samples in the bin).
                 They represent <strong>{{ toFixedIfNeeded(localError[2], 2, true) }}%</strong> of total wrong predictions.
             </div>
         </div>
