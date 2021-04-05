@@ -33,7 +33,7 @@ class TreeHandler(object):
 
         self.selected_feature_ids = set(range(min(len(self.tree.ranked_features), self.DEFAULT_MAX_NR_FEATURES)))
 
-        summary = self.analyzer.mpp_summary(output_dict=True)
+        summary = self.analyzer.evaluate(output_format='dict')
         confidence_decision = summary[ErrorAnalyzerConstants.CONFIDENCE_DECISION]
         if not confidence_decision:
             # TODO: add message in UI
