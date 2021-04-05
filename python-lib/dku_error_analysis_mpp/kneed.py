@@ -8,7 +8,7 @@ from sklearn.linear_model import LinearRegression
 from warnings import warn
 
 
-class KneeLocator(object):
+class KneeLocatorOld(object):
     def __init__(
         self,
         x,
