@@ -11,7 +11,6 @@ LOGGER = logging.getLogger(__name__)
 def get_model_handler(model, version_id=None):
     try:
         params = model.get_predictor(version_id).params
-        assert params.core_params.get("taskType") == "PREDICTION", "Model error analysis view can only be used with prediction models"
         return PredictionModelInformationHandler(params.split_desc, params.core_params, params.model_folder, params.model_folder)
     except Exception as e:
         from future.utils import raise_
