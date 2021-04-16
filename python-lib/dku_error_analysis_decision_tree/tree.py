@@ -52,7 +52,8 @@ class InteractiveTree(object):
             node = self.get_node(ids.popleft())
             dot_str += node.to_dot_string() + "\n"
             if node.parent_id >= 0:
-                dot_str += '{} -> {} ;\n'.format(node.parent_id, node.id)
+                edge_width = max(1, ErrorAnalyzerConstants.GRAPH_MAX_EDGE_WIDTH * node.total_error_fraction)
+                dot_str += '{} -> {} [penwidth={}];\n'.format(node.parent_id, node.id, edge_width)
             ids += node.children_ids
         dot_str += '{rank=same ; '+ '; '.join(map(safe_str, self.leaves)) + '} ;\n'
         dot_str += "}"
