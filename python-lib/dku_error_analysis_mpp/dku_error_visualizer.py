@@ -40,8 +40,12 @@ class DkuErrorVisualizer(_BaseErrorVisualizer):
         self._tree = error_analyzer.tree
         self._tree_parser = error_analyzer.tree_parser
 
-    def plot_error_tree(self, size=None):
-        """ Plot the graph of the decision tree """
+    def plot_error_tree(self, size=(50, 50)):
+        """ Plot the graph of the decision tree
+        Args:
+            size (tuple): size of the output plot.
+
+        """
 
         return Source(self._tree.to_dot_string(size))
 

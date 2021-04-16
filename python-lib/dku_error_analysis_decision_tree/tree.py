@@ -42,7 +42,7 @@ class InteractiveTree(object):
         self.bins = {}
         self.leaves = set()
 
-    def to_dot_string(self, size=None):
+    def to_dot_string(self, size=(50, 50)):
         dot_str = 'digraph Tree {{\n size="{0},{1}!";\nnode [shape=box, style="filled, rounded", color="black", fontname=helvetica] ;\n'.format(size[0], size[1])
         dot_str += 'edge [fontname=helvetica] ;\ngraph [ranksep=equally, splines=polyline] ;\n'
         ids = deque()
