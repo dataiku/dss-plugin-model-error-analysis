@@ -42,8 +42,8 @@ class InteractiveTree(object):
         self.bins = {}
         self.leaves = set()
 
-    def to_dot_string(self):
-        dot_str = 'digraph Tree {\nnode [shape=box, style="filled, rounded", color="black", fontname=helvetica] ;\n'
+    def to_dot_string(self, size=None):
+        dot_str = 'digraph Tree {{\n size="{0},{1}!";\nnode [shape=box, style="filled, rounded", color="black", fontname=helvetica] ;\n'.format(size[0], size[1])
         dot_str += 'edge [fontname=helvetica] ;\ngraph [ranksep=equally, splines=polyline] ;\n'
         ids = deque()
         ids.append(0)
@@ -101,7 +101,6 @@ class InteractiveTree(object):
             total_error_fraction = class_samples[ErrorAnalyzerConstants.WRONG_PREDICTION] / float(nr_errors)
         else:
             total_error_fraction = 0
-            local_error = 0
         samples = filtered_df.shape[0]
         sorted_class_samples = sorted((class_samples).to_dict().items(), key=lambda x: (-x[1], x[0]))
         if samples > 0:

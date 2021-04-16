@@ -40,16 +40,10 @@ class DkuErrorVisualizer(_BaseErrorVisualizer):
         self._tree = error_analyzer.tree
         self._tree_parser = error_analyzer.tree_parser
 
-    def plot_error_tree_old(self, size=None):
-        """ Plot the graph of the decision tree """
-
-        return Source(self._tree.to_dot_string())
-
-
     def plot_error_tree(self, size=None):
         """ Plot the graph of the decision tree """
 
-        return Source(self._tree.to_dot_string())
+        return Source(self._tree.to_dot_string(size))
 
     def plot_feature_distributions_on_leaves(self, leaf_selector=None, top_k_features=ErrorAnalyzerConstants.TOP_K_FEATURES,
                                             show_global=True, show_class=False, rank_leaves_by="total_error_fraction", nr_bins=10, figsize=(15, 10)):

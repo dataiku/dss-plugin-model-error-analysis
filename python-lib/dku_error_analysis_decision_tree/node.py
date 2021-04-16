@@ -65,21 +65,35 @@ class Node(object):
         raise NotImplementedError
 
     def to_dot_string(self):
-        print('----- TOTO')
         dot_str = '{0} [label="node #{0}\n'.format(self.id)
         if self.parent_id >= 0:
             dot_str += self.print_decision_rule() + "\n"
         #for prediction_class, proba, samples in self.probabilities:
         #    dot_str += '{}: {:.3%}\n'.format(prediction_class, proba)
-        node_color = ErrorAnalyzerConstants.ERROR_TREE_COLORS[self.prediction]
-        if len(self.probabilities) == 1:
-            alpha = 255
+
+        alpha = 0
+        if self.local_error >= ErrorAnalyzerConstants.GRAPH_MIN_LOCAL_ERROR_OPAQUE:
+            alpha = 1.0
         else:
-            alpha = int(255 * (self.probabilities[0][1] - self.probabilities[1][1]) / (1 - self.probabilities[1][1]))
-        dot_str += '{}", fillcolor="{}{:02x}"] ;'.format(self.prediction, node_color, alpha)
-        dot_str += 'sample = {:.3f}\n'.format(self.samples[0])
-        dot_str += 'local error = {:.3f}\n'.format(self.local_error)
-        dot_str += 'fraction of total error = {:.3f}\n'.format(self.total_error_fraction)
+            alpha = self.local_error
+
+        node_class = ErrorAnalyzerConstants.CORRECT_PREDICTION if self.total_error_fraction == 0 else ErrorAnalyzerConstants.WRONG_PREDICTION
+        #node_color = ErrorAnalyzerConstants.ERROR_TREE_COLORS[self.prediction]
+        class_color = ErrorAnalyzerConstants.ERROR_TREE_COLORS[node_class].strip('#')
+        class_color_rgb = tuple(int(class_color[i:i + 2], 16) for i in (0, 2, 4))
+        # compute the color as alpha against white
+        color_rgb = [int(round(alpha * c + (1 - alpha) * 255, 0)) for c in class_color_rgb]
+        color = '#{:02x}{:02x}{:02x}'.format(color_rgb[0], color_rgb[1], color_rgb[2])
+
+        #if len(self.probabilities) == 1:
+        #    alpha = 255
+        #else:
+        #    alpha = int(255 * (self.probabilities[0][1] - self.probabilities[1][1]) / (1 - self.probabilities[1][1]))
+
+        dot_str += 'sample = {:.3f}%\n'.format(self.samples[1])
+        dot_str += 'local error = {:.3f}%\n'.format(100.*self.local_error)
+        dot_str += 'fraction of total error = {:.3f}%\n'.format(100.*self.total_error_fraction)
+        dot_str += '", fillcolor="{}"] ;'.format(color)
         return dot_str
 
 
