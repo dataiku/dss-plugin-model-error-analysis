@@ -98,9 +98,10 @@ class InteractiveTree(object):
         filtered_df = self.get_filtered_df(node, self.df)
         class_samples = filtered_df[self.target].value_counts()
         if ErrorAnalyzerConstants.WRONG_PREDICTION in class_samples:
-            error = class_samples[ErrorAnalyzerConstants.WRONG_PREDICTION] / float(nr_errors)
+            total_error_fraction = class_samples[ErrorAnalyzerConstants.WRONG_PREDICTION] / float(nr_errors)
         else:
-            error = 0
+            total_error_fraction = 0
+            local_error = 0
         samples = filtered_df.shape[0]
         sorted_class_samples = sorted((class_samples).to_dict().items(), key=lambda x: (-x[1], x[0]))
         if samples > 0:
@@ -108,9 +109,9 @@ class InteractiveTree(object):
         else:
             prediction = None
         if node.id == 0:
-            node.set_node_info(samples, samples, sorted_class_samples, prediction, error)
+            node.set_node_info(samples, samples, sorted_class_samples, prediction, total_error_fraction)
         else:
-            node.set_node_info(samples, self.get_node(0).samples[0], sorted_class_samples, prediction, error)
+            node.set_node_info(samples, self.get_node(0).samples[0], sorted_class_samples, prediction, total_error_fraction)
 
     def jsonify_nodes(self):
         jsonified_tree = {}

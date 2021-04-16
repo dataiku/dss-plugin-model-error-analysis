@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
 import numpy as np
 from graphviz import Source
-from sklearn.tree import export_graphviz
 import matplotlib
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
-from dku_error_analysis_utils import ErrorAnalyzerConstants, rank_features_by_error_correlation
+from dku_error_analysis_utils import ErrorAnalyzerConstants
 from dku_error_analysis_mpp.dku_error_analyzer import DkuErrorAnalyzer
 
 import sys
@@ -40,6 +39,12 @@ class DkuErrorVisualizer(_BaseErrorVisualizer):
 
         self._tree = error_analyzer.tree
         self._tree_parser = error_analyzer.tree_parser
+
+    def plot_error_tree_old(self, size=None):
+        """ Plot the graph of the decision tree """
+
+        return Source(self._tree.to_dot_string())
+
 
     def plot_error_tree(self, size=None):
         """ Plot the graph of the decision tree """

@@ -34,19 +34,26 @@ class Node(object):
         self.probabilities = None
         self.prediction = None
         self.samples = None
-        self.global_error = None
+        self.total_error_fraction = None
+        self.local_error = None
 
     @property
     def id(self):
         return self.node_id
 
-    def set_node_info(self, samples, total_samples, probabilities, prediction, error):
+    def set_node_info(self, samples, total_samples, probabilities, prediction, total_error_fraction):
         self.samples = [samples, 100.0 * samples / total_samples]
         self.probabilities = []
         for class_name, class_samples in probabilities:
             self.probabilities.append([class_name, class_samples/float(samples), class_samples])
         self.prediction = prediction
-        self.global_error = error
+        self.total_error_fraction = total_error_fraction
+
+        self.local_error = 0
+        if self.prediction and self.probabilities[0][0] == ErrorAnalyzerConstants.WRONG_PREDICTION:
+            self.local_error = self.probabilities[0][1]
+        elif len(self.probabilities) > 1:
+            self.local_error = self.probabilities[1][1]
 
     def get_type(self):
         raise NotImplementedError
@@ -58,18 +65,21 @@ class Node(object):
         raise NotImplementedError
 
     def to_dot_string(self):
+        print('----- TOTO')
         dot_str = '{0} [label="node #{0}\n'.format(self.id)
         if self.parent_id >= 0:
             dot_str += self.print_decision_rule() + "\n"
-        dot_str += 'global error = {:.3f}\nsamples = {}\n'.format(self.global_error, self.samples[0])
-        for prediction_class, proba, samples in self.probabilities:
-            dot_str += '{}: {:.3%}\n'.format(prediction_class, proba)
+        #for prediction_class, proba, samples in self.probabilities:
+        #    dot_str += '{}: {:.3%}\n'.format(prediction_class, proba)
         node_color = ErrorAnalyzerConstants.ERROR_TREE_COLORS[self.prediction]
         if len(self.probabilities) == 1:
             alpha = 255
         else:
             alpha = int(255 * (self.probabilities[0][1] - self.probabilities[1][1]) / (1 - self.probabilities[1][1]))
         dot_str += '{}", fillcolor="{}{:02x}"] ;'.format(self.prediction, node_color, alpha)
+        dot_str += 'sample = {:.3f}\n'.format(self.samples[0])
+        dot_str += 'local error = {:.3f}\n'.format(self.local_error)
+        dot_str += 'fraction of total error = {:.3f}\n'.format(self.total_error_fraction)
         return dot_str
 
 
