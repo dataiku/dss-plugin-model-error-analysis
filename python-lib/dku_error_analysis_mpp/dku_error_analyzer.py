@@ -108,12 +108,8 @@ class DkuErrorAnalyzer(ErrorAnalyzer):
     def parse_tree(self):
         """ Parse Decision Tree and get features information used to display distributions """
         self._error_df.loc[:, DkuMEAConstants.ERROR_COLUMN] = self._error_train_y
-
         self._tree_parser = TreeParser(self._model_handler, self.error_tree.estimator_)
-        self._tree = self._tree_parser.build_tree(self._error_df, self.preprocessed_feature_names)
-        self._tree.parse_nodes(self._tree_parser,
-                               self.preprocessed_feature_names,
-                               self._error_train_x)
+        self._tree = self._tree_parser.build_tree(self._error_df, self.preprocessed_feature_names, self._error_train_x)
 
     def _get_path_to_node(self, node_id):
         """ return path to node as a list of split steps from the nodes of the de-processed

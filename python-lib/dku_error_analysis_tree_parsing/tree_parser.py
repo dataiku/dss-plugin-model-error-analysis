@@ -4,8 +4,9 @@ from dku_error_analysis_decision_tree.tree import InteractiveTree
 from dataiku.doctor.preprocessing.dataframe_preprocessing import RescalingProcessor2, QuantileBinSeries, UnfoldVectorProcessor, BinarizeSeries, \
     FastSparseDummifyProcessor, ImpactCodingStep, FlagMissingValue2, TextCountVectorizerProcessor, TextHashingVectorizerWithSVDProcessor, \
     TextHashingVectorizerProcessor, TextTFIDFVectorizerProcessor
-from dku_error_analysis_utils import DkuMEAConstants
-from functools import reduce
+from dku_error_analysis_utils import DkuMEAConstants, rank_features_by_error_correlation
+from dku_error_analysis_tree_parsing.depreprocessor import descale_numerical_thresholds
+from collections import deque
 
 
 class TreeParser(object):
@@ -102,7 +103,7 @@ class TreeParser(object):
     def get_split_parameters(self, preprocessed_name, threshold=None):
         return self.preprocessed_feature_mapping.get(preprocessed_name, self.SplitParameters(Node.TYPES.NUM, preprocessed_name, threshold))
 
-    def build_tree(self, df, feature_list, target=DkuMEAConstants.ERROR_COLUMN):
+    def build_tree(self, df, feature_list, preprocessed_x, target=DkuMEAConstants.ERROR_COLUMN):
         num_features = {}
         for name, settings in self.model_handler.get_preproc_handler().collector_data.get('per_feature').items():
             avg = settings.get('stats').get('average')
@@ -111,14 +112,48 @@ class TreeParser(object):
                     'mean':  avg
                 }
         ranked_feature_ids = np.argsort(-self.error_model.feature_importances_)
-
-        def get_unique_ranked_features(accumulated_list, current_value, seen_values=set()):
-            unprocessed_name = self.get_split_parameters(feature_list[current_value]).feature
+        ranked_feature_ids_unique, seen_values = [], set()
+        for idx in ranked_feature_ids:
+            unprocessed_name = self.get_split_parameters(feature_list[idx]).feature
             if unprocessed_name not in seen_values:
-                accumulated_list.append(unprocessed_name)
+                ranked_feature_ids_unique.append(unprocessed_name)
                 seen_values.add(unprocessed_name)
-            return accumulated_list
 
-        ranked_features = list(reduce(get_unique_ranked_features, ranked_feature_ids, []))
-        tree = InteractiveTree(df, target, ranked_features, num_features)
+        tree = InteractiveTree(df, target, ranked_feature_ids_unique, num_features)
+        self.parse_nodes(tree, feature_list, preprocessed_x)
         return tree
+
+    def parse_nodes(self, tree, feature_list, preprocessed_x):
+        error_model_tree = self.error_model.tree_
+        thresholds = descale_numerical_thresholds(error_model_tree, feature_list, self.rescalers, False)
+        children_left, children_right, features = error_model_tree.children_left, error_model_tree.children_right, error_model_tree.feature
+        root_node = Node(0, -1)
+        ids = deque()
+        tree.add_node(root_node)
+
+        ids.append(0)
+        while ids:
+            parent_id = ids.popleft()
+            feature_idx, threshold = features[parent_id], thresholds[parent_id]
+            preprocessed_feature = feature_list[feature_idx]
+            split_parameters = self.get_split_parameters(preprocessed_feature, threshold)
+
+            if split_parameters.uses_preprocessed_feature:
+                tree.df[split_parameters.feature] = preprocessed_x[:, feature_idx]
+            if split_parameters.value is None:
+                split_parameters.value = split_parameters.value_func(threshold)
+            if split_parameters.force_others_on_right:
+                left_child_id, right_child_id = children_right[parent_id], children_left[parent_id]
+            else:
+                left_child_id, right_child_id = children_left[parent_id], children_right[parent_id]
+
+            tree.add_split_no_siblings(split_parameters.node_type, parent_id, split_parameters.feature, split_parameters.value, left_child_id, right_child_id)
+
+            if children_left[left_child_id] > 0:
+                ids.append(left_child_id)
+            else:
+                tree.leaves.add(left_child_id)
+            if children_left[right_child_id] > 0:
+                ids.append(right_child_id)
+            else:
+                tree.leaves.add(right_child_id)

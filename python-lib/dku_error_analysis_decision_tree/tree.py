@@ -4,7 +4,6 @@ from mealy import ErrorAnalyzerConstants
 
 import pandas as pd
 from collections import deque
-from dku_error_analysis_tree_parsing.depreprocessor import descale_numerical_thresholds
 
 class InteractiveTree(object):
     """
@@ -60,41 +59,6 @@ class InteractiveTree(object):
         dot_str += '{rank=same ; '+ '; '.join(map(safe_str, self.leaves)) + '} ;\n'
         dot_str += "}"
         return dot_str
-
-    def parse_nodes(self, tree_parser, feature_list, preprocessed_x):
-        error_model_tree = tree_parser.error_model.tree_
-        thresholds = descale_numerical_thresholds(error_model_tree, feature_list, tree_parser.rescalers, False)
-        children_left, children_right, features = error_model_tree.children_left, error_model_tree.children_right, error_model_tree.feature
-        root_node = Node(0, -1)
-        ids = deque()
-        self.add_node(root_node)
-
-        ids.append(0)
-        while ids:
-            parent_id = ids.popleft()
-            feature_idx, threshold = features[parent_id], thresholds[parent_id]
-            preprocessed_feature = feature_list[feature_idx]
-            split_parameters = tree_parser.get_split_parameters(preprocessed_feature, threshold)
-
-            if split_parameters.uses_preprocessed_feature:
-                self.df[split_parameters.feature] = preprocessed_x[:, feature_idx]
-            if split_parameters.value is None:
-                split_parameters.value = split_parameters.value_func(threshold)
-            if split_parameters.force_others_on_right:
-                left_child_id, right_child_id = children_right[parent_id], children_left[parent_id]
-            else:
-                left_child_id, right_child_id = children_left[parent_id], children_right[parent_id]
-
-            self.add_split_no_siblings(split_parameters.node_type, parent_id, split_parameters.feature, split_parameters.value, left_child_id, right_child_id)
-
-            if children_left[left_child_id] > 0:
-                ids.append(left_child_id)
-            else:
-                self.leaves.add(left_child_id)
-            if children_left[right_child_id] > 0:
-                ids.append(right_child_id)
-            else:
-                self.leaves.add(right_child_id)
 
     def set_node_info(self, node):
         nr_errors = self.df[self.df[self.target] == ErrorAnalyzerConstants.WRONG_PREDICTION].shape[0]
