@@ -5,12 +5,11 @@ from sklearn.tree import export_graphviz
 import matplotlib
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
-from dku_error_analysis_utils import ErrorAnalyzerConstants, rank_features_by_error_correlation
 from dku_error_analysis_mpp.dku_error_analyzer import DkuErrorAnalyzer
 
 import sys
 sys.path.append("/Users/dphan/Documents/mea")
-from mealy import ErrorAnalyzer, ErrorVisualizer, _BaseErrorVisualizer
+from mealy import ErrorAnalyzer, ErrorVisualizer, _BaseErrorVisualizer, ErrorAnalyzerConstants
 
 
 import logging

@@ -4,13 +4,13 @@ import pandas as pd
 import collections
 from sklearn.model_selection import train_test_split
 from dku_error_analysis_model_parser.model_handler_utils import get_original_test_df
-from dku_error_analysis_utils import ErrorAnalyzerConstants
 from dku_error_analysis_tree_parsing.tree_parser import TreeParser
+from dku_error_analysis_utils import DkuMEAConstants
 import logging
 
 import sys
 sys.path.append("/Users/dphan/Documents/mea")
-from mealy import ErrorAnalyzer
+from mealy import ErrorAnalyzer, ErrorAnalyzerConstants
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format='Error Analysis Plugin | %(levelname)s - %(message)s')
@@ -104,7 +104,7 @@ class DkuErrorAnalyzer(ErrorAnalyzer):
 
     def parse_tree(self):
         """ Parse Decision Tree and get features information used to display distributions """
-        self._error_df.loc[:, ErrorAnalyzerConstants.ERROR_COLUMN] = self._error_train_y
+        self._error_df.loc[:, DkuMEAConstants.ERROR_COLUMN] = self._error_train_y
 
         self._tree_parser = TreeParser(self._model_handler, self.error_tree.estimator_)
         self._tree = self._tree_parser.build_tree(self._error_df, self.preprocessed_feature_names)
