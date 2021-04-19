@@ -81,7 +81,7 @@ class Node(object):
         color_rgb = [int(round(alpha * c + (1 - alpha) * 255, 0)) for c in class_color_rgb]
         color = '#{:02x}{:02x}{:02x}'.format(color_rgb[0], color_rgb[1], color_rgb[2])
 
-        dot_str += 'sample = {:.3f}%\n'.format(self.samples[1])
+        dot_str += 'samples = {:.3f}%\n'.format(self.samples[1])
         dot_str += 'local error = {:.3f}%\n'.format(100.*self.local_error)
         dot_str += 'fraction of total error = {:.3f}%\n'.format(100. * self.global_error)
         dot_str += '", fillcolor="{}"] ;'.format(color)
