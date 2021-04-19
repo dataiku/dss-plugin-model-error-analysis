@@ -43,7 +43,7 @@ class DkuErrorVisualizer(_BaseErrorVisualizer):
     def plot_error_tree(self, size=(50, 50)):
         """ Plot the graph of the decision tree
         Args:
-            size (tuple): size of the output plot.
+            size (tuple): Size of the output plot as (width, length), in inches.
 
         """
 
