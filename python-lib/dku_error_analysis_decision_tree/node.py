@@ -20,6 +20,10 @@ class Node(object):
 
     samples: positive integer, number of samples when applying the decision rules of the current node
 
+    global_error: float
+
+    local_error: array size two of format [local error, raw count of bad predictions in the node ]
+
     """
 
     class TYPES:
@@ -49,11 +53,12 @@ class Node(object):
         self.prediction = prediction
         self.global_error = global_error
 
-        self.local_error = 0
         if self.prediction and self.probabilities[0][0] == ErrorAnalyzerConstants.WRONG_PREDICTION:
-            self.local_error = self.probabilities[0][1]
+            self.local_error = self.probabilities[0][1:3]
         elif len(self.probabilities) > 1:
-            self.local_error = self.probabilities[1][1]
+            self.local_error = self.probabilities[1][1:3]
+        else:
+            self.local_error = [0, 0]
 
     def get_type(self):
         raise NotImplementedError
@@ -69,10 +74,10 @@ class Node(object):
         if self.parent_id >= 0:
             dot_str += self.print_decision_rule() + "\n"
 
-        if self.local_error >= ErrorAnalyzerConstants.GRAPH_MIN_LOCAL_ERROR_OPAQUE:
+        if self.local_error[0] >= ErrorAnalyzerConstants.GRAPH_MIN_LOCAL_ERROR_OPAQUE:
             alpha = 1.0
         else:
-            alpha = self.local_error
+            alpha = self.local_error[0]
 
         node_class = ErrorAnalyzerConstants.CORRECT_PREDICTION if self.global_error == 0 else ErrorAnalyzerConstants.WRONG_PREDICTION
         class_color = ErrorAnalyzerConstants.ERROR_TREE_COLORS[node_class].strip('#')
@@ -82,7 +87,7 @@ class Node(object):
         color = '#{:02x}{:02x}{:02x}'.format(color_rgb[0], color_rgb[1], color_rgb[2])
 
         dot_str += 'samples = {:.3f}%\n'.format(self.samples[1])
-        dot_str += 'local error = {:.3f}%\n'.format(100.*self.local_error)
+        dot_str += 'local error = {:.3f}%\n'.format(100.*self.local_error[0])
         dot_str += 'fraction of total error = {:.3f}%\n'.format(100. * self.global_error)
         dot_str += '", fillcolor="{}"] ;'.format(color)
         return dot_str
