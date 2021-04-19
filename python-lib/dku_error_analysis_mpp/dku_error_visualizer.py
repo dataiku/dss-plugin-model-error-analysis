@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import numpy as np
 from graphviz import Source
-from sklearn.tree import export_graphviz
 import matplotlib
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
@@ -9,7 +8,7 @@ from dku_error_analysis_mpp.dku_error_analyzer import DkuErrorAnalyzer
 
 import sys
 sys.path.append("/Users/dphan/Documents/mea")
-from mealy import ErrorAnalyzer, ErrorVisualizer, _BaseErrorVisualizer, ErrorAnalyzerConstants
+from mealy import _BaseErrorVisualizer, ErrorAnalyzerConstants
 
 
 import logging
