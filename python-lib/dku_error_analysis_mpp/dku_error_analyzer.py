@@ -23,7 +23,7 @@ class DkuErrorAnalyzer(ErrorAnalyzer):
 
     def __init__(self,
                  model_handler,
-                 max_num_row=DkuMEAConstants.MAX_NUM_ROW,
+                 max_num_rows=DkuMEAConstants.MAX_NUM_ROWS,
                  param_grid=None,
                  random_state=65537):
 
@@ -33,7 +33,7 @@ class DkuErrorAnalyzer(ErrorAnalyzer):
         self._model_handler = model_handler
         self._target = model_handler.get_target_variable()
         self._model_predictor = model_handler.get_predictor()
-        self._max_num_row = max_num_row
+        self._max_num_rows = max_num_rows
 
         feature_names = self._model_predictor.get_features()
         super(DkuErrorAnalyzer, self).__init__(model_handler.get_clf(), feature_names, param_grid, random_state)
@@ -84,7 +84,7 @@ class DkuErrorAnalyzer(ErrorAnalyzer):
         into train and test set for the error analyzer """
         np.random.seed(self.random_state)
 
-        original_df = get_original_test_df(self._model_handler)[:self._max_num_row]
+        original_df = get_original_test_df(self._model_handler)[:self._max_num_rows]
 
         preprocessed_x, y, input_mf_index = self._preprocess_dataframe(original_df)
 
