@@ -1,7 +1,5 @@
 from dku_error_analysis_decision_tree.node import Node, NumericalNode, CategoricalNode
 from dku_error_analysis_utils import safe_str
-import sys
-sys.path.append("/Users/dphan/Documents/mea")
 from mealy import ErrorAnalyzerConstants
 
 import pandas as pd

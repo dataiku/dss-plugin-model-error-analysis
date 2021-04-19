@@ -7,9 +7,6 @@ from dku_error_analysis_model_parser.model_handler_utils import get_original_tes
 from dku_error_analysis_tree_parsing.tree_parser import TreeParser
 from dku_error_analysis_utils import DkuMEAConstants
 import logging
-
-import sys
-sys.path.append("/Users/dphan/Documents/mea")
 from mealy import ErrorAnalyzer, ErrorAnalyzerConstants
 
 logger = logging.getLogger(__name__)

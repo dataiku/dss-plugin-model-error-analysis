@@ -1,7 +1,5 @@
 from math import isnan
 from dku_error_analysis_utils import safe_str
-import sys
-sys.path.append("/Users/dphan/Documents/mea")
 from mealy import ErrorAnalyzerConstants
 
 class Node(object):

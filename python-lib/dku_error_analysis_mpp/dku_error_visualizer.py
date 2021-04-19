@@ -5,9 +5,6 @@ import matplotlib
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
 from dku_error_analysis_mpp.dku_error_analyzer import DkuErrorAnalyzer
-
-import sys
-sys.path.append("/Users/dphan/Documents/mea")
 from mealy import _BaseErrorVisualizer, ErrorAnalyzerConstants
 
 

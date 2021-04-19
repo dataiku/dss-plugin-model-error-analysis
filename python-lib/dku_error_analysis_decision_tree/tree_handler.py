@@ -1,8 +1,5 @@
 import logging
 from dku_error_analysis_mpp.dku_error_analyzer import DkuErrorAnalyzer
-
-import sys
-sys.path.append("/Users/dphan/Documents/mea")
 from mealy import ErrorAnalyzerConstants
 
 
