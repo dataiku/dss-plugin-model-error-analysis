@@ -9,3 +9,4 @@ def safe_str(val):
 
 class DkuMEAConstants(object):
     ERROR_COLUMN = '__dku_error__'
+    MAX_NUM_ROW = 100000
