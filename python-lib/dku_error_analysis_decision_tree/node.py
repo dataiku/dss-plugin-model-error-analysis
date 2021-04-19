@@ -34,20 +34,20 @@ class Node(object):
         self.probabilities = None
         self.prediction = None
         self.samples = None
-        self.total_error_fraction = None
+        self.global_error = None
         self.local_error = None
 
     @property
     def id(self):
         return self.node_id
 
-    def set_node_info(self, samples, total_samples, probabilities, prediction, total_error_fraction):
+    def set_node_info(self, samples, total_samples, probabilities, prediction, global_error):
         self.samples = [samples, 100.0 * samples / total_samples]
         self.probabilities = []
         for class_name, class_samples in probabilities:
             self.probabilities.append([class_name, class_samples/float(samples), class_samples])
         self.prediction = prediction
-        self.total_error_fraction = total_error_fraction
+        self.global_error = global_error
 
         self.local_error = 0
         if self.prediction and self.probabilities[0][0] == ErrorAnalyzerConstants.WRONG_PREDICTION:
@@ -74,7 +74,7 @@ class Node(object):
         else:
             alpha = self.local_error
 
-        node_class = ErrorAnalyzerConstants.CORRECT_PREDICTION if self.total_error_fraction == 0 else ErrorAnalyzerConstants.WRONG_PREDICTION
+        node_class = ErrorAnalyzerConstants.CORRECT_PREDICTION if self.global_error == 0 else ErrorAnalyzerConstants.WRONG_PREDICTION
         class_color = ErrorAnalyzerConstants.ERROR_TREE_COLORS[node_class].strip('#')
         class_color_rgb = tuple(int(class_color[i:i + 2], 16) for i in (0, 2, 4))
         # compute the color as alpha against white
@@ -83,7 +83,7 @@ class Node(object):
 
         dot_str += 'sample = {:.3f}%\n'.format(self.samples[1])
         dot_str += 'local error = {:.3f}%\n'.format(100.*self.local_error)
-        dot_str += 'fraction of total error = {:.3f}%\n'.format(100.*self.total_error_fraction)
+        dot_str += 'fraction of total error = {:.3f}%\n'.format(100. * self.global_error)
         dot_str += '", fillcolor="{}"] ;'.format(color)
         return dot_str
 
