@@ -9,18 +9,13 @@ from dataiku.doctor.posttraining.model_information_handler import PredictionMode
 LOGGER = logging.getLogger(__name__)
 
 def get_model_handler(model, version_id=None):
-    params = model.get_predictor(version_id).params
-
-    assert params.core_params.get("taskType") == "PREDICTION", "Model error analysis view can only be used with prediction models"
-
     try:
+        params = model.get_predictor(version_id).params
         return PredictionModelInformationHandler(params.split_desc, params.core_params, params.model_folder, params.model_folder)
     except Exception as e:
         from future.utils import raise_
         if "ordinal not in range(128)" in safe_str(e):
-            raise_(Exception, "The plugin is using a python3 code-env, cannot load a python2 model.", sys.exc_info()[2])
-        elif safe_str(e) == "non-string names in Numpy dtype unpickling":
-            raise_(Exception, "The plugin is using a python2 code-env, cannot load a python3 model.", sys.exc_info()[2])
+            raise_(Exception, "Model Error Analysis requires models built with python3. This one is on python2.", sys.exc_info()[2])
         else:
             raise_(Exception, "Fail to load saved model: {}".format(e), sys.exc_info()[2])
 
