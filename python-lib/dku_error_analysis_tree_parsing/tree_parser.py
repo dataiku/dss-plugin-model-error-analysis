@@ -4,7 +4,7 @@ from dku_error_analysis_decision_tree.tree import InteractiveTree
 from dataiku.doctor.preprocessing.dataframe_preprocessing import RescalingProcessor2, QuantileBinSeries, UnfoldVectorProcessor, BinarizeSeries, \
     FastSparseDummifyProcessor, ImpactCodingStep, FlagMissingValue2, TextCountVectorizerProcessor, TextHashingVectorizerWithSVDProcessor, \
     TextHashingVectorizerProcessor, TextTFIDFVectorizerProcessor
-from dku_error_analysis_utils import ErrorAnalyzerConstants, rank_features_by_error_correlation
+from dku_error_analysis_utils import DkuMEAConstants
 from functools import reduce
 
 
@@ -52,7 +52,7 @@ class TreeParser(object):
         self.preprocessed_feature_mapping[preprocessed_name] = self.SplitParameters(Node.TYPES.NUM, step.in_col, value_func=value_func)
 
     def add_unfold_mapping(self, step):
-        for i in xrange(step.vector_length):
+        for i in range(step.vector_length):
             preprocessed_name = "unfold:{}:{}".format(step.input_column_name, i)
             display_name = "{} [element #{}]".format(step.input_column_name, i)
             self.preprocessed_feature_mapping[preprocessed_name] = self.SplitParameters(Node.TYPES.NUM, display_name, uses_preprocessed_feature=True)
@@ -97,7 +97,7 @@ class TreeParser(object):
     def get_split_parameters(self, preprocessed_name, threshold=None):
         return self.preprocessed_feature_mapping.get(preprocessed_name, self.SplitParameters(Node.TYPES.NUM, preprocessed_name, threshold))
 
-    def build_tree(self, df, feature_list, target=ErrorAnalyzerConstants.ERROR_COLUMN):
+    def build_tree(self, df, feature_list, target=DkuMEAConstants.ERROR_COLUMN):
         num_features = {}
         for name, settings in self.model_handler.get_preproc_handler().collector_data.get('per_feature').items():
             avg = settings.get('stats').get('average')
@@ -105,8 +105,8 @@ class TreeParser(object):
                 num_features[name] = {
                     'mean':  avg
                 }
+        ranked_feature_ids = np.argsort(-self.error_model.feature_importances_)
 
-        ranked_feature_ids = rank_features_by_error_correlation(self.error_model.feature_importances_)
         def get_unique_ranked_features(accumulated_list, current_value, seen_values=set()):
             unprocessed_name = self.get_split_parameters(feature_list[current_value]).feature
             if unprocessed_name not in seen_values:

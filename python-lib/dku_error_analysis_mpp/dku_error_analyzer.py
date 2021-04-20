@@ -4,13 +4,10 @@ import pandas as pd
 import collections
 from sklearn.model_selection import train_test_split
 from dku_error_analysis_model_parser.model_handler_utils import get_original_test_df
-from dku_error_analysis_utils import ErrorAnalyzerConstants
 from dku_error_analysis_tree_parsing.tree_parser import TreeParser
+from dku_error_analysis_utils import DkuMEAConstants
 import logging
-
-import sys
-sys.path.append("/Users/dphan/Documents/mea")
-from mealy import ErrorAnalyzer
+from mealy import ErrorAnalyzer, ErrorAnalyzerConstants
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format='Error Analysis Plugin | %(levelname)s - %(message)s')
@@ -24,16 +21,22 @@ class DkuErrorAnalyzer(ErrorAnalyzer):
     The nodes of the decision tree are different segments of errors to be studied individually.
     """
 
-    def __init__(self, model_handler, random_state=65537):
+    def __init__(self,
+                 model_handler,
+                 max_num_rows=DkuMEAConstants.MAX_NUM_ROWS,
+                 param_grid=None,
+                 random_state=65537):
+
         if model_handler is None:
             raise NotImplementedError('You need to define a model handler.')
 
         self._model_handler = model_handler
         self._target = model_handler.get_target_variable()
         self._model_predictor = model_handler.get_predictor()
-        feature_names = self._model_predictor.get_features()
+        self._max_num_rows = max_num_rows
 
-        super(DkuErrorAnalyzer, self).__init__(model_handler.get_clf(), feature_names, random_state)
+        feature_names = self._model_predictor.get_features()
+        super(DkuErrorAnalyzer, self).__init__(model_handler.get_clf(), feature_names, param_grid, random_state)
 
         self._train_x = None
         self._test_x = None
@@ -81,7 +84,7 @@ class DkuErrorAnalyzer(ErrorAnalyzer):
         into train and test set for the error analyzer """
         np.random.seed(self.random_state)
 
-        original_df = get_original_test_df(self._model_handler)[:ErrorAnalyzerConstants.MAX_NUM_ROW]
+        original_df = get_original_test_df(self._model_handler)[:self._max_num_rows]
 
         preprocessed_x, y, input_mf_index = self._preprocess_dataframe(original_df)
 
@@ -104,7 +107,7 @@ class DkuErrorAnalyzer(ErrorAnalyzer):
 
     def parse_tree(self):
         """ Parse Decision Tree and get features information used to display distributions """
-        self._error_df.loc[:, ErrorAnalyzerConstants.ERROR_COLUMN] = self._error_train_y
+        self._error_df.loc[:, DkuMEAConstants.ERROR_COLUMN] = self._error_train_y
 
         self._tree_parser = TreeParser(self._model_handler, self.error_tree.estimator_)
         self._tree = self._tree_parser.build_tree(self._error_df, self.preprocessed_feature_names)
