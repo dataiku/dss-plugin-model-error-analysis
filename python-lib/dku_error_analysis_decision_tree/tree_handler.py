@@ -1,6 +1,7 @@
 import logging
 from dku_error_analysis_mpp.dku_error_analyzer import DkuErrorAnalyzer
-from dku_error_analysis_utils import ErrorAnalyzerConstants
+from mealy import ErrorAnalyzerConstants
+
 
 LOGGER = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format="Error Analysis Plugin %(levelname)s - %(message)s")
@@ -33,7 +34,7 @@ class TreeHandler(object):
 
         self.selected_feature_ids = set(range(min(len(self.tree.ranked_features), self.DEFAULT_MAX_NR_FEATURES)))
 
-        summary = self.analyzer.mpp_summary(output_dict=True)
+        summary = self.analyzer.evaluate(output_format='dict')
         confidence_decision = summary[ErrorAnalyzerConstants.CONFIDENCE_DECISION]
         if not confidence_decision:
             # TODO: add message in UI

@@ -4,11 +4,10 @@ import pandas as pd
 import collections
 from sklearn.model_selection import train_test_split
 from dku_error_analysis_model_parser.model_handler_utils import get_original_test_df
-from dku_error_analysis_utils import ErrorAnalyzerConstants
 from dku_error_analysis_tree_parsing.tree_parser import TreeParser
-from dku_error_analysis_decision_tree.node import Node
-from dku_error_analysis_mpp.error_analyzer import ErrorAnalyzer
+from dku_error_analysis_utils import DkuMEAConstants
 import logging
+from mealy import ErrorAnalyzer, ErrorAnalyzerConstants
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format='Error Analysis Plugin | %(levelname)s - %(message)s')
@@ -22,16 +21,22 @@ class DkuErrorAnalyzer(ErrorAnalyzer):
     The nodes of the decision tree are different segments of errors to be studied individually.
     """
 
-    def __init__(self, model_handler, seed=65537):
+    def __init__(self,
+                 model_handler,
+                 max_num_rows=DkuMEAConstants.MAX_NUM_ROWS,
+                 param_grid=None,
+                 random_state=65537):
+
         if model_handler is None:
             raise NotImplementedError('You need to define a model handler.')
 
         self._model_handler = model_handler
         self._target = model_handler.get_target_variable()
         self._model_predictor = model_handler.get_predictor()
-        feature_names = self._model_predictor.get_features()
+        self._max_num_rows = max_num_rows
 
-        super(DkuErrorAnalyzer, self).__init__(model_handler.get_clf(), feature_names, seed)
+        feature_names = self._model_predictor.get_features()
+        super(DkuErrorAnalyzer, self).__init__(model_handler.get_clf(), feature_names, param_grid, random_state)
 
         self._train_x = None
         self._test_x = None
@@ -77,9 +82,9 @@ class DkuErrorAnalyzer(ErrorAnalyzer):
     def _prepare_data_from_dku_saved_model(self):
         """ Preprocess and split original test set from Dku saved model
         into train and test set for the error analyzer """
-        np.random.seed(self._seed)
+        np.random.seed(self.random_state)
 
-        original_df = get_original_test_df(self._model_handler)[:ErrorAnalyzerConstants.MAX_NUM_ROW]
+        original_df = get_original_test_df(self._model_handler)[:self._max_num_rows]
 
         preprocessed_x, y, input_mf_index = self._preprocess_dataframe(original_df)
 
@@ -102,13 +107,13 @@ class DkuErrorAnalyzer(ErrorAnalyzer):
 
     def parse_tree(self):
         """ Parse Decision Tree and get features information used to display distributions """
-        self._error_df.loc[:, ErrorAnalyzerConstants.ERROR_COLUMN] = self.error_train_y
+        self._error_df.loc[:, DkuMEAConstants.ERROR_COLUMN] = self._error_train_y
 
-        self._tree_parser = TreeParser(self._model_handler, self._error_clf)
-        self._tree = self._tree_parser.build_tree(self._error_df, self._features_in_model_performance_predictor)
+        self._tree_parser = TreeParser(self._model_handler, self.error_tree.estimator_)
+        self._tree = self._tree_parser.build_tree(self._error_df, self.preprocessed_feature_names)
         self._tree.parse_nodes(self._tree_parser,
-                               self._features_in_model_performance_predictor,
-                               self.error_train_x)
+                               self.preprocessed_feature_names,
+                               self._error_train_x)
 
     def _get_path_to_node(self, node_id):
         """ return path to node as a list of split steps from the nodes of the de-processed
@@ -121,14 +126,14 @@ class DkuErrorAnalyzer(ErrorAnalyzer):
 
         return path_to_node
 
-    def mpp_summary(self, dku_test_dataset=None, output_dict=False):
+    def evaluate(self, dku_test_dataset=None, output_format='dict'):
         """ print ErrorAnalyzer summary metrics """
         if dku_test_dataset is None:
-            return super(DkuErrorAnalyzer, self).mpp_summary(self._test_x, self._test_y, output_dict=output_dict)
+            return super(DkuErrorAnalyzer, self).evaluate(self._test_x, self._test_y, output_format=output_format)
         else:
             test_df = dku_test_dataset.get_dataframe()
             test_x, test_y, _ = self._preprocess_dataframe(test_df)
-            return super(DkuErrorAnalyzer, self).mpp_summary(test_x, test_y.values, output_dict=output_dict)
+            return super(DkuErrorAnalyzer, self).evaluate(test_x, test_y.values, output_format=output_format)
 
     def predict(self, dku_test_dataset):
         """ Predict model performance on Dku dataset """
