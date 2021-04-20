@@ -17,9 +17,6 @@
         const DEFAULT_MAX_NR_FEATURES = 5;
         const create = function(data) {
             $scope.treeData = data.nodes;
-            angular.forEach($scope.treeData, function(node) {
-                node.localError = TreeUtils.computeLocalError(node);
-            });
             $scope.rankedFeatures = data.rankedFeatures;
             $scope.rankedFeatures.forEach(function(rankedFeature, idx) {
                 rankedFeature.$selected = idx < DEFAULT_MAX_NR_FEATURES;

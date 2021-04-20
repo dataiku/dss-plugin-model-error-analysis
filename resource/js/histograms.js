@@ -12,7 +12,7 @@ app.directive('tooltip', function(TreeUtils) {
             scope.localError = [
                 nrErrors,
                 nrErrors*100/histData.count[binIndex],
-                nrErrors*100/TreeUtils.computeLocalError(scope.treeData[0])[1]
+                nrErrors*100/scope.treeData[0].local_error[1]
             ];
             scope.samples = [
                 histData.count[binIndex],
