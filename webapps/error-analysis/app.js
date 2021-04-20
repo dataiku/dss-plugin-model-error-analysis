@@ -24,6 +24,7 @@
             $scope.rankedFeatures.forEach(function(rankedFeature, idx) {
                 rankedFeature.$selected = idx < DEFAULT_MAX_NR_FEATURES;
             });
+            $scope.epsilon = data.epsilon;
             $scope.actualErrorRate =  1 - data.actualAccuracy;
             TreeInteractions.createTree($scope.treeData, $scope.selectNode);
             $scope.loadingTree = false;
