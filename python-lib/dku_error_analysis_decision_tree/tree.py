@@ -26,7 +26,7 @@ class InteractiveTree(object):
     def __init__(self, df, target, ranked_features, num_features):
         self.df = df.dropna(subset=[target]) # TODO
         self.target = target
-        self.num_features = num_features # TODO: remove this arg (see handling of missing features)
+        self.num_features = num_features
         self.nodes = {0: Node(0, -1)}
         self.ranked_features = []
         for idx, ranked_feature in enumerate(ranked_features):
@@ -99,11 +99,7 @@ class InteractiveTree(object):
         node_id = node.id
         while node_id > 0:
             node = self.get_node(node_id)
-            if node.get_type() == Node.TYPES.NUM:
-                # TODO: change with ch49216
-                df = node.apply_filter(df, self.num_features.get(node.feature, {"mean": None})["mean"])
-            else:
-                df = node.apply_filter(df)
+            df = node.apply_filter(df)
             node_id = node.parent_id
         return df
 
@@ -115,10 +111,9 @@ class InteractiveTree(object):
         if col in self.num_features:
             bins = self.bins.get(col)
             if bins is None:
-                mean = self.num_features[col]["mean"]
-                bins, bin_edges = pd.cut(self.df[col].fillna(mean), bins=min(nr_bins, self.df[col].nunique()), retbins=True, include_lowest=True, right=False)
+                bins, bin_edges = pd.cut(self.df[col], bins=min(nr_bins, self.df[col].nunique()), retbins=True, include_lowest=True, right=False)
                 if i > 0:
-                    bins = pd.cut(column.fillna(mean), bins=bin_edges, right=False)
+                    bins = pd.cut(column, bins=bin_edges, right=False)
             return self.get_stats_numerical_node(column, target_column, bins)
         return self.get_stats_categorical_node(column, target_column, nr_bins if i > 0 else -1)
 

@@ -136,7 +136,7 @@ class NumericalNode(Node):
     def get_type(self):
         return Node.TYPES.NUM
 
-    def apply_filter(self, df, mean):
+    def apply_filter(self, df, mean=None):
         if self.beginning is not None:
             df = df[df[self.feature].gt(self.beginning, fill_value=mean)]
         if self.end is not None:
