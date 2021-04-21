@@ -34,7 +34,6 @@ class DkuErrorVisualizer(_BaseErrorVisualizer):
         super(DkuErrorVisualizer, self).__init__(error_analyzer)
 
         self._tree = error_analyzer.tree
-        self._tree_parser = error_analyzer.tree_parser
 
     def plot_error_tree(self, size=(50, 50)):
         """ Plot the graph of the decision tree

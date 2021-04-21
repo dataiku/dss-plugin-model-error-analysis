@@ -46,17 +46,12 @@ class DkuErrorAnalyzer(ErrorAnalyzer):
         self._error_df = None
 
         self._tree = None
-        self._tree_parser = None
 
     @property
     def tree(self):
         if self._tree is None:
             self.parse_tree()
         return self._tree
-
-    @property
-    def tree_parser(self):
-        return self._tree_parser
 
     def fit(self):
         """
@@ -108,8 +103,8 @@ class DkuErrorAnalyzer(ErrorAnalyzer):
     def parse_tree(self):
         """ Parse Decision Tree and get features information used to display distributions """
         self._error_df.loc[:, DkuMEAConstants.ERROR_COLUMN] = self._error_train_y
-        self._tree_parser = TreeParser(self._model_handler, self.error_tree.estimator_)
-        self._tree = self._tree_parser.build_tree(self._error_df, self.preprocessed_feature_names, self._error_train_x)
+        tree_parser = TreeParser(self._model_handler, self.error_tree.estimator_)
+        self._tree = tree_parser.build_tree(self._error_df, self.preprocessed_feature_names, self._error_train_x)
 
     def _get_path_to_node(self, node_id):
         """ return path to node as a list of split steps from the nodes of the de-processed
