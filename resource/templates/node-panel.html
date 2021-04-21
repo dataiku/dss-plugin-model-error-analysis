@@ -134,7 +134,7 @@
             These directional insights can be leveraged to improve model design, enhance data collection, or identify key samples for manual investigation.
         </p>
         <p>
-            A decision tree is trained to predict whether your original model <strong ng-if="originalModelName">({{ originalModelName }})</strong> successfully predicted an individual sample, or not.
+            A decision tree is trained to predict whether your original model <strong ng-if="originalModelName">({{ originalModelName }})</strong> would successfully predict an individual sample, or not.
             <span ng-if="isRegression == false">A successful prediction by your original model is assessed when the predicted class is the correct one.</span>
             <span ng-if="isRegression">A successful prediction by your original model is assessed when the predicted value is within close range to the target value <strong>(threshold used: {{ epsilon ? toFixedIfNeeded(epsilon, 3, true) : '...' }})</strong>.</span>
         </p>
@@ -142,7 +142,7 @@
             The tree is trained on the test set of your original model, meaning its nodes represent subpopulations of these test samples, with similar characteristics. This way, Model Error Analysis highlights the subsets where your original model made most of its mistakes.
         </p>
         <p>
-            Select a node to display more information on its samples. Nodes with high fraction of the total error and a high local error are likely to be of greatest interest for error analysis.
+            Select a node to display more information on its samples. Nodes with a high fraction of the total error and a high local error are likely to be of greatest interest for error analysis.
         </p>
         <p>
             See the <a class="link">Plugin documentation&nbsp;<i class="icon-external-link"></i></a> for more information.
