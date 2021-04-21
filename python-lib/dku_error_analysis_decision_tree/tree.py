@@ -24,14 +24,10 @@ class InteractiveTree(object):
 
     """
     def __init__(self, df, target, ranked_features, num_features):
-        try:
-            df = df.dropna(subset=[target])
-            df.loc[:, target] = df.loc[:, target].apply(safe_str) # for classification
-        except KeyError:
-            raise Exception("The target %s is not one of the columns of the dataset" % target)
+        self.df = df.dropna(subset=[target]) # TODO
         self.target = target
         self.num_features = num_features # TODO: remove this arg (see handling of missing features)
-        self.nodes = {}
+        self.nodes = {0: Node(0, -1)}
         self.ranked_features = []
         for idx, ranked_feature in enumerate(ranked_features):
             self.ranked_features.append({
@@ -39,7 +35,6 @@ class InteractiveTree(object):
                 "name": ranked_feature,
                 "numerical": ranked_feature in num_features
             })
-        self.df = df
         self.bins = {}
         self.leaves = set()
 
@@ -60,24 +55,20 @@ class InteractiveTree(object):
         dot_str += "}"
         return dot_str
 
-    def set_node_info(self, node):
-        nr_errors = self.df[self.df[self.target] == ErrorAnalyzerConstants.WRONG_PREDICTION].shape[0]
-        filtered_df = self.get_filtered_df(node, self.df)
-        class_samples = filtered_df[self.target].value_counts()
-        if ErrorAnalyzerConstants.WRONG_PREDICTION in class_samples:
-            global_error = class_samples[ErrorAnalyzerConstants.WRONG_PREDICTION] / float(nr_errors)
-        else:
-            global_error = 0
-        samples = filtered_df.shape[0]
-        sorted_class_samples = sorted((class_samples).to_dict().items(), key=lambda x: (-x[1], x[0]))
+    def set_node_info(self, node_id, samples, class_samples):
+        sorted_class_samples = sorted(class_samples.items(), key=lambda x: -x[1])
         if samples > 0:
             prediction = sorted_class_samples[0][0]
         else:
             prediction = None
-        if node.id == 0:
-            node.set_node_info(samples, samples, sorted_class_samples, prediction, global_error)
+
+        node = self.get_node(node_id)
+        if node_id == 0:
+            node.set_node_info(samples, samples, sorted_class_samples, prediction, 1)
         else:
-            node.set_node_info(samples, self.get_node(0).samples[0], sorted_class_samples, prediction, global_error)
+            root = self.get_node(0)
+            global_error = class_samples[ErrorAnalyzerConstants.WRONG_PREDICTION] / root.local_error[1]
+            node.set_node_info(samples, root.samples[0], sorted_class_samples, prediction, global_error)
 
     def jsonify_nodes(self):
         jsonified_tree = {}
@@ -90,27 +81,17 @@ class InteractiveTree(object):
         parent_node = self.get_node(node.parent_id)
         if parent_node is not None:
             parent_node.children_ids.append(node.id)
-        self.set_node_info(node)
 
     def get_node(self, i):
         return self.nodes.get(i)
 
     def add_split_no_siblings(self, node_type, parent_id, feature, value, left_node_id, right_child_id):
-        parent_node = self.get_node(parent_id)
         if node_type == Node.TYPES.NUM:
-            self.add_numerical_split_no_siblings(parent_node, feature, value, left_node_id, right_child_id)
+            left = NumericalNode(left_node_id, parent_id, feature, end=value)
+            right = NumericalNode(right_child_id, parent_id, feature, beginning=value)
         else:
-            self.add_categorical_split_no_siblings(parent_node, feature, value, left_node_id, right_child_id)
-
-    def add_numerical_split_no_siblings(self, parent_node, feature, value, left_node_id, right_child_id):
-        new_node_left = NumericalNode(left_node_id, parent_node.id, feature, end=value)
-        new_node_right = NumericalNode(right_child_id, parent_node.id, feature, beginning=value)
-        self.add_node(new_node_left)
-        self.add_node(new_node_right)
-
-    def add_categorical_split_no_siblings(self, parent_node, feature, values, left_node_id, right_child_id):
-        left = CategoricalNode(left_node_id, parent_node.id, feature, values)
-        right = CategoricalNode(right_child_id, parent_node.id, feature, list(values), others=True)
+            left = CategoricalNode(left_node_id, parent_id, feature, value)
+            right = CategoricalNode(right_child_id, parent_id, feature, list(value), others=True) #TODO: why the list
         self.add_node(left)
         self.add_node(right)
 

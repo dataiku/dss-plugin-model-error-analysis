@@ -50,16 +50,14 @@ class Node(object):
         self.samples = [samples, 100.0 * samples / total_samples]
         self.probabilities = []
         for class_name, class_samples in probabilities:
-            self.probabilities.append([class_name, class_samples/float(samples), class_samples])
+            self.probabilities.append([class_name, class_samples/samples, class_samples])
         self.prediction = prediction
         self.global_error = global_error
 
         if self.prediction and self.probabilities[0][0] == ErrorAnalyzerConstants.WRONG_PREDICTION:
             self.local_error = self.probabilities[0][1:3]
-        elif len(self.probabilities) > 1:
-            self.local_error = self.probabilities[1][1:3]
         else:
-            self.local_error = [0, 0]
+            self.local_error = self.probabilities[1][1:3]
 
     def get_type(self):
         raise NotImplementedError

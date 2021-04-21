@@ -59,11 +59,7 @@ class DkuErrorVisualizer(_BaseErrorVisualizer):
                 feature_name = feature["name"]
                 leaf = self._tree.get_node(leaf_id)
                 node_summary = 'Leaf {} ({}: {:.3f}'.format(leaf.id, *leaf.probabilities[0])
-                if len(leaf.probabilities) > 1:
-                    node_summary += ', {}: {:.3f})'.format(*leaf.probabilities[1])
-                else:
-                    node_summary += ')'
-                print(node_summary)
+                node_summary += ', {}: {:.3f})'.format(*leaf.probabilities[1])
 
                 leaf_stats = self._tree.get_stats(leaf.id, feature_name, nr_bins)
                 feature_is_numerical = feature["numerical"]
