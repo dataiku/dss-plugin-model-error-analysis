@@ -130,19 +130,19 @@
     </div>
     <div class="plugin-explanation">
         <p>
-            Model Error Analysis provides insights on features critically correlated with a model failures.
-            This can give directions to improve model design, enhance data collection, or select critical samples for manual inspection.
+            Model Error Analysis provides insights on features critically correlated with a model's failures.
+            These directional insights can be leveraged to improve model design, enhance data collection, or identify key samples for manual investigation.
         </p>
         <p>
-            A decision tree is trained to predict whether your original model <strong ng-if="originalModelName">({{ originalModelName }})</strong> wrongly predicts its own target.
-            <span ng-if="isRegression == false">A prediction from your original model is considered wrong if the predicted class is not the correct one.</span>
-            <span ng-if="isRegression">A prediction from your original model is considered wrong if the predicted value is too far from the correct one (threshold used: 0.1).</span> <!-- TODO -->
+            A decision tree is trained to predict whether your original model <strong ng-if="originalModelName">({{ originalModelName }})</strong> would successfully predict an individual sample, or not.
+            <span ng-if="isRegression == false">A successful prediction by your original model is assessed when the predicted class is the correct one.</span>
+            <span ng-if="isRegression">A successful prediction by your original model is assessed when the predicted value is within close range to the target value <strong>(threshold used: {{ epsilon ? toFixedIfNeeded(epsilon, 3, true) : '...' }})</strong>.</span>
         </p>
         <p>
-            The tree is trained on the test set of your original model, meaning its nodes represent subsets of these test samples with similar feature values. This way, Model Error Analysis highlights the samples where your original model makes most of its wrong predictions.
+            The tree is trained on the test set of your original model, meaning its nodes represent subpopulations of these test samples, with similar characteristics. This way, Model Error Analysis highlights the subsets where your original model made most of its mistakes.
         </p>
         <p>
-            Select a node to display more information on its samples. Nodes with higher local error and higher fraction of total error should be of a greater interest for the error analysis.
+            Select a node to display more information on its samples. Nodes with a high fraction of the total error and a high local error are likely to be of greatest interest for error analysis.
         </p>
         <p>
             See the <a class="link">Plugin documentation&nbsp;<i class="icon-external-link"></i></a> for more information.

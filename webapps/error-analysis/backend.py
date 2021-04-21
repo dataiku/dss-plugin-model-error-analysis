@@ -40,6 +40,7 @@ def load():
 
         return jsonify(nodes=handler.tree.jsonify_nodes(),
             rankedFeatures=handler.tree.ranked_features,
+            epsilon=handler.analyzer.epsilon,
             actualAccuracy=accuracy)
     except:
         LOGGER.error(traceback.format_exc())
