@@ -25,6 +25,7 @@ class DkuErrorAnalyzer(ErrorAnalyzer):
                  model_handler,
                  max_num_rows=DkuMEAConstants.MAX_NUM_ROWS,
                  param_grid=None,
+                 probability_threshold=0.5,
                  random_state=65537):
 
         if model_handler is None:
@@ -36,12 +37,10 @@ class DkuErrorAnalyzer(ErrorAnalyzer):
         self._max_num_rows = max_num_rows
 
         feature_names = self._model_predictor.get_features()
-        super(DkuErrorAnalyzer, self).__init__(model_handler.get_clf(), feature_names, param_grid, random_state)
+        super(DkuErrorAnalyzer, self).__init__(model_handler.get_clf(), feature_names, param_grid, probability_threshold, random_state)
 
         self._train_x = None
-        self._test_x = None
         self._train_y = None
-        self._test_y = None
 
         self._error_df = None
 
@@ -91,17 +90,10 @@ class DkuErrorAnalyzer(ErrorAnalyzer):
         x_df = pd.DataFrame(preprocessed_x, index=input_mf_index)
         y_df = pd.Series(y, index=input_mf_index)
 
-        train_x_df, test_x_df, train_y_df, test_y_df = train_test_split(
-            x_df, y_df, test_size=ErrorAnalyzerConstants.TEST_SIZE
-        )
+        self._train_x = x_df.values
+        self._train_y = y_df.values
 
-        self._train_x = train_x_df.values
-        self._train_y = train_y_df.values
-
-        self._test_x = test_x_df.values
-        self._test_y = test_y_df.values
-
-        original_train_df = original_df.loc[train_x_df.index]
+        original_train_df = original_df.loc[x_df.index]
 
         self._error_df = original_train_df.drop(self._target, axis=1)
 
@@ -129,7 +121,7 @@ class DkuErrorAnalyzer(ErrorAnalyzer):
     def evaluate(self, dku_test_dataset=None, output_format='dict'):
         """ print ErrorAnalyzer summary metrics """
         if dku_test_dataset is None:
-            return super(DkuErrorAnalyzer, self).evaluate(self._test_x, self._test_y, output_format=output_format)
+            return super(DkuErrorAnalyzer, self).evaluate(self._train_x, self._train_y, output_format=output_format)
         else:
             test_df = dku_test_dataset.get_dataframe()
             test_x, test_y, _ = self._preprocess_dataframe(test_df)
