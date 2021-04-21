@@ -1,9 +1,6 @@
 'use strict';
 app.service("TreeUtils", function(Format) {
     const WRONG_PREDICTION = "Wrong prediction";
-    const computeLocalError = function(d) {
-        return (d.probabilities.find(_ => _[0] === WRONG_PREDICTION) || ["", 0, 0]).slice(1,3)
-    };
 
     const addNode = function(svgParentElem, radius, getLocalErrorFunc, inTree, label) {
         svgParentElem.append("circle")
@@ -94,7 +91,6 @@ app.service("TreeUtils", function(Format) {
 
     return {
         addNode,
-        computeLocalError,
         getDecisionRule,
         nodeValues,
         getPath,
@@ -190,7 +186,7 @@ app.service("TreeInteractions", function(Format, TreeUtils) {
         showSelected(selectedNode.node_id, treeData);
         
         const node = d3.select(".placeholder-node svg").append("g").attr("id", "node-panel__node");
-        TreeUtils.addNode(node, 30, d => selectedNode.localError[0]);
+        TreeUtils.addNode(node, 30, d => selectedNode.local_error[0]);
 
         //if (id == 0) { // TODO
         //    scope.histData = scope.histDataWholeSet;
@@ -275,7 +271,7 @@ app.service("TreeInteractions", function(Format, TreeUtils) {
             hideUnhovered();
         });
 
-        TreeUtils.addNode(nodes, radius, d => d.localError[0], true);
+        TreeUtils.addNode(nodes, radius, d => d.local_error[0], true);
 
         nodeEnter.filter(d => d.node_id > 0)
         .append("text")

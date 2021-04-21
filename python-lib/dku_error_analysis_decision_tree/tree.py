@@ -44,8 +44,8 @@ class InteractiveTree(object):
         self.bins = {}
         self.leaves = set()
 
-    def to_dot_string(self):
-        dot_str = 'digraph Tree {\nnode [shape=box, style="filled, rounded", color="black", fontname=helvetica] ;\n'
+    def to_dot_string(self, size=(50, 50)):
+        dot_str = 'digraph Tree {{\n size="{0},{1}!";\nnode [shape=box, style="filled, rounded", color="black", fontname=helvetica] ;\n'.format(size[0], size[1])
         dot_str += 'edge [fontname=helvetica] ;\ngraph [ranksep=equally, splines=polyline] ;\n'
         ids = deque()
         ids.append(0)
@@ -54,7 +54,8 @@ class InteractiveTree(object):
             node = self.get_node(ids.popleft())
             dot_str += node.to_dot_string() + "\n"
             if node.parent_id >= 0:
-                dot_str += '{} -> {} ;\n'.format(node.parent_id, node.id)
+                edge_width = max(1, ErrorAnalyzerConstants.GRAPH_MAX_EDGE_WIDTH * node.global_error)
+                dot_str += '{} -> {} [penwidth={}];\n'.format(node.parent_id, node.id, edge_width)
             ids += node.children_ids
         dot_str += '{rank=same ; '+ '; '.join(map(safe_str, self.leaves)) + '} ;\n'
         dot_str += "}"
@@ -100,9 +101,9 @@ class InteractiveTree(object):
         filtered_df = self.get_filtered_df(node, self.df)
         class_samples = filtered_df[self.target].value_counts()
         if ErrorAnalyzerConstants.WRONG_PREDICTION in class_samples:
-            error = class_samples[ErrorAnalyzerConstants.WRONG_PREDICTION] / float(nr_errors)
+            global_error = class_samples[ErrorAnalyzerConstants.WRONG_PREDICTION] / float(nr_errors)
         else:
-            error = 0
+            global_error = 0
         samples = filtered_df.shape[0]
         sorted_class_samples = sorted((class_samples).to_dict().items(), key=lambda x: (-x[1], x[0]))
         if samples > 0:
@@ -110,9 +111,9 @@ class InteractiveTree(object):
         else:
             prediction = None
         if node.id == 0:
-            node.set_node_info(samples, samples, sorted_class_samples, prediction, error)
+            node.set_node_info(samples, samples, sorted_class_samples, prediction, global_error)
         else:
-            node.set_node_info(samples, self.get_node(0).samples[0], sorted_class_samples, prediction, error)
+            node.set_node_info(samples, self.get_node(0).samples[0], sorted_class_samples, prediction, global_error)
 
     def jsonify_nodes(self):
         jsonified_tree = {}

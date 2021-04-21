@@ -8,5 +8,5 @@ def safe_str(val):
     return str(val)
 
 class DkuMEAConstants(object):
-    ERROR_COLUMN = '__dku_error__'
+    ERROR_COLUMN = "__dku_error__"
     MAX_NUM_ROWS = 100000
