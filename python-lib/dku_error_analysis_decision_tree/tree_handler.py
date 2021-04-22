@@ -43,9 +43,7 @@ class TreeHandler(object):
         return summary[ErrorAnalyzerConstants.PRIMARY_MODEL_TRUE_ACCURACY] # TODO: compute proper value
 
     def set_error_analyzer(self, original_model_handler):
-        pred = original_model_handler.get_predictor()
-        probability_threshold = pred.params.model_perf.get('usedThreshold', None)
-        self.analyzer = DkuErrorAnalyzer(original_model_handler, probability_threshold=probability_threshold)
+        self.analyzer = DkuErrorAnalyzer(original_model_handler)
 
     def set_current_node_id(self, node_id):
         self.current_node_id = node_id
