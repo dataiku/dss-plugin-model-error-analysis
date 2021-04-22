@@ -29,4 +29,4 @@ You can log feature requests or issues on our [dedicated Github repository](http
 The Model Error Analysis plugin is:
 
    Copyright (c) 2020 Dataiku SAS
-   Licensed under the [Apache](LICENSE.md).
+   Licensed under the [Apache License](LICENSE).
