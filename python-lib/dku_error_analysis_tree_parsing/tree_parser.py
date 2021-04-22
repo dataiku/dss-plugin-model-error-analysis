@@ -167,14 +167,15 @@ class TreeParser(object):
             split_parameters = self._get_split_parameters(preprocessed_feature)
             if split_parameters.uses_preprocessed_feature:
                 tree.df[split_parameters.feature] = preprocessed_x[:, feature_idx]
-            if split_parameters.value is None:
-                split_parameters.value = split_parameters.value_func(threshold)
+            value = split_parameters.value
+            if value is None:
+                value = split_parameters.value_func(threshold)
             if split_parameters.force_others_on_right:
                 left_child_id, right_child_id = children_right[node_id], children_left[node_id]
             else:
                 left_child_id, right_child_id = children_left[node_id], children_right[node_id]
 
-            tree.add_split_no_siblings(split_parameters.node_type, node_id, split_parameters.feature, split_parameters.value, left_child_id, right_child_id)
+            tree.add_split_no_siblings(split_parameters.node_type, node_id, split_parameters.feature, value, left_child_id, right_child_id)
 
             ids.append(left_child_id)
             ids.append(right_child_id)
