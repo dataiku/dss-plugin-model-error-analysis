@@ -103,7 +103,7 @@ class InteractiveTree(object):
             node_id = node.parent_id
         return df
 
-    def get_stats(self, i, col, nr_bins=10):
+    def get_stats(self, i, col, nr_bins, enforced_bins=None):
         node = self.get_node(i)
         filtered_df = self.get_filtered_df(node, self.df)
         column = filtered_df[col]
@@ -115,7 +115,9 @@ class InteractiveTree(object):
                 if i > 0:
                     bins = pd.cut(column, bins=bin_edges, right=False)
             return self.get_stats_numerical_node(column, target_column, bins)
-        return self.get_stats_categorical_node(column, target_column, nr_bins if i > 0 else -1)
+        if enforced_bins:
+            nr_bins = len(enforced_bins)
+        return self.get_stats_categorical_node(column, target_column, nr_bins, enforced_bins)
 
     def get_stats_numerical_node(self, column, target_column, bins):
         stats = {
@@ -139,7 +141,7 @@ class InteractiveTree(object):
                 stats["bin_edge"].append(interval.right)
         return stats
 
-    def get_stats_categorical_node(self, column, target_column, nr_bins):
+    def get_stats_categorical_node(self, column, target_column, nr_bins, bins):
         stats = {
             "bin_value": [],
             "target_distrib": {ErrorAnalyzerConstants.WRONG_PREDICTION: [], ErrorAnalyzerConstants.CORRECT_PREDICTION: []},
@@ -150,6 +152,8 @@ class InteractiveTree(object):
             target_distrib = target_grouped.value_counts(dropna=False)
             col_distrib = target_grouped.count().sort_values(ascending=False)
             for value in col_distrib.index:
+                if bins is not None and value not in bins:
+                    continue
                 target_distrib_dict = target_distrib[value].to_dict()
                 stats["target_distrib"][ErrorAnalyzerConstants.WRONG_PREDICTION].append(target_distrib_dict.get(ErrorAnalyzerConstants.WRONG_PREDICTION, 0))
                 stats["target_distrib"][ErrorAnalyzerConstants.CORRECT_PREDICTION].append(target_distrib_dict.get(ErrorAnalyzerConstants.CORRECT_PREDICTION, 0))
