@@ -35,7 +35,7 @@ class InteractiveTree(object):
                 "name": ranked_feature,
                 "numerical": ranked_feature in num_features
             })
-        self.bins = {}
+        self.bin_edges = {}
         self.leaves = set()
 
     def to_dot_string(self, size=(50, 50)):
@@ -109,11 +109,10 @@ class InteractiveTree(object):
         column = filtered_df[col]
         target_column = filtered_df[self.target]
         if col in self.num_features:
-            bins = self.bins.get(col)
-            if bins is None:
-                bins, bin_edges = pd.cut(self.df[col], bins=min(nr_bins, self.df[col].nunique()), retbins=True, include_lowest=True, right=False)
-                if i > 0:
-                    bins = pd.cut(column, bins=bin_edges, right=False)
+            if col not in self.bin_edges:
+                _, bin_edges = pd.cut(self.df[col], bins=min(nr_bins, self.df[col].nunique()), retbins=True, include_lowest=True, right=False)
+                self.bin_edges[col] = bin_edges
+            bins = pd.cut(column, bins=self.bin_edges[col], right=False)
             return self.get_stats_numerical_node(column, target_column, bins)
         if enforced_bins:
             nr_bins = len(enforced_bins)
