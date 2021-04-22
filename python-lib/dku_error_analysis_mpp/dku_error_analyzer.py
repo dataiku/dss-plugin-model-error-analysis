@@ -35,7 +35,7 @@ class DkuErrorAnalyzer(ErrorAnalyzer):
         self._model_predictor = model_handler.get_predictor()
         self._max_num_rows = max_num_rows
 
-        probability_threshold = model_handler.get_predictor().params.model_perf.get('usedThreshold', None)
+        probability_threshold = self._model_predictor.params.model_perf.get('usedThreshold', None)
         feature_names = self._model_predictor.get_features()
         super(DkuErrorAnalyzer, self).__init__(model_handler.get_clf(), feature_names, param_grid, probability_threshold, random_state)
 
