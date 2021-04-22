@@ -13,14 +13,16 @@
         $scope.leftPanel = {};
         const node = d3.select(".tree-legend_pie svg").append("g");
         TreeUtils.addNode(node, 16, d=>.4, false, "X");
-        
+
+        let chartFeatures = new Set();
         const DEFAULT_MAX_NR_FEATURES = 5;
         const create = function(data) {
             $scope.treeData = data.nodes;
             $scope.rankedFeatures = data.rankedFeatures;
-            $scope.rankedFeatures.forEach(function(rankedFeature, idx) {
-                rankedFeature.$selected = idx < DEFAULT_MAX_NR_FEATURES;
-            });
+            for (let idx = 0; idx < Math.min(DEFAULT_MAX_NR_FEATURES, $scope.rankedFeatures.length); idx++) {
+                $scope.rankedFeatures[idx].$selected = true;
+                chartFeatures.add($scope.rankedFeatures[idx].name);
+            }
             $scope.epsilon = data.epsilon;
             $scope.actualErrorRate =  1 - data.actualAccuracy;
             TreeInteractions.createTree($scope.treeData, $scope.selectNode);
@@ -42,11 +44,13 @@
 
         const selectFeatures = function() {
             const selectedFeatures = $scope.rankedFeatures.filter(_ => _.$selected);
-            if (!selectedFeatures.length) return;
+            if ((selectedFeatures.length === chartFeatures.size)
+                && selectedFeatures.every(_ => chartFeatures.has(_.name))) return;
             $http.post(getWebAppBackendUrl("select-features"), {"feature_ids": selectedFeatures.map(_ => _.rank)})
             .then(function() {
+                chartFeatures = new Set(selectedFeatures.map(_ => _.name));
                 loadHistograms(selectedFeatures);
-                $scope.leftPanel.seeGlobalChartData && fetchGlobalChartData(selectedFeatures);
+                fetchGlobalChartData(selectedFeatures);
             }, function(e) {
                 $scope.createModal.error(e.data);
             });
@@ -61,13 +65,12 @@
 
         $scope.displayOrHideGlobalData = function() {
             $scope.leftPanel.seeGlobalChartData = !$scope.leftPanel.seeGlobalChartData;
-            if ($scope.leftPanel.seeGlobalChartData) {
-                fetchGlobalChartData($scope.rankedFeatures.filter(_ => _.$selected));
-            }
+            fetchGlobalChartData($scope.rankedFeatures);
         }
 
         const fetchGlobalChartData = function(selectedFeatures) {
-            if (!selectedFeatures.filter(_ => !$scope.histDataWholeSet[_.name]).length) return;
+            if (!$scope.leftPanel.seeGlobalChartData || !chartFeatures.size) return;
+            if (!selectedFeatures.filter(_ => !$scope.histDataWholeSet[_.name] && _.$selected).length) return;
             $http.get(getWebAppBackendUrl("global-chart-data"))
             .then(function(response) {
                 Object.assign($scope.histDataWholeSet, response.data);
@@ -77,6 +80,7 @@
         }
 
         const loadHistograms = function(selectedFeatures) {
+            if (!chartFeatures.size) return;
             if (selectedFeatures && !selectedFeatures.filter(_ => !$scope.histData[_.name]).length) return;
             $http.get(getWebAppBackendUrl("select-node/" + $scope.selectedNode.node_id))
                 .then(function(response) {

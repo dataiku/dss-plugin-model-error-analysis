@@ -73,7 +73,7 @@
                     <div>In node samples</div>
                 </div>
                 <div class="legend-histograms__global"
-                    ng-click="globalLegendIsHovered = !globalLegendIsHovered; displayOrHideGlobalData()"
+                    ng-click="globalLegendIsHovered = !globalLegendIsHovered; !featureSelectorShown && displayOrHideGlobalData()"
                     ng-class="{'legend-histograms__global--disabled': !!leftPanel.seeGlobalChartData === !!globalLegendIsHovered}" 
                     ng-mouseenter="globalLegendIsHovered = true"
                     ng-mouseleave="globalLegendIsHovered = false">
