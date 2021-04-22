@@ -83,6 +83,7 @@ class DkuErrorVisualizer(_BaseErrorVisualizer):
                         leaf_hist_data = {leaf.prediction: np.array(leaf_stats["count"])/leaf.samples[0]}
                 else:
                     leaf_hist_data = None
+                    logger.info("No values for the feature %s at the leaf %s", feature_name, leaf.id)
                     if show_global:
                         bins = root_stats["bin_edge"] if feature_is_numerical else root_stats["bin_value"]
 
