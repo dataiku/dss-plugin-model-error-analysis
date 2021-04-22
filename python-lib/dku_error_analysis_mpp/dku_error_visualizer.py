@@ -87,7 +87,8 @@ class DkuErrorVisualizer(_BaseErrorVisualizer):
                     if show_global:
                         bins = root_stats["bin_edge"] if feature_is_numerical else root_stats["bin_value"]
 
-                x_ticks = _BaseErrorVisualizer._add_new_plot(figsize, bins, feature_name, leaf.id)
+                x_ticks = range(len(bins))
+                _BaseErrorVisualizer._add_new_plot(figsize, bins, x_ticks, feature_name, leaf.id)
                 _BaseErrorVisualizer._plot_feature_distribution(x_ticks, feature_is_numerical, leaf_hist_data, root_hist_data)
 
         plt.show()
