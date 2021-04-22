@@ -42,7 +42,7 @@
                     <strong>{{ selectedNode.local_error[1] }}</strong> wrong {{ 'prediction' | pluralize: selectedNode.local_error[1] }} (<strong>{{ toFixedIfNeeded(selectedNode.local_error[0]*100, 2, true) }}%</strong> of the node samples).
                 </p>
                 <p>
-                    They represent <strong>{{ toFixedIfNeeded(selectedNode.global_error*100, 2, true) }}%</strong> of total wrong predictions.
+                    They represent <strong>{{ toFixedIfNeeded(selectedNode.global_error*100, 2, true) }}%</strong> of all the wrong predictions.
                 </p>
             </div>
         </div>
