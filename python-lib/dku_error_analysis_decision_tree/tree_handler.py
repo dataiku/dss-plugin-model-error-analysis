@@ -60,12 +60,12 @@ class TreeHandler(object):
         return self._get_stats_node(node_id, self.already_fetched_locally)
 
     def get_stats_root(self):
-        return self._get_stats_node(0, self.already_fetched_globally)
+        return self._get_stats_node(0, self.already_fetched_globally, nr_bins=-1)
 
-    def _get_stats_node(self, node_id, excluded_id_set):
+    def _get_stats_node(self, node_id, excluded_id_set, nr_bins=10):
         stats = {}
         for idx in self.selected_feature_ids - excluded_id_set:
             feature_name = self.tree.ranked_features[idx]["name"]
-            stats[feature_name] = self.tree.get_stats(node_id, feature_name)
+            stats[feature_name] = self.tree.get_stats(node_id, feature_name, nr_bins)
             excluded_id_set.add(idx)
         return stats

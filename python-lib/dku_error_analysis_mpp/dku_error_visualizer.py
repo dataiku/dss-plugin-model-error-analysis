@@ -20,7 +20,6 @@ plt.rc('ytick', labelsize=SMALL_SIZE)
 plt.rc('legend', fontsize=SMALL_SIZE)
 plt.rc("hatch", color="white", linewidth=4)
 
-
 class DkuErrorVisualizer(_BaseErrorVisualizer):
     """
     ErrorVisualizer provides visual utilities to analyze the error classifier in ErrorAnalyzer and DkuErrorAnalyzer.
@@ -34,7 +33,6 @@ class DkuErrorVisualizer(_BaseErrorVisualizer):
         super(DkuErrorVisualizer, self).__init__(error_analyzer)
 
         self._tree = error_analyzer.tree
-        self._tree_parser = error_analyzer.tree_parser
 
     def plot_error_tree(self, size=(50, 50)):
         """ Plot the graph of the decision tree
@@ -51,44 +49,46 @@ class DkuErrorVisualizer(_BaseErrorVisualizer):
 
         leaf_nodes = self._get_ranked_leaf_ids(leaf_selector, rank_leaves_by)
         ranked_features = self._tree.ranked_features[:top_k_features]
-        if show_global:
-            root_samples = self._tree.get_node(0).samples[0]
-            root_hist_data_all_features = {}
 
         for leaf_id in leaf_nodes:
             for feature in ranked_features:
                 feature_name = feature["name"]
                 leaf = self._tree.get_node(leaf_id)
                 node_summary = 'Leaf {} ({}: {:.3f}'.format(leaf.id, *leaf.probabilities[0])
-                if len(leaf.probabilities) > 1:
-                    node_summary += ', {}: {:.3f})'.format(*leaf.probabilities[1])
-                else:
-                    node_summary += ')'
-                print(node_summary)
+                node_summary += ', {}: {:.3f})'.format(*leaf.probabilities[1])
 
                 leaf_stats = self._tree.get_stats(leaf.id, feature_name, nr_bins)
                 feature_is_numerical = feature["numerical"]
                 bins = leaf_stats["bin_edge"] if feature_is_numerical else leaf_stats["bin_value"]
 
                 if show_global:
-                    if feature_name not in root_hist_data_all_features:
-                        root_hist_data_all_features[feature_name] = self._tree.get_stats(0, feature_name, min(len(bins), nr_bins))
+                    root_samples = self._tree.get_node(0).samples[0]
+                    root_stats = self._tree.get_stats(0, feature_name, nr_bins, set(bins)) # TODO: optimize
                     if show_class:
                         root_hist_data = {}
-                        for class_value, bar_heights in root_hist_data_all_features[feature_name]["target_distrib"].items():
-                            root_hist_data[class_value] = np.array(bar_heights)/float(root_samples)
+                        for class_value, bar_heights in root_stats["target_distrib"].items():
+                            root_hist_data[class_value] = np.array(bar_heights)/root_samples
                     else:
                         root_hist_data, root_prediction = {}, self._tree.get_node(0).prediction
-                        root_hist_data[root_prediction] = np.array(root_hist_data_all_features[feature_name]["count"])/float(root_samples)
-
-                leaf_hist_data = {}
-                if show_class:
-                    for class_value, bar_heights in leaf_stats["target_distrib"].items():
-                        leaf_hist_data[class_value] = np.array(bar_heights)/float(leaf.samples[0])
+                        root_hist_data[root_prediction] = np.array(root_stats["count"])/root_samples
                 else:
-                    leaf_hist_data = {leaf.prediction: np.array(leaf_stats["count"])/float(leaf.samples[0])}
+                    root_hist_data = None
 
-                x_ticks = _BaseErrorVisualizer._add_new_plot(figsize, bins, feature_name, leaf.id)
-                _BaseErrorVisualizer._plot_feature_distribution(x_ticks, feature_is_numerical, leaf_hist_data, root_hist_data if show_global else None)
+                if bins:
+                    leaf_hist_data = {}
+                    if show_class:
+                        for class_value, bar_heights in leaf_stats["target_distrib"].items():
+                            leaf_hist_data[class_value] = np.array(bar_heights)/leaf.samples[0]
+                    else:
+                        leaf_hist_data = {leaf.prediction: np.array(leaf_stats["count"])/leaf.samples[0]}
+                else:
+                    leaf_hist_data = None
+                    logger.info("No values for the feature %s at the leaf %s", feature_name, leaf.id)
+                    if show_global:
+                        bins = root_stats["bin_edge"] if feature_is_numerical else root_stats["bin_value"]
+
+                x_ticks = range(len(bins))
+                _BaseErrorVisualizer._add_new_plot(figsize, bins, x_ticks, feature_name, leaf.id)
+                _BaseErrorVisualizer._plot_feature_distribution(x_ticks, feature_is_numerical, leaf_hist_data, root_hist_data)
 
         plt.show()
