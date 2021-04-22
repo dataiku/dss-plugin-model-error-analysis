@@ -1,5 +1,7 @@
 from dku_error_analysis_decision_tree.node import Node, NumericalNode, CategoricalNode
-from dku_error_analysis_utils import safe_str, ErrorAnalyzerConstants
+from dku_error_analysis_utils import safe_str
+from mealy import ErrorAnalyzerConstants
+
 import pandas as pd
 from collections import deque
 from dku_error_analysis_tree_parsing.depreprocessor import descale_numerical_thresholds
@@ -42,8 +44,8 @@ class InteractiveTree(object):
         self.bins = {}
         self.leaves = set()
 
-    def to_dot_string(self):
-        dot_str = 'digraph Tree {\nnode [shape=box, style="filled, rounded", color="black", fontname=helvetica] ;\n'
+    def to_dot_string(self, size=(50, 50)):
+        dot_str = 'digraph Tree {{\n size="{0},{1}!";\nnode [shape=box, style="filled, rounded", color="black", fontname=helvetica] ;\n'.format(size[0], size[1])
         dot_str += 'edge [fontname=helvetica] ;\ngraph [ranksep=equally, splines=polyline] ;\n'
         ids = deque()
         ids.append(0)
@@ -52,7 +54,8 @@ class InteractiveTree(object):
             node = self.get_node(ids.popleft())
             dot_str += node.to_dot_string() + "\n"
             if node.parent_id >= 0:
-                dot_str += '{} -> {} ;\n'.format(node.parent_id, node.id)
+                edge_width = max(1, ErrorAnalyzerConstants.GRAPH_MAX_EDGE_WIDTH * node.global_error)
+                dot_str += '{} -> {} [penwidth={}];\n'.format(node.parent_id, node.id, edge_width)
             ids += node.children_ids
         dot_str += '{rank=same ; '+ '; '.join(map(safe_str, self.leaves)) + '} ;\n'
         dot_str += "}"
@@ -96,21 +99,21 @@ class InteractiveTree(object):
     def set_node_info(self, node):
         nr_errors = self.df[self.df[self.target] == ErrorAnalyzerConstants.WRONG_PREDICTION].shape[0]
         filtered_df = self.get_filtered_df(node, self.df)
-        probabilities = filtered_df[self.target].value_counts()
-        if ErrorAnalyzerConstants.WRONG_PREDICTION in probabilities:
-            error = probabilities[ErrorAnalyzerConstants.WRONG_PREDICTION] / float(nr_errors)
+        class_samples = filtered_df[self.target].value_counts()
+        if ErrorAnalyzerConstants.WRONG_PREDICTION in class_samples:
+            global_error = class_samples[ErrorAnalyzerConstants.WRONG_PREDICTION] / float(nr_errors)
         else:
-            error = 0
+            global_error = 0
         samples = filtered_df.shape[0]
-        sorted_proba = sorted((probabilities/samples).to_dict().items(), key=lambda x: (-x[1], x[0]))
+        sorted_class_samples = sorted((class_samples).to_dict().items(), key=lambda x: (-x[1], x[0]))
         if samples > 0:
-            prediction = sorted_proba[0][0]
+            prediction = sorted_class_samples[0][0]
         else:
             prediction = None
         if node.id == 0:
-            node.set_node_info(samples, samples, sorted_proba, prediction, error)
+            node.set_node_info(samples, samples, sorted_class_samples, prediction, global_error)
         else:
-            node.set_node_info(samples, self.get_node(0).samples[0], sorted_proba, prediction, error)
+            node.set_node_info(samples, self.get_node(0).samples[0], sorted_class_samples, prediction, global_error)
 
     def jsonify_nodes(self):
         jsonified_tree = {}
@@ -184,8 +187,6 @@ class InteractiveTree(object):
         if not column.empty:
             target_grouped = target_column.groupby(bins)
             target_distrib = target_grouped.apply(lambda x: x.value_counts())
-            full_count = column.shape[0]
-            target_distrib = target_distrib / full_count
             col_distrib = target_grouped.count()
             for interval, count in col_distrib.items():
                 target_distrib_dict = target_distrib[interval].to_dict() if count > 0 else {}
@@ -205,10 +206,8 @@ class InteractiveTree(object):
             "count": []
         }
         if not column.empty:
-            full_count = column.shape[0]
-            target_grouped = target_column.groupby(column.fillna("No values").apply(safe_str))
+            target_grouped = target_column.groupby(column.fillna("No values").apply(safe_str)) # TODO: see CH card on missing values
             target_distrib = target_grouped.value_counts(dropna=False)
-            target_distrib = target_distrib / full_count
             col_distrib = target_grouped.count().sort_values(ascending=False)
             for value in col_distrib.index:
                 target_distrib_dict = target_distrib[value].to_dict()

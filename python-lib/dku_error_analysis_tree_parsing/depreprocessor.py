@@ -13,18 +13,3 @@ def descale_numerical_thresholds(extract, feature_names, rescalers, is_regressio
         return threshold if feat < 0 else _denormalize_feature_value(scalings, feature_names[feat], threshold)
 
     return [denormalize(ft, thresh) for (ft, thresh) in zip(features, extract.threshold.tolist())]
-
-    """tree = {
-        "leftChild": extract.children_left.tolist(),
-        "rightChild": extract.children_right.tolist(),
-        "impurity": extract.impurity.tolist(),
-        "threshold": thresholds,
-        "nSamples": extract.weighted_n_node_samples.tolist(),
-        "feature": features
-    }
-    if is_regression:
-        tree["predict"] = [x[0][0] for x in  extract.value]
-    else:
-        tree["probas"] = [ [ u / y[1] for u in y[0]] for y in [(x[0], sum(x[0])) for x in extract.value]]
-    return tree
-    """

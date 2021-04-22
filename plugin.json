@@ -2,8 +2,8 @@
   "id" : "model-error-analysis",
   "version" : "1.0.0",
   "meta" : {
-    "label" : "Error analysis",
-    "description" : "Debugging model performance with error analysis",
+    "label" : "Model Error Analysis",
+    "description" : "Debug model performance with error analysis",
     "author" : "Dataiku (Agathe Guillemot and Simona Maggio)",
     "icon" : "icon-sitemap",
     "licenseInfo" : "Apache Software License",

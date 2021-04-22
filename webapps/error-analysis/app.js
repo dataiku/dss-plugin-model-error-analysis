@@ -9,28 +9,21 @@
             }
         };
         $scope.createModal = ModalService.create($scope.modal);
-        
-        $scope.modelId = dataiku.getWebAppConfig().modelId;
-        
-        const radius = 16;
+
+        $scope.leftPanel = {};
         const node = d3.select(".tree-legend_pie svg").append("g");
-        TreeUtils.addNode(node, radius, d=>.4, d=>"X", true);
+        TreeUtils.addNode(node, 16, d=>.4, false, "X");
         
         const DEFAULT_MAX_NR_FEATURES = 5;
         const create = function(data) {
             $scope.treeData = data.nodes;
-            angular.forEach($scope.treeData, function(node) {
-                node.localError = TreeUtils.computeLocalError(node);
-            });
             $scope.rankedFeatures = data.rankedFeatures;
             $scope.rankedFeatures.forEach(function(rankedFeature, idx) {
                 rankedFeature.$selected = idx < DEFAULT_MAX_NR_FEATURES;
             });
-            $scope.metrics = {
-                actual: 1 - data.actualAccuracy,
-                estimated: 1 - data.estimatedAccuracy
-            }
-            TreeInteractions.createTree($scope);
+            $scope.epsilon = data.epsilon;
+            $scope.actualErrorRate =  1 - data.actualAccuracy;
+            TreeInteractions.createTree($scope.treeData, $scope.selectNode);
             $scope.loadingTree = false;
         }
 
@@ -41,7 +34,6 @@
                 create(response.data);
                 $scope.histDataWholeSet = {};
                 $scope.histData = {};
-                selectFeatures();
             }, function(e) {
                 $scope.loadingTree = false;
                 $scope.createModal.error(e.data);
@@ -52,26 +44,40 @@
             const selectedFeatures = $scope.rankedFeatures.filter(_ => _.$selected);
             if (!selectedFeatures.length) return;
             $http.post(getWebAppBackendUrl("select-features"), {"feature_ids": selectedFeatures.map(_ => _.rank)})
-            .then(function(response) {
-                Object.assign($scope.histDataWholeSet, response.data);
-                if ($scope.selectedNode && selectedFeatures.filter(_ => !$scope.histData[_.name]).length) {
-                    loadHistograms();
-                }
+            .then(function() {
+                loadHistograms(selectedFeatures);
+                $scope.leftPanel.seeGlobalChartData && fetchGlobalChartData(selectedFeatures);
             }, function(e) {
-                $scope.loadingTree = false;
                 $scope.createModal.error(e.data);
             });
         }
 
-        $scope.interactWithFeatureSelector = function(openedSelector, event) {
-            if (event && event.keyCode != 27) return;
-            if (openedSelector) {
+        $scope.interactWithFeatureSelector = function() {
+            if ($scope.featureSelectorShown) {
                 selectFeatures();
             }
-            $scope.featureSelectorShown = !openedSelector;
+            $scope.featureSelectorShown = !$scope.featureSelectorShown;
         }
 
-        const loadHistograms = function() {
+        $scope.displayOrHideGlobalData = function() {
+            $scope.leftPanel.seeGlobalChartData = !$scope.leftPanel.seeGlobalChartData;
+            if ($scope.leftPanel.seeGlobalChartData) {
+                fetchGlobalChartData($scope.rankedFeatures.filter(_ => _.$selected));
+            }
+        }
+
+        const fetchGlobalChartData = function(selectedFeatures) {
+            if (!selectedFeatures.filter(_ => !$scope.histDataWholeSet[_.name]).length) return;
+            $http.get(getWebAppBackendUrl("global-chart-data"))
+            .then(function(response) {
+                Object.assign($scope.histDataWholeSet, response.data);
+            }, function(e) {
+                $scope.createModal.error(e.data);
+            });
+        }
+
+        const loadHistograms = function(selectedFeatures) {
+            if (selectedFeatures && !selectedFeatures.filter(_ => !$scope.histData[_.name]).length) return;
             $http.get(getWebAppBackendUrl("select-node/" + $scope.selectedNode.node_id))
                 .then(function(response) {
                     Object.assign($scope.histData, response.data);
@@ -80,13 +86,9 @@
                 });
         }
 
-        $scope.zoomFit = function() {
-            TreeInteractions.zoomFit();
-        }
+        $scope.zoomFit = TreeInteractions.zoomFit;
 
-        $scope.zoomBack = function() {
-            TreeInteractions.zoomBack($scope.selectedNode);
-        }
+        $scope.zoomBack = () => TreeInteractions.zoomBack($scope.selectedNode);
 
         $scope.toFixedIfNeeded = function(number, decimals, precision) {
             if (number === undefined) return;
@@ -100,6 +102,22 @@
             return Format.toFixedIfNeeded(number, decimals);
         }
 
-        load();
+        $http.get(getWebAppBackendUrl("original-model-info")).then(function(response) {
+            $scope.isRegression = response.data.isRegression;
+            $scope.originalModelName = response.data.modelName;
+            load();
+        }, function(e) {
+            $scope.createModal.error(e.data);
+        });
+
+        $scope.selectNode = function(nodeId) {
+            if (nodeId === ($scope.selectedNode && $scope.selectedNode.node_id)) return;
+            $scope.selectedNode = $scope.treeData[nodeId];
+            TreeInteractions.selectNode($scope.selectedNode, $scope.treeData);
+            $scope.leftPanel = {};
+            $scope.leftPanel.decisionRule = TreeUtils.getPath($scope.selectedNode.node_id, $scope.treeData, true).map(_ => TreeUtils.getDecisionRule($scope.treeData[_]));
+            $scope.histData = {};
+            loadHistograms();
+        };
     });
 })();

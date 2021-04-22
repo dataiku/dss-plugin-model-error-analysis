@@ -126,3 +126,9 @@ app.directive('focusHere', function ($timeout) {
         }
     };
 });
+
+app.filter('pluralize', function() {
+    return function(word, number) {
+        return number === 1 ? word : (word + 's');
+    };
+});

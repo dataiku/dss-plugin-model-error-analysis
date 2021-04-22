@@ -1,0 +1,151 @@
+<div class="node-panel-selected-samples" ng-show="selectedNode && !leftPanel.displayHelp">
+    <div class="node-info">
+        <div class="selected-samples-section">
+            <div class="header header-div top-header">
+                <div class="decision-rule__header">Node samples</div>
+                <div>
+                    <span ng-show="helpHovered" class="help-text">Help</span>
+                    <i ng-mouseover="helpHovered = true"
+                    ng-mouseleave="helpHovered = false"
+                    class="icon-info-sign interaction-icon"
+                    ng-click="leftPanel.displayHelp = true"></i>
+                </div>
+            </div>
+            <p>
+                <strong>{{ selectedNode.samples[0] }}</strong> {{ 'sample' | pluralize: selectedNode.samples[0] }} in the node (<strong>{{ toFixedIfNeeded(selectedNode.samples[1], 2, true) }}%</strong> of all the samples).
+            </p>
+            <div ng-if="leftPanel.decisionRule.length > 0">
+                <div class="decision-rule__subheader">
+                    Defined by
+                </div>
+                <div class="info-section" ng-class="{'info-section--expanded': leftPanel.displayRule}">
+                    <div class="info" ng-repeat="rule in leftPanel.decisionRule" title="{{ rule.left + ' ' + rule.middle + ' ' + rule.right }}">
+                        <span ng-if="$index">↳&nbsp;</span>
+                        <div class="ellipsed-text" class="no-grow" ng-if="rule.left">{{ rule.left }}&nbsp;</div>
+                        <div class="ellipsed-text" class="no-shrink-no-grow">{{ rule.middle }}&nbsp;</div>
+                        <div class="ellipsed-text" class="no-grow}" ng-if="rule.right">{{ rule.right }}</div>
+                    </div>
+                </div>
+                <div class="show-more" ng-show="leftPanel.decisionRule.length > 3">
+                    <span class="link" ng-click="leftPanel.displayRule = !leftPanel.displayRule">
+                        Show {{ leftPanel.displayRule ? 'less' : 'more' }}<i class="chevron" ng-class="{'icon-chevron-down': !leftPanel.displayRule, 'icon-chevron-up': leftPanel.displayRule}"></i>
+                    </span>
+                </div>
+            </div>
+        </div>
+        <div class="error-section">
+            <div class="placeholder-node">
+                <svg height="100%" width="100%"></svg>
+            </div>
+            <div>
+                <p>
+                    <strong>{{ selectedNode.local_error[1] }}</strong> wrong {{ 'prediction' | pluralize: selectedNode.local_error[1] }} (<strong>{{ toFixedIfNeeded(selectedNode.local_error[0]*100, 2, true) }}%</strong> of the node samples).
+                </p>
+                <p>
+                    They represent <strong>{{ toFixedIfNeeded(selectedNode.global_error*100, 2, true) }}%</strong> of total wrong predictions.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div class="histograms-container">
+        <div class="legend-container">
+            <div class="feature-selector" ng-click="$event.stopPropagation()">
+                <span class="feature-selector__title" ng-click="interactWithFeatureSelector()">Feature distribution <i ng-class="{'icon-caret-down': !featureSelectorShown, 'icon-caret-up': featureSelectorShown}"></i></span>
+                <div class="feature-selector__body" ng-if="featureSelectorShown">
+                    <div class="feature-selector-row" ng-click="feature.$selected = !feature.$selected" ng-repeat="feature in rankedFeatures">
+                        <input type="checkbox" ng-model="feature.$selected" ng-click="$event.stopPropagation()">
+                        &nbsp;
+                        <i class="icon-font" ng-show="!feature.numerical"></i>
+                        <div class="numerical" ng-show="feature.numerical">#</div>
+                        <div class="ellipsed-text">&nbsp;{{ feature.name }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="legend-histograms">
+                <div class="legend-histograms__local">
+                    <svg height="20px" width="25px">
+                        <g>
+                            <rect class="color-bar color-bar--error" x="4"></rect>
+                            <rect class="color-bar color-bar--correct" x="12"> </rect>
+                        </g>
+                    </svg>
+                    <div>In node samples</div>
+                </div>
+                <div class="legend-histograms__global"
+                    ng-click="globalLegendIsHovered = !globalLegendIsHovered; displayOrHideGlobalData()"
+                    ng-class="{'legend-histograms__global--disabled': !!leftPanel.seeGlobalChartData === !!globalLegendIsHovered}" 
+                    ng-mouseenter="globalLegendIsHovered = true"
+                    ng-mouseleave="globalLegendIsHovered = false">
+                    <svg height="20px" width="25px">
+                        <g>
+                            <rect class="color-bar color-bar--error color-bar__global-legend" ng-class="{'color-bar__global-legend--disabled': leftPanel.seeGlobalChartData === globalLegendIsHovered}" x="4"></rect>
+                            <rect class="color-bar color-bar--correct color-bar__global-legend" ng-class="{'color-bar__global-legend--disabled': leftPanel.seeGlobalChartData === globalLegendIsHovered}" x="12"> </rect>
+                        </g>
+                    </svg>
+                    <div>
+                        In all samples
+                        &nbsp;<i ng-class="{'icon-eye-open': !!leftPanel.seeGlobalChartData !== !!globalLegendIsHovered, 'icon-eye-close': !!leftPanel.seeGlobalChartData === !!globalLegendIsHovered}"></i></div>
+                </div>
+            </div>
+        </div>
+        <div class="histograms">  
+            <div id="{{'container-' + feature.rank}}" class="histogram-container" ng-repeat="feature in rankedFeatures | orderBy: 'rank'" ng-if="feature.$selected">
+                <div class="histogram">
+                    <div class="header header-feature">
+                        <div class="header-feature-desc header-div header-div--bolder">
+                            <i class="icon-font header__icon" ng-show="!feature.numerical"></i>
+                            <div class="numerical header__icon" ng-show="feature.numerical">#</div>
+                            <div class="ellipsed-text" title="{{feature.name}}">{{ feature.name }}</div>
+                        </div>
+                    </div>
+                    <div class="histogram-placeholder histogram-placeholder-empty" ng-if="histData[feature.name] && histData[feature.name].count.length == 0">
+                        <em>No values</em>
+                    </div>
+                    <div class="histogram-placeholder histogram-placeholder-empty" ng-if="!histData[feature.name] && featureSelectorShown">
+                        <em>Chart data not yet loaded</em>
+                    </div>
+                    <div class="histogram-placeholder" ng-if="!histData[feature.name] && !featureSelectorShown">
+                        <spinner></spinner>
+                    </div>
+                    <div histogram="{{feature.name}}" class="histogram-placeholder" ng-if="histData[feature.name] && histData[feature.name].count.length > 0">
+                        <spinner class="overlapping-spinner" ng-if="leftPanel.seeGlobalChartData && !histDataWholeSet[feature.name]"></spinner>
+                        <div class="histogram-svg"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="help-panel" ng-show="!selectedNode || leftPanel.displayHelp">
+    <div class="header header-div top-header">
+        <div>How does it work ?</div>
+        <div ng-show="selectedNode">
+            <span ng-show="helpHovered" class="help-text">Close help</span>
+            <i class="icon-question-sign interaction-icon"
+            ng-mouseover="helpHovered = true"
+            ng-mouseleave="helpHovered = false"
+            ng-click="leftPanel.displayHelp = false"></i>
+        </div>
+    </div>
+    <div class="plugin-explanation">
+        <p>
+            Model Error Analysis provides insights on features critically correlated with a model's failures.
+            These directional insights can be leveraged to improve model design, enhance data collection, or identify key samples for manual investigation.
+        </p>
+        <p>
+            A decision tree is trained to predict whether your original model <strong ng-if="originalModelName">({{ originalModelName }})</strong> would successfully predict an individual sample, or not.
+            <span ng-if="isRegression == false">A successful prediction by your original model is assessed when the predicted class is the correct one.</span>
+            <span ng-if="isRegression">A successful prediction by your original model is assessed when the predicted value is within close range to the target value <strong>(threshold used: {{ epsilon ? toFixedIfNeeded(epsilon, 3, true) : '...' }})</strong>.</span>
+        </p>
+        <p>
+            The tree is trained on the test set of your original model, meaning its nodes represent subpopulations of these test samples, with similar characteristics. This way, Model Error Analysis highlights the subsets where your original model made most of its mistakes.
+        </p>
+        <p>
+            Select a node to display more information on its samples. Nodes with a high fraction of the total error and a high local error are likely to be of greatest interest for error analysis.
+        </p>
+        <p>
+            See the <a class="link">Plugin documentation&nbsp;<i class="icon-external-link"></i></a> for more information.
+        </p>
+    </div>
+</div>

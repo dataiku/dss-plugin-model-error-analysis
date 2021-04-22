@@ -1,18 +1,15 @@
-body{
+body {
     font-family: var(--font-family);
-    background-color : var(--grey-lighten-7);
-    overflow : hidden;
-    font-size: 12px;
+    font-size: 14px;
+    --red-lighten: #F0B8C0;
+    margin: 0 0 2px 0;
+    border: 1px solid var(--grey-lighten-6);
 }
 
 input::-webkit-outer-spin-button,
 input::-webkit-inner-spin-button {
     -webkit-appearance: none;
     margin: 0;
-}
-
-input[type=number] {
-    -moz-appearance:textfield;
 }
 
 input[placeholder] {
@@ -29,6 +26,10 @@ form {
 
 spinner {
     height: 100%;
+}
+
+.overlapping-spinner {
+    position: absolute;
 }
 
 .spinner-container {
@@ -59,7 +60,7 @@ select {
     padding-bottom: 1%;
     padding-top: 2%;
     margin-bottom: 2%;
-    font-size:16px;
+    font-size: 16px;
     height: 5%;
 }
 
@@ -79,30 +80,26 @@ select {
 
 .tree-visualization {
     height: 100%;
-    border-right: 1px solid var(--grey-lighten-5);
-    width: calc(100% - 400px);
+    border-left: 1px solid var(--grey-lighten-5);
+    flex: 1 1 auto;
     display: flex;
     flex-direction: column;
 }
 
 .toolbar-header {
-    padding: 10px 20px;
+    padding: 3px 8px 8px 8px;
     display: flex;
     border-bottom: 1px solid var(--grey-lighten-5);
     flex-direction: column;
 }
 
-.toolbar-header:hover .link-show-more {
-    text-decoration: underline;
-}
-
-.toolbar-header--expanded {
-    justify-content: space-between;
-}
-
 .toolbar-header__row {
     display: flex;
     justify-content: space-between;
+}
+
+.toolbar-header__icon-row {
+    flex-direction: row-reverse;
 }
 
 .link {
@@ -111,62 +108,26 @@ select {
 }
 
 .link:hover {
-    text-decoration: underline;
+    color: var(--blue-lighten-3);
 }
 
-.link .chevron-no-decoration {
-    text-decoration: none;
-    margin-left: 5px;
-}
-
-.expandable-introduction-text {
-    width: 50%;
-}
-
-.expandable-introduction-text--expanded {
-    flex: 1 0 auto;
-    padding-right: 20px;
-}
-
-.introduction-text {
-    text-align: justify;
-    font-size: 10px;
-    margin-top: 5px;
+.chevron {
+   margin-left: 5px;
 }
 
 .metrics {
-    display: flex;
-    min-width: 390px;
-    justify-content: space-between;
-}
-
-.metrics--expanded {
-    display: flex;
-    flex-direction: column;
-    justify-content: space-around;
-    flex: 0 auto;
+    margin-bottom: 5px;
 }
 
 .metric {
     display: flex;
     text-align: justify;
-}
-
-.metrics .metric {
     align-items: baseline;
 }
 
 .metric__value {
     font-size: 24px;
     margin-right: 5px;
-}
-
-.metrics--expanded .metric__name {
-    font-weight: bold;
-}
-
-.metric__explanation {
-    font-size: 10px;
 }
 
 .tree-legend-container {
@@ -179,8 +140,8 @@ select {
     align-items: center;
 }
 
-.tree-legend_edge {
-    width: 32px;
+.tree-legend_item {
+    width: 35px;
     height: 32px;
 }
 
@@ -197,8 +158,8 @@ select {
     flex-direction: column;
 }
 
-.tree-legend-desc-short {
-    font-weight: bold;
+.tree-legend-desc__title {
+    font-weight: 500;
 }
 
 .tree-legend_pie {
@@ -208,7 +169,7 @@ select {
 
 .icons-div {
     display: flex;
-    align-items: center;
+    align-items: flex-end;
     justify-content: space-between;
 }
 
@@ -222,64 +183,90 @@ select {
     opacity: .7;
 }
 
-.empty-panel {
-    color: var(--grey-lighten-3);
-    text-align: center;
+.zoom-icon--disabled {
+    cursor: not-allowed;
 }
 
-.histogram-panel--empty {
-    margin: auto;
-    width: 400px;
-    font-size: 32px;
-}
-
-.histogram-panel {
+.node-panel {
     height: 100%;
     width: 400px;
+}
+
+.node-panel-selected-samples {
     display: flex;
     flex-direction: column;
+    height: 100%;
+}
+
+.help-panel {
+    width: calc(100% - 32px);
+    padding: 8px 16px;
+    text-align: justify;
+    height: calc(100% - 32px);
+}
+
+.plugin-explanation {
+    padding-top: 10px;
+    overflow-y: auto;
 }
 
 .header {
     display: flex;
+    align-items: center;
 }
 
 .header-div {
     font-size: 16px;
-    font-weight: bold;
+    font-weight: 400;
     height: 20px;
-    color: var(--grey-lighten-2);
 }
 
-.header-div--uppercase {
-    text-transform: uppercase;
+.header-div--bolder {
+    font-weight: 500;
 }
 
 .header-feature {
-    display: flex;
-    align-items: center;
     margin: 0 5%;
 }
 
-.header-decision-rule {
-    width: 50%;
+.top-header {
+    justify-content: space-between;
+}
+
+.help-text {
+    font-size: 14px;
+}
+
+.interaction-icon {
+    cursor: pointer;
+}
+
+.interaction-icon:hover {
+    color: var(--grey-lighten-4);
+}
+
+.decision-rule__header {
     font-weight: 500;
+}
+
+.decision-rule__subheader {
+    font-weight: 400;
+    font-size: 16px;
 }
 
 .legend-container {
     display:flex;
-    padding: 16px;
+    padding: 8px 16px;
 }
 
 .feature-selector {
     flex: 1 0 auto;
-    display: flex;
-    align-items: center;
     position: relative;
 }
 
 .feature-selector__title {
     cursor: pointer;
+    font-weight: 500;
 }
 
 .feature-selector__title:hover {
@@ -295,7 +282,7 @@ select {
     background: var(--white);
     box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
     width: 200px;
-    max-height: 250px;
+    max-height: 200px;
 }
 
 .feature-selector-row {
@@ -317,18 +304,29 @@ select {
     font-size: 11px;
 }
 
-.legend-details {
+.legend-histograms {
+    font-size: 12px;
     display: flex;
+    justify-content: space-around;
+}
+
+.legend-histograms__global, .legend-histograms__local {
+    display: flex;
+    align-items: center;
+}
+
+.legend-histograms__global {
+    cursor: pointer;
+}
+
+.legend-histograms__global--disabled {
+    color: var(--grey-lighten-3);
 }
 
 .header-feature-desc {
     display: flex;
     width: 100%;
     align-items: baseline;
-}
-
-div[histogram] {
-     display: flex;
 }
 
 .histogram-placeholder {
@@ -358,13 +356,8 @@ div[histogram] {
 }
 
 .template {
-    position:relative;
-    min-width : 200px;
     height : 100%;
-    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
     background-color : var(--white);
-    -webkit-transition: width 0.25s ease-out;
-    transition: width 0.25s ease-out;
     display: flex;
 }
 
@@ -383,25 +376,35 @@ div[histogram] {
     cursor: grabbing;
 }
 
-.tree--no-selection .empty-panel {
+.empty-panel {
     font-size: 24px;
     position: absolute;
     left: 0;
     right: 0;
     top: 40%;
+    color: var(--grey-lighten-3);
+    text-align: center;
+}
+
+.empty-panel__title {
+    font-size: 32px;
 }
 
 .tree--no-selection .tree-svg {
     opacity: .4;
 }
 
+.zoom-description {
+    top: 8px;
+    right: 8px;
+    position: absolute;
+}
+
 .bullet {
-    width: 10px;
-    height: 10px;
-    margin-left: 5px;
+    width: 9px;
+    height: 9px;
     border-radius: 5px;
-    display: flex;
-    align-self: center;
+    display: inline-block;
 }
 
 .bullet--error {
@@ -416,6 +419,7 @@ div[histogram] {
     display: flex;
     align-content: center;
     margin-bottom: 5px;
+    line-height: 16px;
 }
 
 .info-decision-rule {
@@ -447,44 +451,58 @@ div[histogram] {
 }
 
 .histograms-container {
+    display: flex;
+    flex-direction: column;
     flex: 1 1 auto;
     min-height: 0;
     border-top: 1px solid var(--grey-lighten-5);
+    padding: 8px 0;
 }
 
 .histograms {
-    height: calc(100% - 55px);
+    flex: 1 1 auto;
     overflow-y: auto;
+    overflow-x: hidden;
 }
 
-.selected-node-info {
-    padding: 16px;
+.histogram-container {
+    display: flex;
+}
+
+.histogram {
+    width: 400px;
+}
+
+.node-info {
+    padding: 8px 16px;
     flex: 0 0 auto;
 }
 
-.decision-rule-section {
-    border-top: 1px solid var(--grey-lighten-6);
-    padding-top: 10px;
+.selected-samples-section {
+    border-bottom: 1px solid var(--grey-lighten-6);
+    margin-bottom: 10px;
+    padding-bottom: 10px;
 }
 
-.statistics-section {
+.show-more {
+    padding-top: 5px;
+}
+
+.error-section {
     display: flex;
     align-items: center;
     text-align: justify;
 }
 
-.statistics-section p {
-    margin-top: 0;
-}
-
 .placeholder-node {
     width: 65px;
     height: 65px;
+    flex: 0 0 auto;
 }
 
 .section-title {
     font-weight: lighter;
-    height:16px;
+    height: 16px;
     display: flex;
 }
 
@@ -561,7 +579,7 @@ div[histogram] {
 
 .edge {
     fill: none;
-    stroke: #F0B8C0;
+    stroke: var(--red-lighten);
 }
 
 .edge--no-error {
@@ -587,7 +605,7 @@ div[histogram] {
 }
 
 .node__gauge {
-    fill: #F0B8C0; /*TODO*/
+    fill: var(--red-lighten);
 }
 
 .node__gauge.selected, .node__gauge.hovered, .node__gauge.legend-tree {
@@ -596,6 +614,11 @@ div[histogram] {
 
 .node--selected {
     stroke: var(--blue);
+}
+
+.red-node__text.selected, .red-node__text.hovered {
+    text-shadow: 1px 1px 2px var(--grey-lighten-2), 0 0 .5em var(--grey-lighten-2), 0 0 .5em var(--grey-lighten-2);
+    fill: var(--grey-lighten-7);
 }
 
 /*HISTOGRAMS*/
@@ -607,11 +630,11 @@ div[histogram] {
 }
 
 .axis text {
-    font-size: 9px;
+    font-size: 10px;
 }
 
-.histogram__bar:hover {
-    opacity: .7;
+.histogram__bar:hover, .histogram__bar_global:hover {
+    fill-opacity: .7;
 }
 
 .histogram__bar_global, .color-bar__global-legend {
@@ -630,18 +653,20 @@ div[histogram] {
 .color-bar--correct, .rect--correct {
     fill: var(--grey-lighten-5);
 }
-.x-axis__text {
-    text-anchor: middle;
-}
 
-.y-axis__text {
-    text-anchor: end;
+.color-bar__global-legend--disabled {
+    opacity: .4;
 }
 
 /*TOOLTIPS*/
 
 .tooltip {
     cursor: auto;
+    height: 150px;
+    width: 300px;
+    position: absolute;
+    z-index: 3000;
+    left: 410px;
 }
 
 .tooltip-title {
@@ -650,27 +675,17 @@ div[histogram] {
 }
 
 .tooltip-container {
-    display: flex;
-    height: 70%;
-    padding: 10px 10px;
+    padding: 5px;
     border: 1px solid var(--grey-lighten-6);
     background: var(--white);
-    flex-direction: row-reverse;
 }
 
-.tooltip-histogram-container {
-    width: 85%;
-}
-
-.tooltip-main {
+.tooltip__body {
+    font-size: 12px;
+    text-align: justify;
     display: flex;
     flex-direction: column;
-    justify-content: space-evenly;
-    width: 70%;
-}
-
-.tooltip-histogram-main {
-    width: 100%;
+    justify-content: space-between;
 }
 
 /*MODALS*/

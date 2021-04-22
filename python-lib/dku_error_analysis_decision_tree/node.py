@@ -1,5 +1,6 @@
 from math import isnan
-from dku_error_analysis_utils import ErrorAnalyzerConstants, safe_str
+from dku_error_analysis_utils import safe_str
+from mealy import ErrorAnalyzerConstants
 
 class Node(object):
     """
@@ -20,6 +21,10 @@ class Node(object):
 
     samples: positive integer, number of samples when applying the decision rules of the current node
 
+    global_error: float
+
+    local_error: array size two of format [local error, raw count of bad predictions in the node ]
+
     """
 
     class TYPES:
@@ -35,16 +40,26 @@ class Node(object):
         self.prediction = None
         self.samples = None
         self.global_error = None
+        self.local_error = None
 
     @property
     def id(self):
         return self.node_id
 
-    def set_node_info(self, samples, total_samples, probabilities, prediction, error):
+    def set_node_info(self, samples, total_samples, probabilities, prediction, global_error):
         self.samples = [samples, 100.0 * samples / total_samples]
-        self.probabilities = probabilities
+        self.probabilities = []
+        for class_name, class_samples in probabilities:
+            self.probabilities.append([class_name, class_samples/float(samples), class_samples])
         self.prediction = prediction
-        self.global_error = error
+        self.global_error = global_error
+
+        if self.prediction and self.probabilities[0][0] == ErrorAnalyzerConstants.WRONG_PREDICTION:
+            self.local_error = self.probabilities[0][1:3]
+        elif len(self.probabilities) > 1:
+            self.local_error = self.probabilities[1][1:3]
+        else:
+            self.local_error = [0, 0]
 
     def get_type(self):
         raise NotImplementedError
@@ -59,15 +74,23 @@ class Node(object):
         dot_str = '{0} [label="node #{0}\n'.format(self.id)
         if self.parent_id >= 0:
             dot_str += self.print_decision_rule() + "\n"
-        dot_str += 'global error = {:.3f}\nsamples = {}\n'.format(self.global_error, self.samples[0])
-        for prediction_class, proba in self.probabilities:
-            dot_str += '{}: {:.3%}\n'.format(prediction_class, proba)
-        node_color = ErrorAnalyzerConstants.ERROR_TREE_COLORS[self.prediction]
-        if len(self.probabilities) == 1:
-            alpha = 255
+
+        if self.local_error[0] >= ErrorAnalyzerConstants.GRAPH_MIN_LOCAL_ERROR_OPAQUE:
+            alpha = 1.0
         else:
-            alpha = int(255 * (self.probabilities[0][1] - self.probabilities[1][1]) / (1 - self.probabilities[1][1]))
-        dot_str += '{}", fillcolor="{}{:02x}"] ;'.format(self.prediction, node_color, alpha)
+            alpha = self.local_error[0]
+
+        node_class = ErrorAnalyzerConstants.CORRECT_PREDICTION if self.global_error == 0 else ErrorAnalyzerConstants.WRONG_PREDICTION
+        class_color = ErrorAnalyzerConstants.ERROR_TREE_COLORS[node_class].strip('#')
+        class_color_rgb = tuple(int(class_color[i:i + 2], 16) for i in (0, 2, 4))
+        # compute the color as alpha against white
+        color_rgb = [int(round(alpha * c + (1 - alpha) * 255, 0)) for c in class_color_rgb]
+        color = '#{:02x}{:02x}{:02x}'.format(color_rgb[0], color_rgb[1], color_rgb[2])
+
+        dot_str += 'samples = {:.3f}%\n'.format(self.samples[1])
+        dot_str += 'local error = {:.3f}%\n'.format(100.*self.local_error[0])
+        dot_str += 'fraction of total error = {:.3f}%\n'.format(100. * self.global_error)
+        dot_str += '", fillcolor="{}"] ;'.format(color)
         return dot_str
 
 
