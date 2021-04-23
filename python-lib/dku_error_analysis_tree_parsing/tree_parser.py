@@ -137,7 +137,7 @@ class TreeParser(object):
                 self.rescalers.append(step)
             {
                 CategoricalFeatureHashingProcessor: \
-                    lambda step: self._add_cat_hashing_whole(step) if step.hash_whole_categories\
+                    lambda step: self._add_cat_hashing_whole(step) if getattr(step, "hash_whole_categories", False)\
                         else self._add_cat_hashing_not_whole(step),
                 FlagMissingValue2: self._add_flag_missing_value_mapping,
                 QuantileBinSeries: self._add_quantize_mapping,
