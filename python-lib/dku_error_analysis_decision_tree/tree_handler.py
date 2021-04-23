@@ -31,7 +31,6 @@ class TreeHandler(object):
         """
         self.analyzer.fit()
         self.analyzer.parse_tree()
-
         self.selected_feature_ids = set(range(min(len(self.tree.ranked_features), self.DEFAULT_MAX_NR_FEATURES)))
 
         summary = self.analyzer.evaluate(output_format='dict')
