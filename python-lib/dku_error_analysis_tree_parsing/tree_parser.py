@@ -3,7 +3,7 @@ from dku_error_analysis_decision_tree.node import Node
 from dku_error_analysis_decision_tree.tree import InteractiveTree
 from dataiku.doctor.preprocessing.dataframe_preprocessing import RescalingProcessor2, QuantileBinSeries, UnfoldVectorProcessor, BinarizeSeries, \
     FastSparseDummifyProcessor, ImpactCodingStep, FlagMissingValue2, TextCountVectorizerProcessor, TextHashingVectorizerWithSVDProcessor, \
-    TextHashingVectorizerProcessor, TextTFIDFVectorizerProcessor
+    TextHashingVectorizerProcessor, TextTFIDFVectorizerProcessor, CategoricalFeatureHashingProcessor
 from dku_error_analysis_utils import DkuMEAConstants
 from dku_error_analysis_tree_parsing.depreprocessor import descale_numerical_thresholds
 from collections import deque
@@ -11,15 +11,17 @@ from mealy import ErrorAnalyzerConstants
 
 class TreeParser(object):
     class SplitParameters(object):
-        def __init__(self, node_type, chart_name, value=None, friendly_name=None, value_func=lambda threshold: threshold,
-                uses_preprocessed_feature=False, force_others_on_right=False):
+        def __init__(self, node_type, chart_name, value=None, friendly_name=None,
+                     value_func=lambda threshold: threshold,
+                     add_preprocessed_feature=lambda array, col: array[:, col],
+                     invert_left_and_right=None):
             self.node_type = node_type
             self.chart_name = chart_name
             self.friendly_name = friendly_name
             self.value = value
             self.value_func = value_func
-            self.uses_preprocessed_feature = uses_preprocessed_feature
-            self.force_others_on_right = force_others_on_right
+            self.add_preprocessed_feature = add_preprocessed_feature
+            self.invert_left_and_right = invert_left_and_right
 
         @property
         def feature(self):
@@ -39,11 +41,20 @@ class TreeParser(object):
         self.preprocessed_feature_mapping[step._output_name()] = self.SplitParameters(Node.TYPES.CAT, step.feature, [np.nan])
 
     # CATEGORICAL HANDLING
+    def _add_cat_hashing(self, step):
+        add_preprocessed_feature = lambda i: lambda array, col: np.sum(array[:, col - i : col - i + step.n_features], axis=1)
+        value_func = lambda i: lambda threshold: [threshold * 2 * i]
+        for i in range(step.n_features):
+            preprocessed_name = "hashing:{}:{}".format(step.column_name, i)
+            friendly_name = "Hashing value of {}".format(step.column_name)
+            self.preprocessed_feature_mapping[preprocessed_name] = self.SplitParameters(Node.TYPES.CAT, step.column_name, friendly_name=friendly_name,
+                value_func=value_func(i), add_preprocessed_feature=add_preprocessed_feature(i), invert_left_and_right=lambda threshold: threshold > 0)
+
     def _add_dummy_mapping(self, step):
         for value in step.values:
             preprocessed_name = "dummy:{}:{}".format(step.input_column_name, value)
-            self.preprocessed_feature_mapping[preprocessed_name] = self.SplitParameters(Node.TYPES.CAT, step.input_column_name, [value], force_others_on_right=True)
-        self.preprocessed_feature_mapping["dummy:{}:N/A".format(step.input_column_name)] = self.SplitParameters(Node.TYPES.CAT, step.input_column_name, [np.nan], force_others_on_right=True)
+            self.preprocessed_feature_mapping[preprocessed_name] = self.SplitParameters(Node.TYPES.CAT, step.input_column_name, [value], invert_left_and_right=lambda threshold: True)
+        self.preprocessed_feature_mapping["dummy:{}:N/A".format(step.input_column_name)] = self.SplitParameters(Node.TYPES.CAT, step.input_column_name, [np.nan], invert_left_and_right=lambda threshold: True)
         if not step.should_drop:
             self.preprocessed_feature_mapping["dummy:{}:__Others__".format(step.input_column_name)] = self.SplitParameters(Node.TYPES.CAT, step.input_column_name, step.values)
 
@@ -52,7 +63,7 @@ class TreeParser(object):
         for value in impact_map.columns.values:
             preprocessed_name = "impact:{}:{}".format(step.column_name, value)
             friendly_name = "{} [{}]".format(step.column_name, value)
-            self.preprocessed_feature_mapping[preprocessed_name] = self.SplitParameters(Node.TYPES.NUM, step.column_name, friendly_name=friendly_name, uses_preprocessed_feature=True)
+            self.preprocessed_feature_mapping[preprocessed_name] = self.SplitParameters(Node.TYPES.NUM, step.column_name, friendly_name=friendly_name)
 
     # NUMERICAL HANDLING
     def _add_identity_mapping(self, original_name):
@@ -76,7 +87,7 @@ class TreeParser(object):
             preprocessed_name = "unfold:{}:{}".format(step.input_column_name, i)
             friendly_name = "{} [element #{}]".format(step.input_column_name, i)
             self.num_features.add(friendly_name)
-            self.preprocessed_feature_mapping[preprocessed_name] = self.SplitParameters(Node.TYPES.NUM, friendly_name, uses_preprocessed_feature=True)
+            self.preprocessed_feature_mapping[preprocessed_name] = self.SplitParameters(Node.TYPES.NUM, friendly_name)
 
     # TEXT HANDLING
     def _add_hashing_vect_mapping(self, step, with_svd=False):
@@ -84,26 +95,27 @@ class TreeParser(object):
         for i in range(step.n_features):
             preprocessed_name = "{}:{}:{}".format(prefix, step.column_name, i)
             friendly_name = "{} [text #{}]".format(step.column_name, i)
-            self.preprocessed_feature_mapping[preprocessed_name] = self.SplitParameters(Node.TYPES.NUM, None, friendly_name=friendly_name, uses_preprocessed_feature=True)
+            self.preprocessed_feature_mapping[preprocessed_name] = self.SplitParameters(Node.TYPES.NUM, None, friendly_name=friendly_name)
 
     def _add_text_count_vect_mapping(self, step):
         for word in step.resource["vectorizer"].get_feature_names():
             preprocessed_name = "{}:{}:{}".format(step.prefix, step.column_name, word)
             friendly_name = "{}: occurrences of {}".format(step.column_name, word)
-            self.preprocessed_feature_mapping[preprocessed_name] = self.SplitParameters(Node.TYPES.NUM, None, friendly_name=friendly_name, value_func=lambda threshold: int(threshold), uses_preprocessed_feature=True)
+            self.preprocessed_feature_mapping[preprocessed_name] = self.SplitParameters(Node.TYPES.NUM, None, friendly_name=friendly_name)
 
     def _add_tfidf_vect_mapping(self, step):
         vec = step.resource["vectorizer"]
         for word, idf in zip(vec.get_feature_names(), vec.idf_):
             preprocessed_name = "tfidfvec:{}:{:.3f}:{}".format(step.column_name, idf, word)
             friendly_name = "{}: tfidf of {}".format(step.column_name, word)
-            self.preprocessed_feature_mapping[preprocessed_name] = self.SplitParameters(Node.TYPES.NUM, None, friendly_name=friendly_name, uses_preprocessed_feature=True)
+            self.preprocessed_feature_mapping[preprocessed_name] = self.SplitParameters(Node.TYPES.NUM, None, friendly_name=friendly_name)
 
     def _create_preprocessed_feature_mapping(self):
         for step in self.model_handler.get_pipeline().steps:
             if isinstance(step, RescalingProcessor2):
                 self.rescalers.append(step)
-            {
+            {   
+                CategoricalFeatureHashingProcessor: self._add_cat_hashing,
                 FlagMissingValue2: self._add_flag_missing_value_mapping,
                 QuantileBinSeries: self._add_quantize_mapping,
                 FastSparseDummifyProcessor: self._add_dummy_mapping,
@@ -112,7 +124,7 @@ class TreeParser(object):
                 ImpactCodingStep: self._add_impact_mapping,
                 TextCountVectorizerProcessor: self._add_text_count_vect_mapping,
                 TextHashingVectorizerWithSVDProcessor: lambda step: self._add_hashing_vect_mapping(step, with_svd=True),
-                TextHashingVectorizerProcessor: lambda step: self._add_hashing_vect_mapping(step),
+                TextHashingVectorizerProcessor: self._add_hashing_vect_mapping,
                 TextTFIDFVectorizerProcessor: self._add_tfidf_vect_mapping
             }.get(step.__class__, lambda step: None)(step)
 
@@ -165,12 +177,12 @@ class TreeParser(object):
             feature_idx, threshold = features[node_id], thresholds[node_id]
             preprocessed_feature = feature_list[feature_idx]
             split_parameters = self._get_split_parameters(preprocessed_feature)
-            if split_parameters.uses_preprocessed_feature:
-                tree.df[split_parameters.feature] = preprocessed_x[:, feature_idx]
+            if split_parameters.feature not in tree.df:
+                tree.df[split_parameters.feature] = split_parameters.add_preprocessed_feature(preprocessed_x, feature_idx)
             value = split_parameters.value
             if value is None:
                 value = split_parameters.value_func(threshold)
-            if split_parameters.force_others_on_right:
+            if split_parameters.invert_left_and_right and split_parameters.invert_left_and_right(threshold):
                 left_child_id, right_child_id = children_right[node_id], children_left[node_id]
             else:
                 left_child_id, right_child_id = children_left[node_id], children_right[node_id]
