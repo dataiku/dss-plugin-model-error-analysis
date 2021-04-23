@@ -8,6 +8,10 @@ from dku_error_analysis_utils import DkuMEAConstants
 from dku_error_analysis_tree_parsing.depreprocessor import descale_numerical_thresholds
 from collections import deque
 from mealy import ErrorAnalyzerConstants
+import logging
+
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO, format='Error Analysis Plugin | %(levelname)s - %(message)s')
 
 class TreeParser(object):
     class SplitParameters(object):
@@ -38,17 +42,35 @@ class TreeParser(object):
     def _add_flag_missing_value_mapping(self, step):
         if step.output_block_name == "num_flagonly":
             self.num_features.add(step.feature)
-        self.preprocessed_feature_mapping[step._output_name()] = self.SplitParameters(Node.TYPES.CAT, step.feature, [np.nan])
+        self.preprocessed_feature_mapping[step._output_name()] = \
+            self.SplitParameters(Node.TYPES.CAT, step.feature, [np.nan])
 
     # CATEGORICAL HANDLING
-    def _add_cat_hashing(self, step):
-        add_preprocessed_feature = lambda i: lambda array, col: np.sum(array[:, col - i : col - i + step.n_features], axis=1)
-        value_func = lambda i: lambda threshold: [threshold * 2 * i]
+    def _add_cat_hashing_not_whole(self, step):
+        logger.warning(
+            "The model has been trained on a version of DSS < 9.0.0, \
+            and so uses categorical hashing without whole category hashing enabled.\
+            This is not recommanded."
+        )
         for i in range(step.n_features):
             preprocessed_name = "hashing:{}:{}".format(step.column_name, i)
-            friendly_name = "Hashing value of {}".format(step.column_name)
-            self.preprocessed_feature_mapping[preprocessed_name] = self.SplitParameters(Node.TYPES.CAT, step.column_name, friendly_name=friendly_name,
-                value_func=value_func(i), add_preprocessed_feature=add_preprocessed_feature(i), invert_left_and_right=lambda threshold: threshold > 0)
+            friendly_name = "Hash #{} of {}".format(i, step.column_name)
+            self.preprocessed_feature_mapping[preprocessed_name] = \
+                self.SplitParameters(Node.TYPES.NUM, step.column_name, friendly_name=friendly_name)
+
+    def _add_cat_hashing_whole(self, step):
+        add_preprocessed_feature = \
+            lambda i: lambda array, col: np.sum(array[:, col-i : col-i + step.n_features], axis=1)
+        value_func = lambda i: lambda threshold: [threshold * 2 * i]
+        friendly_name = "Hashing value of {}".format(step.column_name)
+
+        for i in range(step.n_features):
+            preprocessed_name = "hashing:{}:{}".format(step.column_name, i)
+            self.preprocessed_feature_mapping[preprocessed_name] = \
+                self.SplitParameters(Node.TYPES.CAT, step.column_name, friendly_name=friendly_name,
+                                     value_func=value_func(i),
+                                     add_preprocessed_feature=add_preprocessed_feature(i),
+                                     invert_left_and_right=lambda threshold: threshold > 0)
 
     def _add_dummy_mapping(self, step):
         for value in step.values:
@@ -114,8 +136,10 @@ class TreeParser(object):
         for step in self.model_handler.get_pipeline().steps:
             if isinstance(step, RescalingProcessor2):
                 self.rescalers.append(step)
-            {   
-                CategoricalFeatureHashingProcessor: self._add_cat_hashing,
+            {
+                CategoricalFeatureHashingProcessor: \
+                    lambda step: self._add_cat_hashing_whole(step) if step.hash_whole_categories\
+                        else self._add_cat_hashing_not_whole(step),
                 FlagMissingValue2: self._add_flag_missing_value_mapping,
                 QuantileBinSeries: self._add_quantize_mapping,
                 FastSparseDummifyProcessor: self._add_dummy_mapping,
