@@ -2,11 +2,15 @@ import traceback, logging, json
 from flask import jsonify, request
 
 import dataiku
+import dataikuapi
 
 from dataiku.customwebapp import get_webapp_config
 from dataiku.core.dkujson import DKUJSONEncoder
 
 from dku_error_analysis_model_parser.model_handler_utils import get_model_handler
+from dataiku.doctor.posttraining.model_information_handler import PredictionModelInformationHandler
+from dataikuapi.dss.ml import DSSMLTask
+
 from dku_error_analysis_decision_tree.tree_handler import TreeHandler
 
 app.json_encoder = DKUJSONEncoder
@@ -15,18 +19,22 @@ LOGGER = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format="Error Analysis Plugin %(levelname)s - %(message)s")
 
 # initialization of the backend
-MODEL = dataiku.Model(get_webapp_config()["modelId"])
-VERSION_ID = get_webapp_config().get("versionId")
-
 handler = TreeHandler()
 
 @app.route("/original-model-info", methods=["GET"])
 def get_original_model_info():
     try:
-        original_model_handler = get_model_handler(MODEL, VERSION_ID)
+        fmi = dataiku.Model(get_webapp_config()["trainedModelFullModelId"])
+        if fmi is None:
+            model = dataiku.Model(get_webapp_config()["modelId"])
+            version_id = get_webapp_config().get("versionId")
+            original_model_handler = get_model_handler(model, version_id)
+            name = model.get_name()
+        else:
+            original_model_handler = PredictionModelInformationHandler.from_full_model_id(fmi)
+            name = DSSMLTask.from_full_model_id(fmi).get_trained_model_snippet(fmi).get("userMeta", {}).get("name")
         handler.set_error_analyzer(original_model_handler)
-
-        return jsonify(modelName=MODEL.get_name(),
+        return jsonify(modelName=name,
             isRegression='REGRESSION' in original_model_handler.get_prediction_type())
     except:
         LOGGER.error(traceback.format_exc())
