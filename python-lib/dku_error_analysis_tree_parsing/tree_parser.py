@@ -48,8 +48,7 @@ class TreeParser(object):
     # CATEGORICAL HANDLING
     def _add_cat_hashing_not_whole(self, step):
         logger.warning(
-            "The model has been trained on a version of DSS < 9.0.0, \
-            and so uses categorical hashing without whole category hashing enabled.\
+            "The model uses categorical hashing without whole category hashing enabled.\
             This is not recommanded."
         )
         for i in range(step.n_features):
