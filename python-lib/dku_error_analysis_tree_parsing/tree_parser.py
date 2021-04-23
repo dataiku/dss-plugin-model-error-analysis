@@ -58,15 +58,17 @@ class TreeParser(object):
                 self.SplitParameters(Node.TYPES.NUM, step.column_name, friendly_name=friendly_name)
 
     def _add_cat_hashing_whole(self, step):
-        add_preprocessed_feature = \
-            lambda i: lambda array, col: 2*np.sum(array[:, col-i : col-i + step.n_features], axis=1)
         value_func = lambda i: lambda threshold: [threshold * 2 * i]
-        friendly_name = "Hashing value of {}".format(step.column_name)
+        friendly_name = "Hash of {}".format(step.column_name)
+        add_preprocessed_feature = lambda i: lambda array, col: np.sum(
+            np.multiply(range(step.n_features), array[:, col - i : col - i + step.n_features]),
+            axis=1)
 
         for i in range(step.n_features):
             preprocessed_name = "hashing:{}:{}".format(step.column_name, i)
             self.preprocessed_feature_mapping[preprocessed_name] = \
-                self.SplitParameters(Node.TYPES.CAT, step.column_name, friendly_name=friendly_name,
+                self.SplitParameters(Node.TYPES.CAT, step.column_name,
+                                     friendly_name=friendly_name,
                                      value_func=value_func(i),
                                      add_preprocessed_feature=add_preprocessed_feature(i),
                                      invert_left_and_right=lambda threshold: threshold > 0)
