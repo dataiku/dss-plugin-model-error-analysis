@@ -60,7 +60,7 @@ class TreeParser(object):
 
     def _add_cat_hashing_whole(self, step):
         add_preprocessed_feature = \
-            lambda i: lambda array, col: np.sum(array[:, col-i : col-i + step.n_features], axis=1)
+            lambda i: lambda array, col: 2*np.sum(array[:, col-i : col-i + step.n_features], axis=1)
         value_func = lambda i: lambda threshold: [threshold * 2 * i]
         friendly_name = "Hashing value of {}".format(step.column_name)
 
