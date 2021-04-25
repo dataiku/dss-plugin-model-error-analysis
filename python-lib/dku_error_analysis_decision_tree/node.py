@@ -70,15 +70,20 @@ class Node(object):
 
     def to_dot_string(self):
         dot_str = '{0} [label="node #{0}\n'.format(self.id)
-        if self.parent_id >= 0:
-            dot_str += self.print_decision_rule() + "\n"
+        if self.node_id == 0:
+            tooltip = "root"
+        else:
+            rule = self.print_decision_rule()
+            tooltip = rule
+            dot_str += "{}\n".format((rule[:32] + "...") if len(rule) > 35 else rule)
 
         if self.local_error[0] >= ErrorAnalyzerConstants.GRAPH_MIN_LOCAL_ERROR_OPAQUE:
             alpha = 1.0
         else:
             alpha = self.local_error[0]
 
-        node_class = ErrorAnalyzerConstants.CORRECT_PREDICTION if self.global_error == 0 else ErrorAnalyzerConstants.WRONG_PREDICTION
+        node_class = ErrorAnalyzerConstants.CORRECT_PREDICTION if self.global_error == 0 \
+            else ErrorAnalyzerConstants.WRONG_PREDICTION
         class_color = ErrorAnalyzerConstants.ERROR_TREE_COLORS[node_class].strip('#')
         class_color_rgb = tuple(int(class_color[i:i + 2], 16) for i in (0, 2, 4))
         # compute the color as alpha against white
@@ -88,7 +93,7 @@ class Node(object):
         dot_str += 'samples = {:.3f}%\n'.format(self.samples[1])
         dot_str += 'local error = {:.3f}%\n'.format(100.*self.local_error[0])
         dot_str += 'fraction of total error = {:.3f}%\n'.format(100. * self.global_error)
-        dot_str += '", fillcolor="{}"] ;'.format(color)
+        dot_str += '", fillcolor="{}", tooltip="{}"] ;'.format(color, tooltip)
         return dot_str
 
 
@@ -154,7 +159,7 @@ class NumericalNode(Node):
     def print_decision_rule(self):
         decision_rule = self.feature
         if self.beginning:
-            decision_rule = '{:.2f} < {}'.format(self.beginning, self.feature)            
+            decision_rule = '{:.2f} < {}'.format(self.beginning, self.feature)
         if self.end:
             decision_rule = '{} <= {:.2f}'.format(decision_rule, self.end)
         return decision_rule
