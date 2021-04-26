@@ -15,6 +15,11 @@
       "contentType": "prediction",
       "targetParamsKey": "modelId",
       "pathParamsKey": "versionId"
+    },
+    {
+      "type": "ANALYSIS",
+      "contentType": "prediction",
+      "targetParamsKey": "trainedModelFullModelId"
     }
   ],
   "params": [
