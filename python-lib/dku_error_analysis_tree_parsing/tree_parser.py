@@ -182,8 +182,8 @@ class TreeParser(object):
                                 for i in range(unfolded.shape[1])]
                         df[columns] = unfolded
                         unique_ranked_feature_names += columns
-                        self.num_features.update(column for i, column in enumerate(columns)
-                                                if unfolded.dtypes[i] <= pd.np.number)
+                        self.num_features.update(column for column in unfolded
+                                                if pd.api.types.is_numeric_dtype(unfolded[column]))
                     except Exception as e:
                         logger.warning("Error while parsing vector feature %: %.\
                             It will not be used for charts", name, e)
