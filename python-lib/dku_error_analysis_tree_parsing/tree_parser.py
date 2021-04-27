@@ -9,6 +9,8 @@ from dku_error_analysis_tree_parsing.depreprocessor import descale_numerical_thr
 from collections import deque
 from mealy import ErrorAnalyzerConstants
 import logging
+from json import loads
+import pandas as pd
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format='Error Analysis Plugin | %(levelname)s - %(message)s')
@@ -161,7 +163,6 @@ class TreeParser(object):
 
     def build_tree(self, df, feature_list, preprocessed_x, target=DkuMEAConstants.ERROR_COLUMN):
         # Retrieve feature names without duplicates while keeping the ranking order
-        # TODO: allow rejected features as well?
         ranked_feature_ids = np.argsort(- self.error_model.feature_importances_)
         unique_ranked_feature_names, seen_values = [], set()
         for idx in ranked_feature_ids:
@@ -169,6 +170,28 @@ class TreeParser(object):
             if chart_name not in seen_values and chart_name is not None:
                 unique_ranked_feature_names.append(chart_name)
                 seen_values.add(chart_name)
+
+        # Add features that were rejected in the original model
+        for name, params in self.model_handler.get_per_feature().items():
+            if params["role"] == "REJECT":
+                if params["type"] == "VECTOR":
+                    # Unfold vector column
+                    try:
+                        unfolded = pd.DataFrame(df[name].dropna().map(loads).tolist())
+                        columns = ["{} [element #{}]".format(name, i)
+                                for i in range(unfolded.shape[1])]
+                        df[columns] = unfolded
+                        unique_ranked_feature_names += columns
+                        self.num_features.update(column for i, column in enumerate(columns)
+                                                if unfolded.dtypes[i] <= pd.np.number)
+                    except:
+                        logger.warning("Vector feature % might not be of a proper format.\
+                            It will not be used for charts", name)
+                elif params["type"] == "NUMERIC":
+                    self.num_features.add(name)
+                    unique_ranked_feature_names.append(name)
+                elif params["type"] == "CATEGORY":
+                    unique_ranked_feature_names.append(name)
 
         tree = InteractiveTree(df, target, unique_ranked_feature_names, self.num_features)
         self.parse_nodes(tree, feature_list, preprocessed_x)
