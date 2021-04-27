@@ -184,9 +184,9 @@ class TreeParser(object):
                         unique_ranked_feature_names += columns
                         self.num_features.update(column for i, column in enumerate(columns)
                                                 if unfolded.dtypes[i] <= pd.np.number)
-                    except:
-                        logger.warning("Vector feature % might not be of a proper format.\
-                            It will not be used for charts", name)
+                    except Exception as e:
+                        logger.warning("Error while parsing vector feature %: %.\
+                            It will not be used for charts", name, e)
                 elif params["type"] == "NUMERIC":
                     self.num_features.add(name)
                     unique_ranked_feature_names.append(name)
