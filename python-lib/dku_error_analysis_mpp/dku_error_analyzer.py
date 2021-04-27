@@ -77,15 +77,9 @@ class DkuErrorAnalyzer(ErrorAnalyzer):
         """ Preprocess and split original test set from Dku saved model
         into train and test set for the error analyzer """
         np.random.seed(self.random_state)
-
         original_df = get_original_test_df(self._model_handler)[:self._max_num_rows]
-
         self._train_x, self._train_y, input_mf_index = self._preprocess_dataframe(original_df)
-
-        x_df = pd.DataFrame(self._train_x, index=input_mf_index)
-
-        original_train_df = original_df.loc[x_df.index]
-
+        original_train_df = original_df.loc[input_mf_index]
         self._error_df = original_train_df.drop(self._target, axis=1)
 
     def parse_tree(self):
