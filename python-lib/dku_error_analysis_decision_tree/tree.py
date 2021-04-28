@@ -95,8 +95,8 @@ class InteractiveTree(object):
         self.add_node(left)
         self.add_node(right)
 
-    def get_filtered_df(self, node, df):
-        node_id = node.id
+    def get_filtered_df(self, node_id, df=None):
+        df = self.df if df is None else df
         while node_id > 0:
             node = self.get_node(node_id)
             df = node.apply_filter(df)
@@ -104,8 +104,7 @@ class InteractiveTree(object):
         return df
 
     def get_stats(self, i, col, nr_bins, enforced_bins=None):
-        node = self.get_node(i)
-        filtered_df = self.get_filtered_df(node, self.df)
+        filtered_df = self.get_filtered_df(i)
         column = filtered_df[col]
         target_column = filtered_df[self.target]
         if col in self.num_features:
