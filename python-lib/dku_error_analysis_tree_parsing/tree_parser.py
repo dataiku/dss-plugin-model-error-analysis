@@ -177,13 +177,13 @@ class TreeParser(object):
                 if params["type"] == "VECTOR":
                     # Unfold vector column
                     try:
-                        unfolded = pd.DataFrame(df[name].dropna().map(loads).tolist())
+                        unfolded = pd.DataFrame(df[name].dropna().map(loads).tolist()).replace("", np.nan)
                         columns = ["{} [element #{}]".format(name, i)
                                 for i in range(unfolded.shape[1])]
                         df[columns] = unfolded
                         unique_ranked_feature_names += columns
-                        self.num_features.update(column for column in unfolded
-                                                if pd.api.types.is_numeric_dtype(unfolded[column]))
+                        self.num_features.update(column for i, column in enumerate(columns)
+                                                if pd.api.types.is_numeric_dtype(unfolded[i]))
                     except Exception as e:
                         logger.warning("Error while parsing vector feature %: %.\
                             It will not be used for charts", name, e)
