@@ -2,7 +2,6 @@
 import numpy as np
 import pandas as pd
 import collections
-from sklearn.model_selection import train_test_split
 from dku_error_analysis_model_parser.model_handler_utils import get_original_test_df
 from dku_error_analysis_tree_parsing.tree_parser import TreeParser
 from dku_error_analysis_utils import DkuMEAConstants
@@ -71,25 +70,16 @@ class DkuErrorAnalyzer(ErrorAnalyzer):
                 df,
                 with_target=True)
             return x, y, input_mf_index
+
         return self._model_predictor.preprocessing.preprocess(df)[0]
 
     def _prepare_data_from_dku_saved_model(self):
         """ Preprocess and split original test set from Dku saved model
         into train and test set for the error analyzer """
         np.random.seed(self.random_state)
-
         original_df = get_original_test_df(self._model_handler)[:self._max_num_rows]
-
-        preprocessed_x, y, input_mf_index = self._preprocess_dataframe(original_df)
-
-        x_df = pd.DataFrame(preprocessed_x, index=input_mf_index)
-        y_df = pd.Series(y, index=input_mf_index)
-
-        self._train_x = x_df.values
-        self._train_y = y_df.values
-
-        original_train_df = original_df.loc[x_df.index]
-
+        self._train_x, self._train_y, input_mf_index = self._preprocess_dataframe(original_df)
+        original_train_df = original_df.loc[input_mf_index]
         self._error_df = original_train_df.drop(self._target, axis=1)
 
     def parse_tree(self):
