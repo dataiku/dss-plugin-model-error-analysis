@@ -55,20 +55,14 @@ class InteractiveTree(object):
         dot_str += "}"
         return dot_str
 
-    def set_node_info(self, node_id, samples, class_samples):
-        sorted_class_samples = sorted(class_samples.items(), key=lambda x: -x[1])
-        if samples > 0:
-            prediction = sorted_class_samples[0][0]
-        else:
-            prediction = None
-
+    def set_node_info(self, node_id, class_samples):
         node = self.get_node(node_id)
         if node_id == 0:
-            node.set_node_info(samples, samples, sorted_class_samples, prediction, 1)
+            node.set_node_info(self.df.shape[0], class_samples, 1)
         else:
             root = self.get_node(0)
             global_error = class_samples[ErrorAnalyzerConstants.WRONG_PREDICTION] / root.local_error[1]
-            node.set_node_info(samples, root.samples[0], sorted_class_samples, prediction, global_error)
+            node.set_node_info(root.samples[0], class_samples, global_error)
 
     def jsonify_nodes(self):
         jsonified_tree = {}

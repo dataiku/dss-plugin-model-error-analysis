@@ -36,7 +36,7 @@ class Node(object):
         self.parent_id = parent_id
         self.children_ids = []
         self.feature = feature
-        self.probabilities = None
+        self.probabilities = []
         self.prediction = None
         self.samples = None
         self.global_error = None
@@ -46,15 +46,18 @@ class Node(object):
     def id(self):
         return self.node_id
 
-    def set_node_info(self, samples, total_samples, probabilities, prediction, global_error):
+    def set_node_info(self, total_samples, class_samples, global_error):
+        sorted_class_samples = sorted(class_samples.items(), reverse=True, key=lambda x: (x[1], x[0]))
+        samples = sorted_class_samples[0][1] + sorted_class_samples[1][1]
         self.samples = [samples, 100.0 * samples / total_samples]
-        self.probabilities = []
-        for class_name, class_samples in probabilities:
-            self.probabilities.append([class_name, class_samples/samples, class_samples])
-        self.prediction = prediction
+        for class_name, class_samples in sorted_class_samples:
+            self.probabilities.append([class_name,
+                                       class_samples/samples if samples > 0 else 0,
+                                       class_samples])
+        self.prediction = sorted_class_samples[0][0] if sorted_class_samples[0][1] > 0 else None
         self.global_error = global_error
 
-        if self.prediction and self.probabilities[0][0] == ErrorAnalyzerConstants.WRONG_PREDICTION:
+        if self.prediction == ErrorAnalyzerConstants.WRONG_PREDICTION:
             self.local_error = self.probabilities[0][1:3]
         else:
             self.local_error = self.probabilities[1][1:3]
@@ -127,7 +130,7 @@ class CategoricalNode(Node):
         single_value = len(self.values) == 1
         if single_value:
             return self.feature + ' is ' + ( 'not ' if self.others else '') + safe_str(self.values[0])
-        return self.feature + ( ' not ' if self.others else '') + ' in ['  + u', '.join(self.values) + "]"
+        return self.feature + ( ' not' if self.others else '') + ' in ['  + u', '.join(self.values) + "]"
 
 
 class NumericalNode(Node):

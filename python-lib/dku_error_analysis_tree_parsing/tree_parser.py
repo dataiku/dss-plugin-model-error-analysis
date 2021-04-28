@@ -213,8 +213,7 @@ class TreeParser(object):
                 ErrorAnalyzerConstants.WRONG_PREDICTION: error_model_tree.value[node_id, 0, error_class_idx],
                 ErrorAnalyzerConstants.CORRECT_PREDICTION: error_model_tree.value[node_id, 0, 1 - error_class_idx]
             }
-            samples = error_model_tree.n_node_samples[node_id]
-            tree.set_node_info(node_id, samples, class_samples)
+            tree.set_node_info(node_id, class_samples)
 
             # Create its children if any
             if children_left[node_id] < 0:
