@@ -172,7 +172,7 @@ class TreeParser(object):
             self._add_identity_mapping(preprocessed_name)
         return self.preprocessed_feature_mapping[preprocessed_name]
 
-    def build_tree(self, df, preprocessed_x, target=DkuMEAConstants.ERROR_COLUMN):
+    def rank_features(self, df):
         # Retrieve feature names without duplicates while keeping the ranking order
         ranked_feature_ids = np.argsort(- self.error_model.feature_importances_)
         unique_ranked_feature_names, seen_values = [], set()
@@ -203,12 +203,10 @@ class TreeParser(object):
                     unique_ranked_feature_names.append(name)
                 elif params["type"] == "CATEGORY":
                     unique_ranked_feature_names.append(name)
+        return unique_ranked_feature_names
 
+    def build_tree(self, df, preprocessed_x, unique_ranked_feature_names, target=DkuMEAConstants.ERROR_COLUMN):
         tree = InteractiveTree(df, target, unique_ranked_feature_names, self.num_features)
-        self.parse_nodes(tree, preprocessed_x)
-        return tree
-
-    def parse_nodes(self, tree, preprocessed_x):
         error_model_tree = self.error_model.tree_
         thresholds = descale_numerical_thresholds(error_model_tree, self.feature_list, self.rescalers)
         children_left, children_right, features = error_model_tree.children_left, error_model_tree.children_right, error_model_tree.feature
@@ -246,3 +244,4 @@ class TreeParser(object):
 
             ids.append(left_child_id)
             ids.append(right_child_id)
+        return tree
