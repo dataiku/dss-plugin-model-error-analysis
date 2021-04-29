@@ -27,7 +27,9 @@ class InteractiveTree(object):
         self.df = df.dropna(subset=[target]) # TODO
         self.target = target
         self.num_features = num_features
-        self.nodes = {0: Node(0, -1)}
+        self.nodes = {}
+        self.leaves = set()
+        self.add_node(Node(0, -1))
         self.ranked_features = []
         for idx, ranked_feature in enumerate(ranked_features):
             self.ranked_features.append({
@@ -36,7 +38,6 @@ class InteractiveTree(object):
                 "numerical": ranked_feature in num_features
             })
         self.bin_edges = {}
-        self.leaves = set()
 
     def to_dot_string(self, size=(50, 50)):
         dot_str = 'digraph Tree {{\n size="{0},{1}!";\nnode [shape=box, style="filled, rounded", color="black", fontname=helvetica] ;\n'.format(size[0], size[1])
@@ -72,9 +73,11 @@ class InteractiveTree(object):
 
     def add_node(self, node):
         self.nodes[node.id] = node
+        self.leaves.add(node.id)
         parent_node = self.get_node(node.parent_id)
         if parent_node is not None:
             parent_node.children_ids.append(node.id)
+            self.leaves.discard(node.parent_id)
 
     def get_node(self, i):
         return self.nodes.get(i)
@@ -85,7 +88,7 @@ class InteractiveTree(object):
             right = NumericalNode(right_child_id, parent_id, feature, beginning=value)
         else:
             left = CategoricalNode(left_node_id, parent_id, feature, value)
-            right = CategoricalNode(right_child_id, parent_id, feature, list(value), others=True) #TODO: why the list
+            right = CategoricalNode(right_child_id, parent_id, feature, list(value), others=True)
         self.add_node(left)
         self.add_node(right)
 
