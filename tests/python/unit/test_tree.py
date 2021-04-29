@@ -10,20 +10,21 @@ import pytest
 @pytest.fixture
 def create_tree():
     df = pd.DataFrame([
-                    [1,      5.5, "x", "n",    "A"],
-                    [2,      7.7, "y", np.nan, "A"],
-                    [np.nan, 7,   "z", np.nan, "B"],
-                    [3,      1.2, "z", "n",    "B"],
-                    [4,      7.1, "z", np.nan, "C"],
-                    [5,      .4,  "x", "p",    "A"],
-                    [6,      8,   "z", np.nan, "A"],
-                    [7,      5.5, "y", "p",    "B"],
-                    [8,      1.5, "z", "n",    "B"],
-                    [9,      3,   "y", "n",    "C"],
-                    [10,     7.5, "x", np.nan, "B"],
-                    [11,     6,   "x", np.nan, "B"]
-                ], columns=("num_1", "num_2", "cat_1", "cat_2", "target"))
-    return lambda: InteractiveTree(df, "target", ["cat_1", "num_2", "cat_2", "num_1"], {"num_1", "num_2"})
+        [1,      5.5, "x", "n",    "A"],
+        [2,      7.7, "y", np.nan, "A"],
+        [np.nan, 7,   "z", np.nan, "B"],
+        [3,      1.2, "z", "n",    "B"],
+        [4,      7.1, "z", np.nan, "C"],
+        [5,      .4,  "x", "p",    "A"],
+        [6,      8,   "z", np.nan, "A"],
+        [7,      5.5, "y", "p",    "B"],
+        [8,      1.5, "z", "n",    "B"],
+        [9,      3,   "y", "n",    "C"],
+        [10,     7.5, "x", np.nan, "B"],
+        [11,     6,   "x", np.nan, "B"]
+    ], columns=("num_1", "num_2", "cat_1", "cat_2", "target"))
+    tree = InteractiveTree(df, "target", ["cat_1", "num_2", "cat_2", "num_1"], {"num_1", "num_2"})
+    return tree
 
 @pytest.fixture
 def target():
@@ -190,9 +191,70 @@ def test_get_stats_categorical_node(target, cat_column):
     assert stats["target_distrib"][ErrorAnalyzerConstants.WRONG_PREDICTION] == []
     assert stats["target_distrib"][ErrorAnalyzerConstants.CORRECT_PREDICTION] == []
 
-# TODO
-def test_get_stats(create_tree):
+def test_get_stats(create_tree, mocker):
+    # Retrieving stats for categorical features
     tree = create_tree()
+    spy = mocker.spy(InteractiveTree, 'get_stats_categorical_node')
+    tree.get_stats(0, "cat_1", 7)
+    cargs = spy.call_args[0]
+    pd.testing.assert_series_equal(cargs[0], pd.Series(["x","y","z","z","z","x","z","y","z","y","x","x"], name="cat_1"))
+    pd.testing.assert_series_equal(cargs[1], pd.Series(["A","A","B","B","C","A","A","B","B","C","B","B"], name="target"))
+    assert cargs[2] == 7
+    assert cargs[3] is None
+
+    # Retrieving stats for numerical features - no bins
+    tree = create_tree()
+    spy = mocker.spy(InteractiveTree, 'get_stats_numerical_node')
+    spy_cut = mocker.spy(pd, 'cut')
+    tree.get_stats(0, "num_1", 10)
+    cargs = spy.call_args[0]
+    bins = pd.Series(pd.Categorical([
+        pd.Interval(1.0,  2.0,  "left"),
+        pd.Interval(2.0,  3.0,  "left"),
+        np.nan,
+        pd.Interval(3.0,  4.0,  "left"),
+        pd.Interval(4.0,  5.0,  "left"),
+        pd.Interval(5.0,  6.0,  "left"),
+        pd.Interval(6.0,  7.0,  "left"),
+        pd.Interval(7.0,  8.0,  "left"),
+        pd.Interval(8.0,  9.0,  "left"),
+        pd.Interval(9.0,  10.0, "left"),
+        pd.Interval(10.0, 11.01, "left"),
+        pd.Interval(10.0, 11.01, "left")
+    ], ordered=True), name="num_1")
+    pd.testing.assert_series_equal(cargs[0], bins)
+    pd.testing.assert_series_equal(cargs[1], pd.Series(["A","A","B","B","C","A","A","B","B","C","B","B"], name="target"))
+    assert (tree.bin_edges["num_1"] == [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.01]).all()
+    assert spy_cut.call_count == 2
+
+    # Retrieving stats for numerical features - with bins
+    tree = create_tree()
+    bin_edges = np.array([1.0, 5.0, 11.01])
+    tree.bin_edges["num_1"] = bin_edges
+    spy = mocker.spy(InteractiveTree, 'get_stats_numerical_node')
+    tree.get_stats(0, "num_1", 8, pd.Series(pd.Categorical([
+        pd.Interval(1.0, 3.0, "left"),
+        pd.Interval(3.0, 11.01, "left")],
+    ordered=True), name="num_1"))
+    cargs = spy.call_args[0]
+    bins = pd.Series(pd.Categorical([
+        pd.Interval(1.0,  5.0,  "left"),
+        pd.Interval(1.0,  5.0,  "left"),
+        np.nan,
+        pd.Interval(1.0,  5.0,  "left"),
+        pd.Interval(1.0,  5.0,  "left"),
+        pd.Interval(5.0,  11.01,  "left"),
+        pd.Interval(5.0,  11.01,  "left"),
+        pd.Interval(5.0,  11.01,  "left"),
+        pd.Interval(5.0,  11.01,  "left"),
+        pd.Interval(5.0,  11.01, "left"),
+        pd.Interval(5.0, 11.01, "left"),
+        pd.Interval(5.0, 11.01, "left")
+    ], ordered=True), name="num_1")
+    pd.testing.assert_series_equal(cargs[0], bins)
+    pd.testing.assert_series_equal(cargs[1], pd.Series(["A","A","B","B","C","A","A","B","B","C","B","B"], name="target"))
+    assert (tree.bin_edges["num_1"] == [1.0, 5.0, 11.01]).all()
+    assert spy_cut.call_count == 3
 
 # TODO
 def test_to_dot_string(create_tree):
@@ -200,5 +262,5 @@ def test_to_dot_string(create_tree):
     pass
 
 # TODO
-def test_set_node_info(create_tree):
+def test_set_node_info(mocker):
     pass
