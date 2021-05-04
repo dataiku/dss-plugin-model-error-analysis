@@ -4,6 +4,7 @@ import pandas as pd
 import collections
 from dku_error_analysis_model_parser.model_handler_utils import get_original_test_df
 from dku_error_analysis_tree_parsing.tree_parser import TreeParser
+from dku_error_analysis_decision_tree.tree import InteractiveTree
 from dku_error_analysis_utils import DkuMEAConstants
 import logging
 from mealy import ErrorAnalyzer, ErrorAnalyzerConstants
@@ -87,7 +88,8 @@ class DkuErrorAnalyzer(ErrorAnalyzer):
         self._error_df.loc[:, DkuMEAConstants.ERROR_COLUMN] = self._error_train_y
         tree_parser = TreeParser(self._model_handler, self.error_tree.estimator_, self.preprocessed_feature_names)
         ranked_features = tree_parser.rank_features(self._error_df)
-        self._tree = tree_parser.build_tree(self._error_df, self._error_train_x, ranked_features)
+        tree = InteractiveTree(self._error_df, DkuMEAConstants.ERROR_COLUMN, ranked_features, tree_parser.num_features)
+        self._tree = tree_parser.parse_nodes(tree, self._error_train_x)
 
     def _get_path_to_node(self, node_id):
         """ return path to node as a list of split steps from the nodes of the de-processed

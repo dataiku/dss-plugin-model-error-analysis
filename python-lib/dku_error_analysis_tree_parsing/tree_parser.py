@@ -1,10 +1,8 @@
 import numpy as np
 from dku_error_analysis_decision_tree.node import Node
-from dku_error_analysis_decision_tree.tree import InteractiveTree
 from dataiku.doctor.preprocessing.dataframe_preprocessing import RescalingProcessor2, QuantileBinSeries, UnfoldVectorProcessor, BinarizeSeries, \
     FastSparseDummifyProcessor, ImpactCodingStep, FlagMissingValue2, TextCountVectorizerProcessor, TextHashingVectorizerWithSVDProcessor, \
     TextHashingVectorizerProcessor, TextTFIDFVectorizerProcessor, CategoricalFeatureHashingProcessor
-from dku_error_analysis_utils import DkuMEAConstants
 from dku_error_analysis_tree_parsing.depreprocessor import descale_numerical_thresholds, denormalize_feature_value
 from collections import deque
 from mealy import ErrorAnalyzerConstants
@@ -20,7 +18,7 @@ class TreeParser(object):
         def __init__(self, node_type, chart_name, value=None, friendly_name=None,
                      value_func=lambda threshold: threshold,
                      add_preprocessed_feature=lambda array, col: array[:, col],
-                     invert_left_and_right=None):
+                     invert_left_and_right=lambda threshold: False):
             self.node_type = node_type
             self.chart_name = chart_name
             self.friendly_name = friendly_name
@@ -143,7 +141,7 @@ class TreeParser(object):
         vec = step.resource["vectorizer"]
         for word, idf in zip(vec.get_feature_names(), vec.idf_):
             preprocessed_name = "tfidfvec:{}:{:.3f}:{}".format(step.column_name, idf, word)
-            friendly_name = "{}: tfidf of {}".format(step.column_name, word)
+            friendly_name = "{}: tf-idf of {} (idf={:.3f})".format(step.column_name, word, idf)
             self.preprocessed_feature_mapping[preprocessed_name] = self.SplitParameters(Node.TYPES.NUM, None, friendly_name=friendly_name)
 
     def _create_preprocessed_feature_mapping(self):
@@ -184,11 +182,12 @@ class TreeParser(object):
 
         # Add features that were rejected in the original model
         for name, params in self.model_handler.get_per_feature().items():
-            if params["role"] == "REJECT":
+            if params["role"] == "REJECT" or params["role"] == "WEIGHT":
                 if params["type"] == "VECTOR":
                     # Unfold vector column
                     try:
-                        unfolded = pd.DataFrame(df[name].dropna().map(loads).tolist()).replace("", np.nan)
+                        vector_col_no_nan = df[name].dropna()
+                        unfolded = pd.DataFrame(vector_col_no_nan.map(loads).tolist(), index=vector_col_no_nan.index).replace("", np.nan)
                         columns = ["{} [element #{}]".format(name, i)
                                 for i in range(unfolded.shape[1])]
                         df[columns] = unfolded
@@ -205,8 +204,7 @@ class TreeParser(object):
                     unique_ranked_feature_names.append(name)
         return unique_ranked_feature_names
 
-    def build_tree(self, df, preprocessed_x, unique_ranked_feature_names, target=DkuMEAConstants.ERROR_COLUMN):
-        tree = InteractiveTree(df, target, unique_ranked_feature_names, self.num_features)
+    def parse_nodes(self, tree, preprocessed_x):
         error_model_tree = self.error_model.tree_
         thresholds = descale_numerical_thresholds(error_model_tree, self.feature_list, self.rescalers)
         children_left, children_right, features = error_model_tree.children_left, error_model_tree.children_right, error_model_tree.feature
@@ -235,7 +233,7 @@ class TreeParser(object):
             value = split_parameters.value
             if value is None:
                 value = split_parameters.value_func(threshold)
-            if split_parameters.invert_left_and_right and split_parameters.invert_left_and_right(threshold):
+            if split_parameters.invert_left_and_right(threshold):
                 left_child_id, right_child_id = children_right[node_id], children_left[node_id]
             else:
                 left_child_id, right_child_id = children_left[node_id], children_right[node_id]
