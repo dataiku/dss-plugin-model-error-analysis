@@ -23,8 +23,7 @@ def create_tree():
         [10,     7.5, "x", np.nan, "B"],
         [11,     6,   "x", np.nan, "B"]
     ], columns=("num_1", "num_2", "cat_1", "cat_2", "target"))
-    tree = InteractiveTree(df, "target", ["cat_1", "num_2", "cat_2", "num_1"], {"num_1", "num_2"})
-    return tree
+    return lambda: InteractiveTree(df, "target", ["cat_1", "num_2", "cat_2", "num_1"], {"num_1", "num_2"})
 
 @pytest.fixture
 def target():
@@ -56,7 +55,7 @@ def num_column():
     return col
 
 @pytest.fixture
-def cat_column(create_tree):
+def cat_column():
     def col(full=True):
         return pd.Series(["C", "B", "B" if full else np.nan, "B", "Q"])
     return col
@@ -65,7 +64,7 @@ def test_on_add_splits(create_tree):
     # Add numerical split
     tree = create_tree()
     tree.add_split_no_siblings(Node.TYPES.NUM, 0, "num_2", .9, 1, 2)
-    assert not (tree.leaves - {1, 2})
+    assert tree.leaves == {1, 2}
     assert tree.get_node(0).children_ids == [1, 2]
 
     left_node = tree.get_node(1)
@@ -86,7 +85,7 @@ def test_on_add_splits(create_tree):
     # Add categorical split
     tree = create_tree()
     tree.add_split_no_siblings(Node.TYPES.CAT, 0, "cat_1", ["n"], 1, 2)
-    assert not (tree.leaves - {1, 2})
+    assert tree.leaves == {1, 2}
     assert tree.get_node(0).children_ids == [1, 2]
 
     left_node = tree.get_node(1)
@@ -257,10 +256,9 @@ def test_get_stats(create_tree, mocker):
     assert spy_cut.call_count == 3
 
 # TODO
-def test_to_dot_string(create_tree):
-    tree = create_tree()
+def test_to_dot_string():
     pass
 
 # TODO
-def test_set_node_info(mocker):
+def test_set_node_info():
     pass
