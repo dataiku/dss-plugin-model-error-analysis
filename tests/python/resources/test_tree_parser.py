@@ -1,7 +1,3 @@
-import sys
-sys.path.append("/Users/aguillemot/devenv/dss-plugin-model-error-analysis/python-lib")
-sys.path.append("/Users/aguillemot/devenv/dip/src/main/python")
-sys.path.append("/Users/aguillemot/devenv/dataiku-api-client-python")
 from dku_error_analysis_tree_parsing.tree_parser import TreeParser
 from dku_error_analysis_decision_tree.node import Node
 from mealy import ErrorAnalyzerConstants

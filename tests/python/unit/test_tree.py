@@ -1,5 +1,3 @@
-import sys
-sys.path.append("/Users/aguillemot/devenv/dss-plugin-model-error-analysis/python-lib")
 from mealy import ErrorAnalyzerConstants
 import pandas as pd
 import numpy as np

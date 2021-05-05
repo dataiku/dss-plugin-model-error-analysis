@@ -1,5 +1,3 @@
-import sys
-sys.path.append("/Users/aguillemot/devenv/dss-plugin-model-error-analysis/python-lib")
 from dku_error_analysis_decision_tree.node import Node, CategoricalNode, NumericalNode
 from mealy import ErrorAnalyzerConstants
 import pandas as pd
