@@ -1,0 +1,1 @@
+git+git://github.com/dataiku/dataiku-plugin-tests-utils.git@master#egg=dataiku-plugin-tests-utils

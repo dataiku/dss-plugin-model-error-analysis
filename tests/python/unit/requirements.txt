@@ -1,0 +1,4 @@
+pandas~=1.0
+pytest~=6.2
+numpy==1.16.6
+mealy==0.2.2
