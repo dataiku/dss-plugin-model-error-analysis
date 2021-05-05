@@ -80,24 +80,17 @@ class Node(object):
             tooltip = rule
             dot_str += "{}\n".format((rule[:32] + "...") if len(rule) > 35 else rule)
 
-        if self.local_error[0] >= ErrorAnalyzerConstants.GRAPH_MIN_LOCAL_ERROR_OPAQUE:
-            alpha = 1.0
-        else:
-            alpha = self.local_error[0]
-
-        node_class = ErrorAnalyzerConstants.CORRECT_PREDICTION if self.global_error == 0 \
-            else ErrorAnalyzerConstants.WRONG_PREDICTION
-        class_color = ErrorAnalyzerConstants.ERROR_TREE_COLORS[node_class].strip('#')
-        class_color_rgb = tuple(int(class_color[i:i + 2], 16) for i in (0, 2, 4))
-        # compute the color as alpha against white
-        color_rgb = [int(round(alpha * c + (1 - alpha) * 255, 0)) for c in class_color_rgb]
-        color = '#{:02x}{:02x}{:02x}'.format(color_rgb[0], color_rgb[1], color_rgb[2])
+        color = ErrorAnalyzerConstants.ERROR_TREE_COLORS[ErrorAnalyzerConstants.WRONG_PREDICTION]
+        alpha = "{:02x}".format(int(self.local_error[0]*255))
 
         dot_str += 'samples = {:.3f}%\n'.format(self.samples[1])
         dot_str += 'local error = {:.3f}%\n'.format(100.*self.local_error[0])
         dot_str += 'fraction of total error = {:.3f}%\n'.format(100. * self.global_error)
-        dot_str += '", fillcolor="{}", tooltip="{}"] ;'.format(color, tooltip)
+        dot_str += '", fillcolor="{}", tooltip="{}"] ;'.format(color+alpha, tooltip)
         return dot_str
+
+    def apply_filter(self, df):
+        raise NotImplementedError
 
 
 class CategoricalNode(Node):
@@ -144,11 +137,11 @@ class NumericalNode(Node):
     def get_type(self):
         return Node.TYPES.NUM
 
-    def apply_filter(self, df, mean=None):
+    def apply_filter(self, df):
         if self.beginning is not None:
-            df = df[df[self.feature].gt(self.beginning, fill_value=mean)]
+            df = df[df[self.feature].gt(self.beginning)]
         if self.end is not None:
-            df = df[df[self.feature].le(self.end, fill_value=mean)]
+            df = df[df[self.feature].le(self.end)]
         return df
 
     def jsonify(self):
