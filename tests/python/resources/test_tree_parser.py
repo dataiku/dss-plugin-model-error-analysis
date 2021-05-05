@@ -44,6 +44,7 @@ def df():
     ], columns=("num_1", "num_2", "cat_1", "cat_2", "target", "text", "vector", "bad_vector"))
 
 # PARSING METHODS
+@pytest.mark.parsing
 def test_rank_features(mocker, df, create_parser, caplog):
     error_model = mocker.Mock()
     error_model.feature_importances_ = np.array([1, 3, 0, 5, 2, 4])
@@ -125,6 +126,7 @@ def mocked_get_split_param(feature):
     if feature == "num_1":
         return TreeParser.SplitParameters(Node.TYPES.NUM, "foo", None, "num_1")
 
+@pytest.mark.parsing
 def test_build_tree(mocker, df, create_parser):
     mocker.patch("dku_error_analysis_tree_parsing.tree_parser.descale_numerical_thresholds",
                  return_value=[8, -2, .5, 3, -.5, -2, -2, -2, 1, -2, -2])
@@ -245,6 +247,7 @@ def check_dummy(split, name, value=None, others=False):
     else:
         assert split.invert_left_and_right and split.invert_left_and_right(0)
 
+@pytest.mark.categorical
 def test_dummy(create_parser, mocker):
     parser = create_parser()
     step = mocker.Mock(values=["A", "B"], input_column_name="test", should_drop=True)
@@ -277,6 +280,7 @@ def test_dummy(create_parser, mocker):
     others = parser.preprocessed_feature_mapping["dummy:test:__Others__"]
     check_dummy(others, "test", ["A", "B"], True)
 
+@pytest.mark.categorical
 def test_impact(create_parser, mocker):
     # < DSS 10
     parser = create_parser()
@@ -337,6 +341,7 @@ def test_impact(create_parser, mocker):
     with pytest.raises(AttributeError):
         parser._add_impact_mapping(step)
 
+@pytest.mark.categorical
 def test_whole_cat_hashing(create_parser, mocker):
     parser = create_parser()
     step = mocker.Mock(column_name="test", n_features=3)
@@ -382,6 +387,7 @@ def test_whole_cat_hashing(create_parser, mocker):
     assert third.invert_left_and_right and third.invert_left_and_right(.5) and not third.invert_left_and_right(-.5)
     assert (third.add_preprocessed_feature(preproc_array, 2) == added_column).all()
 
+@pytest.mark.categorical
 def test_not_whole_cat_hashing(create_parser, mocker):
     parser = create_parser()
     step = mocker.Mock(column_name="test", n_features=2)
@@ -419,6 +425,7 @@ def test_not_whole_cat_hashing(create_parser, mocker):
     assert (second.add_preprocessed_feature(preproc_array, 1) == [0,2,3,0,1,0,0]).all()
 
 # VECTOR HANDLING
+@pytest.mark.vector
 def test_unfold(create_parser, mocker):
     parser = create_parser()
     step = mocker.Mock(input_column_name="test", vector_length=2)
@@ -456,6 +463,7 @@ def test_unfold(create_parser, mocker):
     assert (elem_1.add_preprocessed_feature(preproc_array, 1) == [0,2,3,0,1,0,0]).all()
 
 # NUM HANDLINGS
+@pytest.mark.numerical
 def test_add_preprocessed_rescaled_num(create_parser, mocker):
     parser = create_parser()
     parser.rescalers = {"test": "does_not_matter"}
@@ -484,6 +492,7 @@ def test_add_preprocessed_rescaled_num(create_parser, mocker):
 def mocked_add_preprocessed_rescaled_num_feature(original_name):
     return "fake_function", "friendly_name"
 
+@pytest.mark.numerical
 def test_identity(create_parser, mocker):
     parser = create_parser()
     mocker.patch.object(parser, '_add_preprocessed_rescaled_num_feature', side_effect=mocked_add_preprocessed_rescaled_num_feature)
@@ -501,6 +510,7 @@ def test_identity(create_parser, mocker):
         and not split.invert_left_and_right(.5)
     assert split.add_preprocessed_feature == "fake_function"
 
+@pytest.mark.numerical
 def test_binarize(create_parser, mocker):
     parser = create_parser()
     patched = mocker.patch.object(parser, '_add_preprocessed_rescaled_num_feature', side_effect=mocked_add_preprocessed_rescaled_num_feature)
@@ -521,6 +531,7 @@ def test_binarize(create_parser, mocker):
         and not split.invert_left_and_right(.5)
     assert split.add_preprocessed_feature == "fake_function"
 
+@pytest.mark.numerical
 def test_quantize(create_parser, mocker):
     parser = create_parser()
     patched = mocker.patch.object(parser, '_add_preprocessed_rescaled_num_feature', side_effect=mocked_add_preprocessed_rescaled_num_feature)
@@ -540,6 +551,7 @@ def test_quantize(create_parser, mocker):
         and not split.invert_left_and_right(.5)
     assert split.add_preprocessed_feature == "fake_function"
 
+@pytest.mark.numerical
 def test_flag_missing(create_parser, mocker):
     # Flag on numerical feature
     parser = create_parser()
@@ -586,6 +598,7 @@ def check_text_features(preproc_array, split, name):
     assert (split.add_preprocessed_feature(preproc_array, 0) == [-1,0,0,0,1,0,4]).all()
     assert (split.add_preprocessed_feature(preproc_array, 1) == [0,2,3,0,1,0,0]).all()
 
+@pytest.mark.text
 def test_vect_hashing(create_parser, mocker):
     # Hash without SVD
     parser = create_parser()
@@ -618,6 +631,7 @@ def test_vect_hashing(create_parser, mocker):
     first = parser.preprocessed_feature_mapping["thsvd:test:0"]
     check_text_features(preproc_array, first, "test [text #0]")
 
+@pytest.mark.text
 def test_count_vect(create_parser, mocker):
     parser = create_parser()
     step = mocker.Mock(column_name="test", prefix="prefix")
@@ -643,6 +657,7 @@ def test_count_vect(create_parser, mocker):
     second = parser.preprocessed_feature_mapping["prefix:test:random"]
     check_text_features(preproc_array, second, "test: occurrences of random")
 
+@pytest.mark.text
 def test_tfidf_vect(create_parser, mocker):
     parser = create_parser()
     step = mocker.Mock(column_name="test")
