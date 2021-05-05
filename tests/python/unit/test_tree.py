@@ -255,10 +255,48 @@ def test_get_stats(create_tree, mocker):
     assert (tree.bin_edges["num_1"] == [1.0, 5.0, 11.01]).all()
     assert spy_cut.call_count == 3
 
-# TODO
-def test_to_dot_string():
-    pass
+def test_to_dot_string(create_tree, mocker):
+    tree = create_tree()
+    root = mocker.Mock(parent_id=-1, children_ids=[1, 2])
+    left_child = mocker.Mock(id=1, parent_id=0, children_ids=[], global_error=2/ErrorAnalyzerConstants.GRAPH_MAX_EDGE_WIDTH)
+    right_child = mocker.Mock(id=2, parent_id=0, children_ids=[], global_error=1/(1+ErrorAnalyzerConstants.GRAPH_MAX_EDGE_WIDTH))
 
-# TODO
-def test_set_node_info():
-    pass
+    tree.nodes = { 0: root, 1: left_child, 2: right_child }
+    tree.leaves = {1, 2}
+    mocker.patch.object(root, "to_dot_string", return_value="root string")
+    mocker.patch.object(left_child, "to_dot_string", return_value="left string")
+    mocker.patch.object(right_child, "to_dot_string", return_value="right string")
+
+    digraph_desc, size, node_desc, edge_desc, graph_desc, root_string, left_string, left_edge,\
+        right_string, right_edge, leaves_desc, final_line = tree.to_dot_string((20, 30)).split("\n")
+
+    assert digraph_desc == 'digraph Tree {'
+    assert size == ' size="20,30!";'
+    assert node_desc == 'node [shape=box, style="filled, rounded", color="black", fontname=helvetica] ;'
+    assert edge_desc == 'edge [fontname=helvetica] ;'
+    assert graph_desc == 'graph [ranksep=equally, splines=polyline] ;'
+    assert root_string == 'root string'
+    assert left_string == 'left string'
+    assert left_edge == '0 -> 1 [penwidth=2.0];'
+    assert right_string == 'right string'
+    assert right_edge == '0 -> 2 [penwidth=1];'
+    assert leaves_desc == '{rank=same ; 1; 2} ;'
+    assert final_line == '}'
+
+def test_set_node_info(create_tree, mocker):
+    tree = create_tree()
+    root = mocker.Mock(samples=[100, 1], local_error=[100, 100])
+    node = mocker.Mock()
+    set_root_info = mocker.patch.object(root, "set_node_info", return_value=None)
+    set_node_info = mocker.patch.object(node, "set_node_info", return_value=None)
+
+    tree.nodes = { 0: root, 1: node }
+    class_samples = {
+        ErrorAnalyzerConstants.WRONG_PREDICTION: 40,
+        ErrorAnalyzerConstants.CORRECT_PREDICTION: 60
+    }
+    tree.set_node_info(0, class_samples)
+    set_root_info.assert_called_once_with(12, class_samples, 1)
+
+    tree.set_node_info(1, class_samples)
+    set_node_info.assert_called_once_with(100, class_samples, .4)
