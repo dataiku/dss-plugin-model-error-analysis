@@ -110,10 +110,14 @@ class InteractiveTree(object):
         column = filtered_df[col]
         target_column = filtered_df[self.target]
         if col in self.num_features:
-            if col not in self.bin_edges:
-                _, bin_edges = pd.cut(self.df[col], bins=min(nr_bins, self.df[col].nunique()), retbins=True, include_lowest=True, right=False)
-                self.bin_edges[col] = bin_edges
-            bins = column if column.empty else pd.cut(column, bins=self.bin_edges[col], right=False)
+            if column.empty:
+                bins = column
+            else:
+                if col not in self.bin_edges or len(self.bin_edges[col]) != nr_bins + 1:
+                    _, bin_edges = pd.cut(self.df[col], bins=min(nr_bins, self.df[col].nunique()),
+                                          retbins=True, include_lowest=True, right=False)
+                    self.bin_edges[col] = bin_edges
+                bins = column if column.empty else pd.cut(column, bins=self.bin_edges[col], right=False)
             return InteractiveTree.get_stats_numerical_node(bins, target_column)
         return InteractiveTree.get_stats_categorical_node(column, target_column, nr_bins, enforced_bins)
 
