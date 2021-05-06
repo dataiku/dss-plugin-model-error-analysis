@@ -189,23 +189,27 @@ def test_get_stats_categorical_node(target, cat_column):
     assert stats["target_distrib"][ErrorAnalyzerConstants.CORRECT_PREDICTION] == []
 
 def test_get_stats(create_tree, mocker):
+    target_col = pd.Series(["A","A","B","B","C","A","A","B","B","C","B","B"], name="target")
     # Retrieving stats for categorical features
     tree = create_tree()
     spy = mocker.spy(InteractiveTree, 'get_stats_categorical_node')
-    tree.get_stats(0, "cat_1", 7)
+    mocker.patch.object(tree, "get_filtered_df", return_value=tree.df)
+    tree.get_stats(-1, "cat_1", 7)
     cargs = spy.call_args[0]
     pd.testing.assert_series_equal(cargs[0], pd.Series(["x","y","z","z","z","x","z","y","z","y","x","x"], name="cat_1"))
-    pd.testing.assert_series_equal(cargs[1], pd.Series(["A","A","B","B","C","A","A","B","B","C","B","B"], name="target"))
+    pd.testing.assert_series_equal(cargs[1], target_col)
     assert cargs[2] == 7
     assert cargs[3] is None
+    assert not tree.bin_edges
 
     # Retrieving stats for numerical features - no bins
     tree = create_tree()
     spy = mocker.spy(InteractiveTree, 'get_stats_numerical_node')
     spy_cut = mocker.spy(pd, 'cut')
-    tree.get_stats(0, "num_1", 10)
+    mocker.patch.object(tree, "get_filtered_df", return_value=tree.df)
+    tree.get_stats(-1, "num_1", 10)
     cargs = spy.call_args[0]
-    bins = pd.Series(pd.Categorical([
+    ten_binned_feature = pd.Series(pd.Categorical([
         pd.Interval(1.0,  2.0,  "left"),
         pd.Interval(2.0,  3.0,  "left"),
         np.nan,
@@ -219,22 +223,36 @@ def test_get_stats(create_tree, mocker):
         pd.Interval(10.0, 11.01, "left"),
         pd.Interval(10.0, 11.01, "left")
     ], ordered=True), name="num_1")
-    pd.testing.assert_series_equal(cargs[0], bins)
-    pd.testing.assert_series_equal(cargs[1], pd.Series(["A","A","B","B","C","A","A","B","B","C","B","B"], name="target"))
-    assert (tree.bin_edges["num_1"] == [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.01]).all()
+    ten_bin_edges = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.01]
+    pd.testing.assert_series_equal(cargs[0], ten_binned_feature)
+    pd.testing.assert_series_equal(cargs[1], target_col)
+    assert len(tree.bin_edges) == 1 and (tree.bin_edges["num_1"] == ten_bin_edges).all()
     assert spy_cut.call_count == 2
 
-    # Retrieving stats for numerical features - with bins
+    # Retrieving stats for numerical features - empty col
+    tree = create_tree()
+    spy = mocker.spy(InteractiveTree, 'get_stats_numerical_node')
+    mocker.patch.object(tree, "get_filtered_df", return_value=pd.DataFrame([], columns=tree.df.columns))
+    tree.get_stats(-1, "num_1", 10)
+    cargs = spy.call_args[0]
+
+    assert cargs[0].empty
+    assert cargs[1].empty
+    assert not tree.bin_edges
+    assert spy_cut.call_count == 2
+
+    # Retrieving stats for numerical features - with bins not recomputed
     tree = create_tree()
     bin_edges = np.array([1.0, 5.0, 11.01])
     tree.bin_edges["num_1"] = bin_edges
     spy = mocker.spy(InteractiveTree, 'get_stats_numerical_node')
-    tree.get_stats(0, "num_1", 8, pd.Series(pd.Categorical([
+    mocker.patch.object(tree, "get_filtered_df", return_value=tree.df)
+    tree.get_stats(-1, "num_1", 2, pd.Series(pd.Categorical([
         pd.Interval(1.0, 3.0, "left"),
         pd.Interval(3.0, 11.01, "left")],
     ordered=True), name="num_1"))
     cargs = spy.call_args[0]
-    bins = pd.Series(pd.Categorical([
+    two_binned_feature = pd.Series(pd.Categorical([
         pd.Interval(1.0,  5.0,  "left"),
         pd.Interval(1.0,  5.0,  "left"),
         np.nan,
@@ -248,10 +266,26 @@ def test_get_stats(create_tree, mocker):
         pd.Interval(5.0, 11.01, "left"),
         pd.Interval(5.0, 11.01, "left")
     ], ordered=True), name="num_1")
-    pd.testing.assert_series_equal(cargs[0], bins)
-    pd.testing.assert_series_equal(cargs[1], pd.Series(["A","A","B","B","C","A","A","B","B","C","B","B"], name="target"))
-    assert (tree.bin_edges["num_1"] == [1.0, 5.0, 11.01]).all()
+    pd.testing.assert_series_equal(cargs[0], two_binned_feature)
+    pd.testing.assert_series_equal(cargs[1], target_col)
+    assert len(tree.bin_edges) == 1 and (tree.bin_edges["num_1"] == [1.0, 5.0, 11.01]).all()
     assert spy_cut.call_count == 3
+
+    # Retrieving stats for numerical features - with bins recomputed
+    tree = create_tree()
+    bin_edges = np.array([1.0, 5.0, 11.01])
+    tree.bin_edges["num_1"] = bin_edges
+    spy = mocker.spy(InteractiveTree, 'get_stats_numerical_node')
+    mocker.patch.object(tree, "get_filtered_df", return_value=tree.df)
+    tree.get_stats(-1, "num_1", 10, pd.Series(pd.Categorical([
+        pd.Interval(1.0, 3.0, "left"),
+        pd.Interval(3.0, 11.01, "left")],
+    ordered=True), name="num_1"))
+    cargs = spy.call_args[0]
+    pd.testing.assert_series_equal(cargs[0], ten_binned_feature)
+    pd.testing.assert_series_equal(cargs[1], target_col)
+    assert len(tree.bin_edges) == 1 and (tree.bin_edges["num_1"] == ten_bin_edges).all()
+    assert spy_cut.call_count == 5
 
 def test_to_dot_string(create_tree, mocker):
     tree = create_tree()
