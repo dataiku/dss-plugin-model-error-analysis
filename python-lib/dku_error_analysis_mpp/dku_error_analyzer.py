@@ -4,6 +4,7 @@ import pandas as pd
 import collections
 from dku_error_analysis_model_parser.model_handler_utils import get_original_test_df
 from dku_error_analysis_tree_parsing.tree_parser import TreeParser
+from dku_error_analysis_decision_tree.tree import InteractiveTree
 from dku_error_analysis_utils import DkuMEAConstants
 import logging
 from mealy import ErrorAnalyzer, ErrorAnalyzerConstants
@@ -85,33 +86,27 @@ class DkuErrorAnalyzer(ErrorAnalyzer):
     def parse_tree(self):
         """ Parse Decision Tree and get features information used to display distributions """
         self._error_df.loc[:, DkuMEAConstants.ERROR_COLUMN] = self._error_train_y
-        tree_parser = TreeParser(self._model_handler, self.error_tree.estimator_)
-        self._tree = tree_parser.build_tree(self._error_df, self.preprocessed_feature_names, self._error_train_x)
+        tree_parser = TreeParser(self._model_handler, self.error_tree.estimator_, self.preprocessed_feature_names)
+        ranked_features = tree_parser.rank_features(self._error_df)
+        tree = InteractiveTree(self._error_df, DkuMEAConstants.ERROR_COLUMN, ranked_features, tree_parser.num_features)
+        self._tree = tree_parser.parse_nodes(tree, self._error_train_x)
 
     def _get_path_to_node(self, node_id):
         """ return path to node as a list of split steps from the nodes of the de-processed
         dku_error_analysis_decision_tree.tree.InteractiveTree object """
         cur_node = self.tree.get_node(node_id)
         path_to_node = collections.deque()
-        while cur_node is not None and cur_node.id != 0:
+        while cur_node.id != 0:
             path_to_node.appendleft(cur_node.print_decision_rule())
             cur_node = self.tree.get_node(cur_node.parent_id)
-
         return path_to_node
 
     def evaluate(self, dku_test_dataset=None, output_format='dict'):
         """ print ErrorAnalyzer summary metrics """
         if dku_test_dataset is None:
-            return super(DkuErrorAnalyzer, self).evaluate(self._train_x, self._train_y, output_format=output_format)
-        else:
-            test_df = dku_test_dataset.get_dataframe()
-            test_x, test_y, _ = self._preprocess_dataframe(test_df)
-            return super(DkuErrorAnalyzer, self).evaluate(test_x, test_y.values, output_format=output_format)
-
-    def predict(self, dku_test_dataset):
-        """ Predict model performance on Dku dataset """
+            return super(DkuErrorAnalyzer, self).evaluate(self._train_x, self._train_y,
+                                                          output_format=output_format)
         test_df = dku_test_dataset.get_dataframe()
-
-        test_x = self._preprocess_dataframe(test_df, with_target=False)
-
-        return super(DkuErrorAnalyzer, self).predict(test_x)
+        test_x, test_y, _ = self._preprocess_dataframe(test_df)
+        return super(DkuErrorAnalyzer, self).evaluate(test_x, test_y.values,
+                                                      output_format=output_format)

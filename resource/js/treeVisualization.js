@@ -66,7 +66,7 @@ app.service("TreeUtils", function(Format) {
                 middle += "one of ";
             }
             return {
-                left: node.feature,
+                left: displayableFeature(node.feature),
                 middle,
                 right: node.values.join(", ")
             }
@@ -74,7 +74,7 @@ app.service("TreeUtils", function(Format) {
         const sign = node.hasOwnProperty("end") ? "≤" : ">";
         const bound = node.hasOwnProperty("end") ? node.end : node.beginning;
         return {
-            left: node.feature,
+            left: displayableFeature(node.feature),
             middle: sign + Format.noBreakingSpace + Format.toFixedIfNeeded(bound, 5),
         }
     }
@@ -89,11 +89,17 @@ app.service("TreeUtils", function(Format) {
         return path;
     }
 
+    const displayableFeature = function(feature) {
+        const match = feature.match(/^preprocessed:rescaled:(.*)$/);
+        if (match) return match[1];
+        return feature;
+    }
     return {
         addNode,
         getDecisionRule,
         nodeValues,
         getPath,
+        displayableFeature,
         WRONG_PREDICTION
     }
 });
@@ -287,7 +293,7 @@ app.service("TreeInteractions", function(Format, TreeUtils) {
         .attr("text-anchor","middle")
         .attr("x", radius)
         .attr("y", radius*2 + 20)
-        .text(d => Format.ellipsis(treeData[d.children_ids[0].toString()].feature, 20));
+        .text(d => Format.ellipsis(TreeUtils.displayableFeature(treeData[d.children_ids[0].toString()].feature), 20));
 
         // Add new edges
         const edgeContainer = svg.selectAll(".edge").data(edgeData, d => d.target.node_id).enter().insert("g", "g");
