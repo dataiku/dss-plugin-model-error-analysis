@@ -4,6 +4,7 @@ from dataiku.doctor.preprocessing.dataframe_preprocessing import RescalingProces
     FastSparseDummifyProcessor, ImpactCodingStep, FlagMissingValue2, TextCountVectorizerProcessor, TextHashingVectorizerWithSVDProcessor, \
     TextHashingVectorizerProcessor, TextTFIDFVectorizerProcessor, CategoricalFeatureHashingProcessor
 from dku_error_analysis_tree_parsing.depreprocessor import descale_numerical_thresholds, denormalize_feature_value
+from dku_error_analysis_utils import format_float
 from collections import deque
 from mealy import ErrorAnalyzerConstants
 import logging
@@ -146,8 +147,8 @@ class TreeParser(object):
             "Its distribution plot will not be available")
         vec = step.resource["vectorizer"]
         for word, idf in zip(vec.get_feature_names(), vec.idf_):
-            preprocessed_name = "tfidfvec:{}:{:.3f}:{}".format(step.column_name, idf, word)
-            friendly_name = "{}: tf-idf of {} (idf={:.3f})".format(step.column_name, word, idf)
+            preprocessed_name = "tfidfvec:{}:{}:{}".format(step.column_name, format_float(idf, 3), word)
+            friendly_name = "{}: tf-idf of {} (idf={})".format(step.column_name, word, format_float(idf, 3))
             self.preprocessed_feature_mapping[preprocessed_name] = self.SplitParameters(Node.TYPES.NUM, None, friendly_name=friendly_name)
 
     def _create_preprocessed_feature_mapping(self):

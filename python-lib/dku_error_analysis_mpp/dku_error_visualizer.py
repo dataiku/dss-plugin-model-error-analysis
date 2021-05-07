@@ -6,7 +6,7 @@ matplotlib.use('agg')
 import matplotlib.pyplot as plt
 from dku_error_analysis_mpp.dku_error_analyzer import DkuErrorAnalyzer
 from mealy import _BaseErrorVisualizer, ErrorAnalyzerConstants
-
+from dku_error_analysis_utils import safe_str, format_float
 
 import logging
 logger = logging.getLogger(__name__)
@@ -54,8 +54,8 @@ class DkuErrorVisualizer(_BaseErrorVisualizer):
             for feature in ranked_features:
                 feature_name = feature["name"]
                 leaf = self._tree.get_node(leaf_id)
-                node_summary = 'Leaf {} ({}: {:.3f}'.format(leaf.id, *leaf.probabilities[0])
-                node_summary += ', {}: {:.3f})'.format(*leaf.probabilities[1])
+                node_summary = 'Leaf {} ({}: {}'.format(leaf.id, leaf.probabilities[0][0], format_float(leaf.probabilities[0][1], 3))
+                node_summary += ', {}: {})'.format(leaf.probabilities[1][0], format_float(leaf.probabilities[1][1], 3))
 
                 leaf_stats = self._tree.get_stats(leaf.id, feature_name, nr_bins)
                 feature_is_numerical = feature["numerical"]
