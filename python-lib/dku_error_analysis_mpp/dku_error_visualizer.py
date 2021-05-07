@@ -51,11 +51,11 @@ class DkuErrorVisualizer(_BaseErrorVisualizer):
         ranked_features = self._tree.ranked_features[:top_k_features]
 
         for leaf_id in leaf_nodes:
+            leaf = self._tree.get_node(leaf_id)
+            suptitle = 'Leaf {} ({}: {}'.format(leaf.id, leaf.probabilities[0][0], format_float(leaf.probabilities[0][1], 3))
+            suptitle += ', {}: {})'.format(leaf.probabilities[1][0], format_float(leaf.probabilities[1][1], 3))
             for feature in ranked_features:
                 feature_name = feature["name"]
-                leaf = self._tree.get_node(leaf_id)
-                node_summary = 'Leaf {} ({}: {}'.format(leaf.id, leaf.probabilities[0][0], format_float(leaf.probabilities[0][1], 3))
-                node_summary += ', {}: {})'.format(leaf.probabilities[1][0], format_float(leaf.probabilities[1][1], 3))
 
                 leaf_stats = self._tree.get_stats(leaf.id, feature_name, nr_bins)
                 feature_is_numerical = feature["numerical"]
@@ -88,7 +88,7 @@ class DkuErrorVisualizer(_BaseErrorVisualizer):
                         bins = root_stats["bin_edge"] if feature_is_numerical else root_stats["bin_value"]
 
                 x_ticks = range(len(bins))
-                _BaseErrorVisualizer._add_new_plot(figsize, bins, x_ticks, feature_name, leaf.id)
+                _BaseErrorVisualizer._add_new_plot(figsize, bins, x_ticks, feature_name, suptitle)
                 _BaseErrorVisualizer._plot_feature_distribution(x_ticks, feature_is_numerical, leaf_hist_data, root_hist_data)
 
         plt.show()
