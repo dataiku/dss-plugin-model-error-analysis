@@ -21,10 +21,10 @@ def test_print_decision_rule():
     assert cat_node_several_values_others.print_decision_rule() == "test not in [A, B]"
 
     num_node_beginning = NumericalNode(1, 0, "test", beginning=1)
-    assert num_node_beginning.print_decision_rule() == "1.00 < test"
+    assert num_node_beginning.print_decision_rule() == "1 < test"
 
     num_node_end = NumericalNode(1, 0, "test", end=890.896)
-    assert num_node_end.print_decision_rule() == "test <= 890.90"
+    assert num_node_end.print_decision_rule() == "test <= 890.9"
 
 def test_apply_filter():
     df = pd.DataFrame([
