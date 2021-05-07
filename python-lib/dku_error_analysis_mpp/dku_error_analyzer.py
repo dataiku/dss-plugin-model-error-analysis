@@ -102,7 +102,7 @@ class DkuErrorAnalyzer(ErrorAnalyzer):
         return path_to_node
 
     def evaluate(self, dku_test_dataset=None, output_format='dict'):
-        """ print ErrorAnalyzer summary metrics """
+        """ Return ErrorAnalyzer summary metrics """
         if dku_test_dataset is None:
             return super(DkuErrorAnalyzer, self).evaluate(self._train_x, self._train_y,
                                                           output_format=output_format)
