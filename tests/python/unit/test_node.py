@@ -110,9 +110,9 @@ def test_to_dot_string(mocker):
     root.global_error = .6789598
     label, samples, local_err, global_err, color_n_tooltip = root.to_dot_string().split("\n")
     assert label == '0 [label="node #0'
-    assert samples == 'samples = 1.000%'
-    assert local_err == 'local error = 50.000%'
-    assert global_err == 'fraction of total error = 67.896%'
+    assert samples == 'samples = 1%'
+    assert local_err == 'local error = 50%'
+    assert global_err == 'fraction of total error = 67.9%'
     assert color_n_tooltip == '", fillcolor="{}", tooltip="root"] ;'.format(
         ErrorAnalyzerConstants.ERROR_TREE_COLORS[ErrorAnalyzerConstants.WRONG_PREDICTION]+'7f')
 
@@ -125,9 +125,9 @@ def test_to_dot_string(mocker):
         node.to_dot_string().split("\n")
     assert label == '1 [label="node #1'
     assert decision_rule == 'decision rule'
-    assert samples == 'samples = 0.493%'
-    assert local_err == 'local error = 0.000%'
-    assert global_err == 'fraction of total error = 67.895%'
+    assert samples == 'samples = 0.49%'
+    assert local_err == 'local error = 0%'
+    assert global_err == 'fraction of total error = 67.9%'
     assert color_n_tooltip == '", fillcolor="{}", tooltip="decision rule"] ;'.format(
         ErrorAnalyzerConstants.ERROR_TREE_COLORS[ErrorAnalyzerConstants.WRONG_PREDICTION]+'00')
 
@@ -138,9 +138,9 @@ def test_to_dot_string(mocker):
         node.to_dot_string().split("\n")
     assert label == '1 [label="node #1'
     assert decision_rule == 'pretty really very extremely fai...'
-    assert samples == 'samples = 0.493%'
-    assert local_err == 'local error = 100.000%'
-    assert global_err == 'fraction of total error = 67.895%'
+    assert samples == 'samples = 0.49%'
+    assert local_err == 'local error = 100%'
+    assert global_err == 'fraction of total error = 67.9%'
     assert color_n_tooltip == '", fillcolor="{}", tooltip="{}"] ;'.format(
         ErrorAnalyzerConstants.ERROR_TREE_COLORS[ErrorAnalyzerConstants.WRONG_PREDICTION]+'ff', fake_rule)
 

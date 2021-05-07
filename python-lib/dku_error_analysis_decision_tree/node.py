@@ -1,5 +1,5 @@
 from math import isnan
-from dku_error_analysis_utils import safe_str
+from dku_error_analysis_utils import safe_str, format_float
 from mealy import ErrorAnalyzerConstants
 
 class Node(object):
@@ -83,9 +83,9 @@ class Node(object):
         color = ErrorAnalyzerConstants.ERROR_TREE_COLORS[ErrorAnalyzerConstants.WRONG_PREDICTION]
         alpha = "{:02x}".format(int(self.local_error[0]*255))
 
-        dot_str += 'samples = {:.3f}%\n'.format(self.samples[1])
-        dot_str += 'local error = {:.3f}%\n'.format(100.*self.local_error[0])
-        dot_str += 'fraction of total error = {:.3f}%\n'.format(100. * self.global_error)
+        dot_str += 'samples = {}%\n'.format(format_float(self.samples[1], 2))
+        dot_str += 'local error = {}%\n'.format(format_float(100.*self.local_error[0], 2))
+        dot_str += 'fraction of total error = {}%\n'.format(format_float(100. * self.global_error, 2))
         dot_str += '", fillcolor="{}", tooltip="{}"] ;'.format(color+alpha, tooltip)
         return dot_str
 
@@ -155,7 +155,7 @@ class NumericalNode(Node):
     def print_decision_rule(self):
         decision_rule = self.feature
         if self.beginning:
-            decision_rule = '{:.2f} < {}'.format(self.beginning, self.feature)
+            decision_rule = '{} < {}'.format(format_float(self.beginning, 2), self.feature)
         if self.end:
-            decision_rule = '{} <= {:.2f}'.format(decision_rule, self.end)
+            decision_rule = '{} <= {}'.format(decision_rule, format_float(self.end, 2))
         return decision_rule
