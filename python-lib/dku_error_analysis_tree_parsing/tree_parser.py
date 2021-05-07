@@ -125,6 +125,8 @@ class TreeParser(object):
 
     # TEXT HANDLING
     def _add_hashing_vect_mapping(self, step, with_svd=False):
+        logger.info("Feature {} is a text feature. ".format(step.column_name) +
+            "Its distribution plot will not be available")
         prefix = "thsvd" if with_svd else "hashvect"
         for i in range(step.n_features):
             preprocessed_name = "{}:{}:{}".format(prefix, step.column_name, i)
@@ -132,12 +134,16 @@ class TreeParser(object):
             self.preprocessed_feature_mapping[preprocessed_name] = self.SplitParameters(Node.TYPES.NUM, None, friendly_name=friendly_name)
 
     def _add_text_count_vect_mapping(self, step):
+        logger.info("Feature {} is a text feature. ".format(step.column_name) +
+            "Its distribution plot will not be available")
         for word in step.resource["vectorizer"].get_feature_names():
             preprocessed_name = "{}:{}:{}".format(step.prefix, step.column_name, word)
             friendly_name = "{}: occurrences of {}".format(step.column_name, word)
             self.preprocessed_feature_mapping[preprocessed_name] = self.SplitParameters(Node.TYPES.NUM, None, friendly_name=friendly_name)
 
     def _add_tfidf_vect_mapping(self, step):
+        logger.info("Feature {} is a text feature. ".format(step.column_name) +
+            "Its distribution plot will not be available")
         vec = step.resource["vectorizer"]
         for word, idf in zip(vec.get_feature_names(), vec.idf_):
             preprocessed_name = "tfidfvec:{}:{:.3f}:{}".format(step.column_name, idf, word)
@@ -170,6 +176,8 @@ class TreeParser(object):
             self._add_identity_mapping(preprocessed_name)
         return self.preprocessed_feature_mapping[preprocessed_name]
 
+    # PARSING
+
     def rank_features(self, df):
         # Retrieve feature names without duplicates while keeping the ranking order
         ranked_feature_ids = np.argsort(- self.error_model.feature_importances_)
@@ -195,13 +203,16 @@ class TreeParser(object):
                         self.num_features.update(column for i, column in enumerate(columns)
                                                 if pd.api.types.is_numeric_dtype(unfolded[i]))
                     except Exception as e:
-                        logger.warning("Error while parsing vector feature {}: {}.\
-                            It will not be used for charts".format(name, e))
+                        logger.warning(("Error while parsing vector feature {}: {}. ".format(name, e) +
+                            "Its distribution plot will not be available"))
                 elif params["type"] == "NUMERIC":
                     self.num_features.add(name)
                     unique_ranked_feature_names.append(name)
                 elif params["type"] == "CATEGORY":
                     unique_ranked_feature_names.append(name)
+                elif params["type"] == "TEXT":
+                    logger.info("Feature {} is a text feature. ".format(name) +
+                    "Its distribution plot will not be available")
         return unique_ranked_feature_names
 
     def parse_nodes(self, tree, preprocessed_x):

@@ -4,6 +4,7 @@ from mealy import ErrorAnalyzerConstants
 import pandas as pd
 import numpy as np
 import pytest
+import logging
 
 #from dataiku.doctor.preprocessing.dataframe_preprocessing import RescalingProcessor2, QuantileBinSeries, UnfoldVectorProcessor, BinarizeSeries, \
 #    FastSparseDummifyProcessor, ImpactCodingStep, FlagMissingValue2, TextCountVectorizerProcessor, TextHashingVectorizerWithSVDProcessor, \
@@ -80,6 +81,7 @@ def test_rank_features(mocker, df, create_parser, caplog):
     }
 
     # Add rejected features from original model
+    caplog.set_level(logging.INFO)
     parser = create_parser(per_feature=per_feature,
                             error_model=error_model,
                             feature_names=list(feature_names))
@@ -93,6 +95,9 @@ def test_rank_features(mocker, df, create_parser, caplog):
     assert ranked_features[:3] == ["feat_c", "feat_a", "feat_b"]
     assert set(ranked_features) == {"feat_c", "feat_a", "feat_b", "vector [element #0]", "vector [element #1]", "cat_1", "num_1"}
     assert parser.num_features == {"num_1", "vector [element #1]"}
+    log = caplog.records[-1]
+    assert log.levelname == "INFO"
+    assert log.msg == "Feature text is a text feature. Its distribution plot will not be available"
 
     # Check badly formatted vector columns are properly handled
     parser = create_parser(per_feature={"bad_vector": {"role": "REJECT", "type": "VECTOR"}},
@@ -107,7 +112,7 @@ def test_rank_features(mocker, df, create_parser, caplog):
     log = caplog.records[-1]
     assert log.levelname == "WARNING"
     assert log.msg.startswith("Error while parsing vector feature bad_vector:")
-    assert log.msg.endswith("It will not be used for charts")
+    assert log.msg.endswith("Its distribution plot will not be available")
 
 def mocked_get_split_param(feature):
     if feature == "cat_1":
@@ -595,7 +600,8 @@ def check_text_features(preproc_array, split, name):
     assert (split.add_preprocessed_feature(preproc_array, 1) == [0,2,3,0,1,0,0]).all()
 
 @pytest.mark.text
-def test_vect_hashing(create_parser, mocker):
+def test_vect_hashing(create_parser, mocker, caplog):
+    caplog.set_level(logging.INFO)
     # Hash without SVD
     parser = create_parser()
     step = mocker.Mock(column_name="test", n_features=2)
@@ -617,18 +623,25 @@ def test_vect_hashing(create_parser, mocker):
 
     second = parser.preprocessed_feature_mapping["hashvect:test:1"]
     check_text_features(preproc_array, second, "test [text #1]")
+    log = caplog.records[-1]
+    assert log.levelname == "INFO"
+    assert log.msg == "Feature test is a text feature. Its distribution plot will not be available"
 
     # Hash with SVD
     parser = create_parser()
-    step = mocker.Mock(column_name="test", n_features=1)
+    step = mocker.Mock(column_name="test_bis", n_features=1)
     parser._add_hashing_vect_mapping(step, True)
     assert len(parser.preprocessed_feature_mapping) == 1
 
-    first = parser.preprocessed_feature_mapping["thsvd:test:0"]
-    check_text_features(preproc_array, first, "test [text #0]")
+    first = parser.preprocessed_feature_mapping["thsvd:test_bis:0"]
+    check_text_features(preproc_array, first, "test_bis [text #0]")
+    log = caplog.records[-1]
+    assert log.levelname == "INFO"
+    assert log.msg == "Feature test_bis is a text feature. Its distribution plot will not be available"
 
 @pytest.mark.text
-def test_count_vect(create_parser, mocker):
+def test_count_vect(create_parser, mocker, caplog):
+    caplog.set_level(logging.INFO)
     parser = create_parser()
     step = mocker.Mock(column_name="test", prefix="prefix")
     vectorizer = mocker.Mock()
@@ -652,9 +665,13 @@ def test_count_vect(create_parser, mocker):
 
     second = parser.preprocessed_feature_mapping["prefix:test:random"]
     check_text_features(preproc_array, second, "test: occurrences of random")
+    log = caplog.records[-1]
+    assert log.levelname == "INFO"
+    assert log.msg == "Feature test is a text feature. Its distribution plot will not be available"
 
 @pytest.mark.text
-def test_tfidf_vect(create_parser, mocker):
+def test_tfidf_vect(create_parser, mocker, caplog):
+    caplog.set_level(logging.INFO)
     parser = create_parser()
     step = mocker.Mock(column_name="test")
     vectorizer = mocker.Mock(idf_=[42.4242])
@@ -675,17 +692,23 @@ def test_tfidf_vect(create_parser, mocker):
 
     first = parser.preprocessed_feature_mapping["tfidfvec:test:42.424:word"]
     check_text_features(preproc_array, first, "test: tf-idf of word (idf=42.424)")
+    log = caplog.records[-1]
+    assert log.levelname == "INFO"
+    assert log.msg == "Feature test is a text feature. Its distribution plot will not be available"
 
     parser = create_parser()
-    step = mocker.Mock(column_name="test")
+    step = mocker.Mock(column_name="test_bis")
     vectorizer = mocker.Mock(idf_=[42.4242, 1])
     vectorizer.get_feature_names.return_value = ["word", "random"]
     step.resource = {"vectorizer": vectorizer}
     parser._add_tfidf_vect_mapping(step)
     assert len(parser.preprocessed_feature_mapping) == 2
 
-    first = parser.preprocessed_feature_mapping["tfidfvec:test:42.424:word"]
-    check_text_features(preproc_array, first, "test: tf-idf of word (idf=42.424)")
+    first = parser.preprocessed_feature_mapping["tfidfvec:test_bis:42.424:word"]
+    check_text_features(preproc_array, first, "test_bis: tf-idf of word (idf=42.424)")
 
-    second = parser.preprocessed_feature_mapping["tfidfvec:test:1.000:random"]
-    check_text_features(preproc_array, second, "test: tf-idf of random (idf=1.000)")
+    second = parser.preprocessed_feature_mapping["tfidfvec:test_bis:1.000:random"]
+    check_text_features(preproc_array, second, "test_bis: tf-idf of random (idf=1.000)")
+    log = caplog.records[-1]
+    assert log.levelname == "INFO"
+    assert log.msg == "Feature test_bis is a text feature. Its distribution plot will not be available"
