@@ -1,10 +1,4 @@
-import sys
-sys.path.append("/Users/aguillemot/devenv/mealy")
-sys.path.append("/Users/aguillemot/devenv/dss-plugin-model-error-analysis/python-lib")
-sys.path.append("/Users/aguillemot/devenv/dip/src/main/python")
-sys.path.append("/Users/aguillemot/devenv/dataiku-api-client-python")
 from mealy import ErrorAnalyzer
-#import numpy as np
 from dku_error_analysis_mpp.dku_error_visualizer import DkuErrorVisualizer
 from dku_error_analysis_mpp.dku_error_analyzer import DkuErrorAnalyzer
 import pytest
