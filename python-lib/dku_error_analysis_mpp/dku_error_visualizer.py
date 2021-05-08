@@ -28,7 +28,7 @@ class DkuErrorVisualizer(_BaseErrorVisualizer):
     def __init__(self, error_analyzer):
 
         if not isinstance(error_analyzer, DkuErrorAnalyzer):
-            raise NotImplementedError('You need to input a DkuErrorAnalyzer object.')
+            raise TypeError('You need to input a DkuErrorAnalyzer object.')
 
         super(DkuErrorVisualizer, self).__init__(error_analyzer)
 
@@ -83,7 +83,7 @@ class DkuErrorVisualizer(_BaseErrorVisualizer):
                         leaf_hist_data = {leaf.prediction: np.array(leaf_stats["count"])/leaf.samples[0]}
                 else:
                     leaf_hist_data = None
-                    logger.info("No values for the feature %s at the leaf %s", feature_name, leaf.id)
+                    logger.info("No values for the feature {} at the leaf {}".format(feature_name, leaf.id))
                     if show_global:
                         bins = root_stats["bin_edge"] if feature_is_numerical else root_stats["bin_value"]
 
