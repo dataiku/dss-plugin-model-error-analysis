@@ -1,7 +1,9 @@
 import logging
 from dku_error_analysis_mpp.dku_error_analyzer import DkuErrorAnalyzer
 from mealy import ErrorAnalyzerConstants
-
+from dku_error_analysis_tree_parsing.tree_parser import TreeParser
+from dku_error_analysis_decision_tree.tree import InteractiveTree
+from dku_error_analysis_utils import DkuMEAConstants
 
 LOGGER = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format="Error Analysis Plugin %(levelname)s - %(message)s")
@@ -30,7 +32,14 @@ class TreeHandler(object):
         :return: The accuracy of the original model, computed on the part of the test set used to train the Error Analyzer Tree
         """
         self.analyzer.fit()
-        self.analyzer.parse_tree()
+
+        tree_parser = TreeParser(self.analyzer._model_handler, self.analyzer.error_tree.estimator_,
+                                 self.analyzer.preprocessed_feature_names)
+        ranked_features = tree_parser.rank_features(self.analyzer.error_df)
+        tree = InteractiveTree(self.analyzer.error_df, DkuMEAConstants.ERROR_COLUMN,
+                               ranked_features, tree_parser.num_features)
+        tree_parser.parse_nodes(tree, self.analyzer._error_train_x)
+
         self.selected_feature_ids = set(range(min(len(self.tree.ranked_features), self.DEFAULT_MAX_NR_FEATURES)))
 
         summary = self.analyzer.evaluate(output_format='dict')

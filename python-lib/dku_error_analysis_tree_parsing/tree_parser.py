@@ -254,4 +254,3 @@ class TreeParser(object):
 
             ids.append(left_child_id)
             ids.append(right_child_id)
-        return tree

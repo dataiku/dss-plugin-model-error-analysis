@@ -1,12 +1,9 @@
 # -*- coding: utf-8 -*-
 import numpy as np
-import pandas as pd
 import collections
-from dku_error_analysis_tree_parsing.tree_parser import TreeParser
-from dku_error_analysis_decision_tree.tree import InteractiveTree
 from dku_error_analysis_utils import DkuMEAConstants
 import logging
-from mealy import ErrorAnalyzer, ErrorAnalyzerConstants
+from mealy import ErrorAnalyzer
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format='Error Analysis Plugin | %(levelname)s - %(message)s')
@@ -51,6 +48,12 @@ class DkuErrorAnalyzer(ErrorAnalyzer):
             self.parse_tree()
         return self._tree
 
+    @property
+    def error_df(self):
+        if DkuMEAConstants.ERROR_COLUMN not in self._error_df:
+            self._error_df.loc[:, DkuMEAConstants.ERROR_COLUMN] = self._error_train_y
+        return self._error_df
+
     def fit(self):
         """
         Trains a Decision Tree to discriminate between samples that are correctly predicted or wrongly predicted
@@ -86,14 +89,6 @@ class DkuErrorAnalyzer(ErrorAnalyzer):
         self._train_x, self._train_y, input_mf_index = self._preprocess_dataframe(original_df)
         original_train_df = original_df.loc[input_mf_index]
         self._error_df = original_train_df.drop(self._target, axis=1)
-
-    def parse_tree(self):
-        """ Parse Decision Tree and get features information used to display distributions """
-        self._error_df.loc[:, DkuMEAConstants.ERROR_COLUMN] = self._error_train_y
-        tree_parser = TreeParser(self._model_handler, self.error_tree.estimator_, self.preprocessed_feature_names)
-        ranked_features = tree_parser.rank_features(self._error_df)
-        tree = InteractiveTree(self._error_df, DkuMEAConstants.ERROR_COLUMN, ranked_features, tree_parser.num_features)
-        self._tree = tree_parser.parse_nodes(tree, self._error_train_x)
 
     def _get_path_to_node(self, node_id):
         """ return path to node as a list of split steps from the nodes of the de-processed
