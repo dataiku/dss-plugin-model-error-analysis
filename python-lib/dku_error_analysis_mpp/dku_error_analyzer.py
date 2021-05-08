@@ -2,7 +2,6 @@
 import numpy as np
 import pandas as pd
 import collections
-from dku_error_analysis_model_parser.model_handler_utils import get_original_test_df
 from dku_error_analysis_tree_parsing.tree_parser import TreeParser
 from dku_error_analysis_decision_tree.tree import InteractiveTree
 from dku_error_analysis_utils import DkuMEAConstants
@@ -78,7 +77,12 @@ class DkuErrorAnalyzer(ErrorAnalyzer):
         """ Preprocess and split original test set from Dku saved model
         into train and test set for the error analyzer """
         np.random.seed(self.random_state)
-        original_df = get_original_test_df(self._model_handler)[:self._max_num_rows]
+        try:
+            original_df = self._model_handler.get_test_df()[0][:self._max_num_rows]
+        except Exception as e:
+            logger.warning('Cannot retrieve original test set: %s.' +
+                'The plugin will take the whole original dataset.', e)
+            original_df = self._model_handler.get_full_df()[0][:self._max_num_rows]
         self._train_x, self._train_y, input_mf_index = self._preprocess_dataframe(original_df)
         original_train_df = original_df.loc[input_mf_index]
         self._error_df = original_train_df.drop(self._target, axis=1)
