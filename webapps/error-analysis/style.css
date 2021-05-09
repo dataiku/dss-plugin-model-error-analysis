@@ -474,13 +474,12 @@ select {
 }
 
 .node-info {
-    padding: 8px 16px;
+    padding: 8px 16px 0 16px;
     flex: 0 0 auto;
 }
 
 .selected-samples-section {
     border-bottom: 1px solid var(--grey-lighten-6);
-    margin-bottom: 10px;
     padding-bottom: 10px;
 }
 
@@ -498,6 +497,7 @@ select {
     width: 65px;
     height: 65px;
     flex: 0 0 auto;
+    padding-top: 5px;
 }
 
 .section-title {
