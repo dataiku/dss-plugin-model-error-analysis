@@ -44,8 +44,6 @@ class DkuErrorAnalyzer(ErrorAnalyzer):
 
     @property
     def tree(self):
-        if self._tree is None:
-            self.parse_tree()
         return self._tree
 
     @property

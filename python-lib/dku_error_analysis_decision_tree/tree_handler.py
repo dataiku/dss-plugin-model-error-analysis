@@ -39,6 +39,7 @@ class TreeHandler(object):
         tree = InteractiveTree(self.analyzer.error_df, DkuMEAConstants.ERROR_COLUMN,
                                ranked_features, tree_parser.num_features)
         tree_parser.parse_nodes(tree, self.analyzer._error_train_x)
+        self.analyzer._tree = tree
 
         self.selected_feature_ids = set(range(min(len(self.tree.ranked_features), self.DEFAULT_MAX_NR_FEATURES)))
 
@@ -68,7 +69,7 @@ class TreeHandler(object):
         return self._get_stats_node(node_id, self.already_fetched_locally)
 
     def get_stats_root(self):
-        return self._get_stats_node(0, self.already_fetched_globally, nr_bins=-1)
+        return self._get_stats_node(0, self.already_fetched_globally)
 
     def _get_stats_node(self, node_id, excluded_id_set, nr_bins=10):
         stats = {}

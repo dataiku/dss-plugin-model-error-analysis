@@ -119,6 +119,8 @@ class InteractiveTree(object):
                     self.bin_edges[col] = bin_edges
                 bins = column if column.empty else pd.cut(column, bins=self.bin_edges[col], right=False)
             return InteractiveTree.get_stats_numerical_node(bins, target_column)
+        if i == 0:
+            nr_bins = -1
         return InteractiveTree.get_stats_categorical_node(column, target_column, nr_bins, enforced_bins)
 
     @staticmethod
