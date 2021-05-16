@@ -105,6 +105,7 @@ select {
 .link {
     cursor: pointer;
     color: var(--blue);
+    text-decoration: none;
 }
 
 .link:hover {
