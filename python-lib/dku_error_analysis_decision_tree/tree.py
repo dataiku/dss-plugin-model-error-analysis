@@ -119,6 +119,8 @@ class InteractiveTree(object):
                     self.bin_edges[col] = bin_edges
                 bins = column if column.empty else pd.cut(column, bins=self.bin_edges[col], right=False)
             return InteractiveTree.get_stats_numerical_node(bins, target_column)
+        if i == 0:
+            nr_bins = -1
         return InteractiveTree.get_stats_categorical_node(column, target_column, nr_bins, enforced_bins)
 
     @staticmethod
@@ -154,12 +156,12 @@ class InteractiveTree(object):
         if not column.empty:
             if bins:
                 nr_bins = len(bins)
-            target_grouped = target_column.groupby(column.fillna("No values").apply(safe_str)) # TODO: see CH card on missing values
+            target_grouped = target_column.groupby(column.fillna("No values").apply(safe_str))
             target_distrib = target_grouped.value_counts(dropna=False)
             col_distrib = target_grouped.count().sort_values(ascending=False)
-            for value in col_distrib.index:
-                if bins is not None and value not in bins:
-                    continue
+            values = col_distrib.index if not bins else bins
+
+            for value in values:
                 target_distrib_dict = target_distrib[value].to_dict()
                 stats["target_distrib"][ErrorAnalyzerConstants.WRONG_PREDICTION].append(target_distrib_dict.get(ErrorAnalyzerConstants.WRONG_PREDICTION, 0))
                 stats["target_distrib"][ErrorAnalyzerConstants.CORRECT_PREDICTION].append(target_distrib_dict.get(ErrorAnalyzerConstants.CORRECT_PREDICTION, 0))
