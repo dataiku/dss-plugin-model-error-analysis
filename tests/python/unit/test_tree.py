@@ -151,7 +151,7 @@ def test_get_stats_categorical_node(target, cat_column):
 
     # Check nominal case - enforced bins
     binned_column = cat_column()
-    stats = InteractiveTree.get_stats_categorical_node(binned_column, target, 1, set({"C", "Q"}))
+    stats = InteractiveTree.get_stats_categorical_node(binned_column, target, 1, ["Q", "C"])
     assert stats["bin_value"] == ["Q", "C"]
     assert stats["count"] == [1, 1]
     assert stats["target_distrib"][ErrorAnalyzerConstants.WRONG_PREDICTION] == [1, 1]
@@ -175,7 +175,7 @@ def test_get_stats_categorical_node(target, cat_column):
 
     # Check with nan - less bins
     binned_column = cat_column(False)
-    stats = InteractiveTree.get_stats_categorical_node(binned_column, target, 1, set({"Q", "B"}))
+    stats = InteractiveTree.get_stats_categorical_node(binned_column, target, 1, ["B", "Q"])
     assert stats["bin_value"] == ["B", "Q"]
     assert stats["count"] == [2, 1]
     assert stats["target_distrib"][ErrorAnalyzerConstants.WRONG_PREDICTION] == [0, 1]

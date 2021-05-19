@@ -9,6 +9,5 @@ enum34==1.1.10
 graphviz==0.16
 matplotlib==3.3.4
 kneed==0.6.0
-pydotplus==2.0
 ipython==5.5.0
-mealy==0.2.2
+mealy==0.2.3
