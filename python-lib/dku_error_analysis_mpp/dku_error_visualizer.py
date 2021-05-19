@@ -63,7 +63,7 @@ class DkuErrorVisualizer(_BaseErrorVisualizer):
 
                 if show_global:
                     root_samples = self._tree.get_node(0).samples[0]
-                    root_stats = self._tree.get_stats(0, feature_name, nr_bins, set(bins)) # TODO: optimize
+                    root_stats = self._tree.get_stats(0, feature_name, nr_bins, bins) # TODO: optimize
                     if show_class:
                         root_hist_data = {}
                         for class_value, bar_heights in root_stats["target_distrib"].items():

@@ -159,9 +159,9 @@ def test_plot_feature_distributions_show_global(mocker, mocked_nodes, mocked_get
 
     assert patched_get_stats.call_count == 4
     assert patched_get_stats.call_args_list[0][0] == (1, "num", 10)
-    assert patched_get_stats.call_args_list[1][0] == (0, "num", 10, {"works_num"})
+    assert patched_get_stats.call_args_list[1][0] == (0, "num", 10, ["works_num"])
     assert patched_get_stats.call_args_list[2][0] == (1, "cat", 10)
-    assert patched_get_stats.call_args_list[3][0] == (0, "cat", 10, {"works_cat"})
+    assert patched_get_stats.call_args_list[3][0] == (0, "cat", 10, ["works_cat"])
 
     # Show class
     visualizer = DkuErrorVisualizer(analyzer)   
@@ -196,9 +196,9 @@ def test_plot_feature_distributions_show_global(mocker, mocked_nodes, mocked_get
 
     assert patched_get_stats.call_count == 8
     assert patched_get_stats.call_args_list[4][0] == (1, "num", 5)
-    assert patched_get_stats.call_args_list[5][0] == (0, "num", 5, {"works_num"})
+    assert patched_get_stats.call_args_list[5][0] == (0, "num", 5, ["works_num"])
     assert patched_get_stats.call_args_list[6][0] == (1, "cat", 5)
-    assert patched_get_stats.call_args_list[7][0] == (0, "cat", 5, {"works_cat"})
+    assert patched_get_stats.call_args_list[7][0] == (0, "cat", 5, ["works_cat"])
 
     # No bins
     visualizer = DkuErrorVisualizer(analyzer)   
@@ -224,7 +224,7 @@ def test_plot_feature_distributions_show_global(mocker, mocked_nodes, mocked_get
 
     assert patched_get_stats.call_count == 2
     assert patched_get_stats.call_args_list[0][0] == (1, "num", 10)
-    assert patched_get_stats.call_args_list[1][0] == (0, "num", 10, set())
+    assert patched_get_stats.call_args_list[1][0] == (0, "num", 10, [])
 
 def test_failed_init(mocker):
     with pytest.raises(TypeError, match="You need to input a DkuErrorAnalyzer object."):
