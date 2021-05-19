@@ -176,7 +176,7 @@ def test_get_stats_categorical_node(target, cat_column):
     # Check with nan - less bins
     binned_column = cat_column(False)
     stats = InteractiveTree.get_stats_categorical_node(binned_column, target, 1, set({"Q", "B"}))
-    assert stats["bin_value"] == ["B", "Q"]
+    assert stats["bin_value"] == ["Q", "B"]
     assert stats["count"] == [2, 1]
     assert stats["target_distrib"][ErrorAnalyzerConstants.WRONG_PREDICTION] == [0, 1]
     assert stats["target_distrib"][ErrorAnalyzerConstants.CORRECT_PREDICTION] == [2, 0]
