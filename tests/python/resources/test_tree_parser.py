@@ -1,5 +1,6 @@
 from dku_error_analysis_tree_parsing.tree_parser import TreeParser
 from dku_error_analysis_decision_tree.node import Node
+from dku_error_analysis_decision_tree.tree import InteractiveTree
 from mealy import ErrorAnalyzerConstants
 import pandas as pd
 import numpy as np
@@ -42,7 +43,7 @@ def df():
 
 # PARSING METHODS
 @pytest.mark.parsing
-def test_rank_features(mocker, df, create_parser, caplog):
+def test_create_tree(mocker, df, create_parser, caplog):
     error_model = mocker.Mock()
     error_model.feature_importances_ = np.array([1, 3, 0, 5, 2, 4])
     feature_names = [
@@ -66,7 +67,10 @@ def test_rank_features(mocker, df, create_parser, caplog):
                             feature_names=list(feature_names))
     parser.preprocessed_feature_mapping = dict(mapping)
     dataframe = df()
-    ranked_features = parser.rank_features(dataframe)
+
+    spy = mocker.spy(InteractiveTree, '__init__')
+    parser.create_tree(dataframe)
+    ranked_features = spy.call_args[0][3]
     pd.testing.assert_frame_equal(df(), dataframe)
     assert ranked_features == ["feat_c", "feat_a", "feat_b"]
     assert not parser.num_features
@@ -87,7 +91,8 @@ def test_rank_features(mocker, df, create_parser, caplog):
                             feature_names=list(feature_names))
     parser.preprocessed_feature_mapping = dict(mapping)
     dataframe = df()
-    ranked_features = parser.rank_features(dataframe)
+    parser.create_tree(dataframe)
+    ranked_features = spy.call_args[0][3]
     pd.testing.assert_series_equal(dataframe["vector [element #0]"],
         pd.Series(['e','a',np.nan,'e','i','e','e','i','i','i','i','i'], name="vector [element #0]"))
     pd.testing.assert_series_equal(dataframe["vector [element #1]"],
@@ -106,7 +111,8 @@ def test_rank_features(mocker, df, create_parser, caplog):
     parser.preprocessed_feature_mapping = dict(mapping)
     dataframe = df()
     pd.testing.assert_frame_equal(df(), dataframe)
-    ranked_features = parser.rank_features(dataframe)
+    parser.create_tree(dataframe)
+    ranked_features = spy.call_args[0][3]
     assert ranked_features == ["feat_c", "feat_a", "feat_b"]
     assert not parser.num_features
     log = caplog.records[-1]
