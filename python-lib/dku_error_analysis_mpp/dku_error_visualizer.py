@@ -49,6 +49,13 @@ class DkuErrorVisualizer(_BaseErrorVisualizer):
 
         leaf_nodes = self._get_ranked_leaf_ids(leaf_selector, rank_leaves_by)
         ranked_features = self._tree.ranked_features[:top_k_features]
+        nr_leaves, nr_features = len(leaf_nodes), len(ranked_features)
+        logger.info("{} lea{} selected: {}".format(nr_leaves,
+                                                   "f" if nr_leaves == 1 else "ves",
+                                                   leaf_nodes))
+        logger.info("{} feature distribution{} plotted: {}".format(nr_features,
+                                                                   "" if nr_features == 1 else "s",
+                                                                   [f["name"] for f in ranked_features]))
 
         for leaf_id in leaf_nodes:
             leaf = self._tree.get_node(leaf_id)
