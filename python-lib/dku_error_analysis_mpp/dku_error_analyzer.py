@@ -4,6 +4,7 @@ import collections
 from dku_error_analysis_utils import DkuMEAConstants
 import logging
 from mealy import ErrorAnalyzer
+from dku_error_analysis_tree_parsing.tree_parser import TreeParser
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format='Error Analysis Plugin | %(levelname)s - %(message)s')
@@ -23,9 +24,6 @@ class DkuErrorAnalyzer(ErrorAnalyzer):
                  param_grid=None,
                  random_state=65537):
 
-        if model_handler is None:
-            raise NotImplementedError('You need to define a model handler.')
-
         self._model_handler = model_handler
         self._target = model_handler.get_target_variable()
         self._model_predictor = model_handler.get_predictor()
@@ -44,6 +42,8 @@ class DkuErrorAnalyzer(ErrorAnalyzer):
 
     @property
     def tree(self):
+        if self._tree is None:
+            self._parse_tree()
         return self._tree
 
     @property
@@ -51,6 +51,13 @@ class DkuErrorAnalyzer(ErrorAnalyzer):
         if DkuMEAConstants.ERROR_COLUMN not in self._error_df:
             self._error_df.loc[:, DkuMEAConstants.ERROR_COLUMN] = self._error_train_y
         return self._error_df
+
+    def _parse_tree(self):
+        tree_parser = TreeParser(self._model_handler, self.error_tree.estimator_,
+                                 self.preprocessed_feature_names)
+        tree = tree_parser.create_tree(self.error_df)
+        tree_parser.parse_nodes(tree, self._error_train_x)
+        self._tree = tree
 
     def fit(self):
         """

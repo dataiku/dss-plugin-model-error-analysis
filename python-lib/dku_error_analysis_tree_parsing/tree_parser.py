@@ -5,6 +5,8 @@ from dataiku.doctor.preprocessing.dataframe_preprocessing import RescalingProces
     TextHashingVectorizerProcessor, TextTFIDFVectorizerProcessor, CategoricalFeatureHashingProcessor
 from dku_error_analysis_tree_parsing.depreprocessor import descale_numerical_thresholds, denormalize_feature_value
 from dku_error_analysis_utils import format_float
+from dku_error_analysis_decision_tree.tree import InteractiveTree
+from dku_error_analysis_utils import DkuMEAConstants
 from collections import deque
 from mealy import ErrorAnalyzerConstants
 import logging
@@ -179,7 +181,7 @@ class TreeParser(object):
 
     # PARSING
 
-    def rank_features(self, df):
+    def create_tree(self, df):
         # Retrieve feature names without duplicates while keeping the ranking order
         ranked_feature_ids = np.argsort(- self.error_model.feature_importances_)
         unique_ranked_feature_names, seen_values = [], set()
@@ -214,7 +216,7 @@ class TreeParser(object):
                 elif params["type"] == "TEXT":
                     logger.info("Feature {} is a text feature. ".format(name) +
                     "Its distribution plot will not be available")
-        return unique_ranked_feature_names
+        return InteractiveTree(df, DkuMEAConstants.ERROR_COLUMN, unique_ranked_feature_names, self.num_features)
 
     def parse_nodes(self, tree, preprocessed_x):
         error_model_tree = self.error_model.tree_
