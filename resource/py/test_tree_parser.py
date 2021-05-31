@@ -2,6 +2,8 @@ from dku_error_analysis_tree_parsing.tree_parser import TreeParser
 from dku_error_analysis_decision_tree.node import Node
 from dku_error_analysis_decision_tree.tree import InteractiveTree
 from mealy import ErrorAnalyzerConstants
+from dku_error_analysis_utils import DkuMEAConstants
+
 import pandas as pd
 import numpy as np
 import pytest
@@ -39,7 +41,7 @@ def df():
         [9,      3,   "y", "n",    "C", "does_not_matter", '["i",2]',   "['e',1]"],
         [10,     7.5, "x", np.nan, "B", "does_not_matter", '["i",100]', "['e',1]"],
         [11,     6,   "x", np.nan, "B", "does_not_matter", '["i"]',     "['e',1]"]
-    ], columns=("num_1", "num_2", "cat_1", "cat_2", "target", "text", "vector", "bad_vector"))
+    ], columns=("num_1", "num_2", "cat_1", "cat_2", DkuMEAConstants.ERROR_COLUMN, "text", "vector", "bad_vector"))
 
 # PARSING METHODS
 @pytest.mark.parsing
@@ -80,7 +82,7 @@ def test_create_tree(mocker, df, create_parser, caplog):
         "cat_1": { "role": "WEIGHT", "type": "CATEGORY" },
         "num_1": { "role": "REJECT", "type": "NUMERIC" },
         "num_2": { "role": "INPUT", "type": "NUMERIC" },
-        "target": { "role": "TARGET", "type": "NUMERIC" },
+        DkuMEAConstants.ERROR_COLUMN: { "role": "TARGET", "type": "NUMERIC" },
         "text": { "role": "REJECT", "type": "TEXT"}
     }
 
