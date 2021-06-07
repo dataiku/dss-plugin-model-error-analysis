@@ -14,13 +14,7 @@ This plugin offers a set of different DSS components to analyse the error of a d
 
 Please see our [official plugin page](https://www.dataiku.com/product/plugins/model-error-analysis/) for installation.
 
-## Changelog
-
-**Version 1.0.0 (2021-04)**
-
-* Initial release
-* Model view component
-* Template notebook component
+## Issues
 
 You can log feature requests or issues on our [dedicated Github repository](https://github.com/dataiku/dss-plugin-model-error-analysis/issues).
 
@@ -28,5 +22,5 @@ You can log feature requests or issues on our [dedicated Github repository](http
 
 The Model Error Analysis plugin is:
 
-   Copyright (c) 2020 Dataiku SAS
+   Copyright (c) 2021 Dataiku
    Licensed under the [Apache License](LICENSE).
