@@ -1,8 +1,8 @@
 import numpy as np
 from dku_error_analysis_decision_tree.node import Node
 from dataiku.doctor.preprocessing.dataframe_preprocessing import RescalingProcessor2, QuantileBinSeries, UnfoldVectorProcessor, BinarizeSeries, \
-    FastSparseDummifyProcessor, ImpactCodingStep, FlagMissingValue2, TextCountVectorizerProcessor, TextHashingVectorizerWithSVDProcessor, \
-    TextHashingVectorizerProcessor, TextTFIDFVectorizerProcessor, CategoricalFeatureHashingProcessor
+    FastSparseDummifyProcessor, TargetEncodingStep, FrequencyEncodingStep, OrdinalEncodingStep, FlagMissingValue2, TextCountVectorizerProcessor, \
+    TextHashingVectorizerWithSVDProcessor, TextHashingVectorizerProcessor, TextTFIDFVectorizerProcessor, CategoricalFeatureHashingProcessor, DatetimeCyclicalEncodingStep
 from dku_error_analysis_tree_parsing.depreprocessor import descale_numerical_thresholds, denormalize_feature_value
 from dku_error_analysis_utils import format_float
 from dku_error_analysis_decision_tree.tree import InteractiveTree
@@ -85,12 +85,23 @@ class TreeParser(object):
         if not step.should_drop:
             self.preprocessed_feature_mapping["dummy:{}:__Others__".format(step.input_column_name)] = self.SplitParameters(Node.TYPES.CAT, step.input_column_name, step.values)
 
-    def _add_impact_mapping(self, step):
-        impact_map = getattr(step.impact_coder, "_impact_map", getattr(step.impact_coder, "encoding_map", None)) # To handle DSS10 new implem
+    def _add_target_encoding_mapping(self, step):
+        impact_map = step.impact_coder.encoding_map
+        is_reg = len(impact_map.columns.values) == 1
         for value in impact_map.columns.values:
-            preprocessed_name = "impact:{}:{}".format(step.column_name, value)
-            friendly_name = "{} [{}]".format(step.column_name, value)
+            preprocessed_name = "{}:{}:{}".format(step.encoding_name, step.column_name, value)
+            friendly_name = "{} [{} on target]".format(step.column_name, step.encoding_name) if is_reg else "{} [{} #{}]".format(step.column_name, step.encoding_name, value)
             self.preprocessed_feature_mapping[preprocessed_name] = self.SplitParameters(Node.TYPES.NUM, step.column_name, friendly_name=friendly_name)
+
+    def _add_frequency_encoding_mapping(self, step):
+        preprocessed_name = "frequency:{}:{}".format(step.column_name, step.suffix)
+        friendly_name = "{} [{} encoded]".format(step.column_name, step.suffix)
+        self.preprocessed_feature_mapping[preprocessed_name] = self.SplitParameters(Node.TYPES.NUM, step.column_name, friendly_name=friendly_name)
+
+    def _add_ordinal_encoding_mapping(self, step):
+        preprocessed_name = "ordinal:{}:{}".format(step.column_name, step.suffix)
+        friendly_name = "{} [ordinal encoded ({})]".format(step.column_name, step.suffix)
+        self.preprocessed_feature_mapping[preprocessed_name] = self.SplitParameters(Node.TYPES.NUM, step.column_name, friendly_name=friendly_name)
 
     # NUMERICAL HANDLING
     def _add_preprocessed_rescaled_num_feature(self, original_name):
@@ -117,6 +128,17 @@ class TreeParser(object):
         add_feature, name = self._add_preprocessed_rescaled_num_feature(step.in_col)
         self.num_features.add(step.in_col)
         self.preprocessed_feature_mapping[preprocessed_name] = self.SplitParameters(Node.TYPES.NUM, step.in_col, value_func=value_func, add_preprocessed_feature=add_feature, friendly_name=name)
+
+    def _add_datetime_cyclical_encoding_mapping(self, step):
+        self.num_features.add(step.column_name)
+        for period in step.selected_periods:
+            preprocessed_name = "datetime_cyclical:{}:{}:cos".format(step.column_name, period)
+            friendly_name = "{} [{} cycle (cos)]".format(step.column_name, period)
+            self.preprocessed_feature_mapping[preprocessed_name] = self.SplitParameters(Node.TYPES.NUM, step.column_name, friendly_name=friendly_name)
+
+            preprocessed_name = "datetime_cyclical:{}:{}:sin".format(step.column_name, period)
+            friendly_name = "{} [{} cycle (sin)]".format(step.column_name, period)
+            self.preprocessed_feature_mapping[preprocessed_name] = self.SplitParameters(Node.TYPES.NUM, step.column_name, friendly_name=friendly_name)
 
     # VECTOR HANDLING
     def _add_unfold_mapping(self, step):
@@ -163,10 +185,13 @@ class TreeParser(object):
                         else self._add_cat_hashing_not_whole_mapping(step),
                 FlagMissingValue2: self._add_flag_missing_value_mapping,
                 QuantileBinSeries: self._add_quantize_mapping,
-                FastSparseDummifyProcessor: self._add_dummy_mapping,
                 BinarizeSeries: self._add_binarize_mapping,
+                DatetimeCyclicalEncodingStep: self._add_datetime_cyclical_encoding_mapping,
                 UnfoldVectorProcessor: self._add_unfold_mapping,
-                ImpactCodingStep: self._add_impact_mapping,
+                FastSparseDummifyProcessor: self._add_dummy_mapping,
+                TargetEncodingStep: self._add_target_encoding_mapping,
+                OrdinalEncodingStep: self._add_ordinal_encoding_mapping,
+                FrequencyEncodingStep: self._add_frequency_encoding_mapping,
                 TextCountVectorizerProcessor: self._add_text_count_vect_mapping,
                 TextHashingVectorizerWithSVDProcessor: lambda step: self._add_hashing_vect_mapping(step, with_svd=True),
                 TextHashingVectorizerProcessor: self._add_hashing_vect_mapping,
