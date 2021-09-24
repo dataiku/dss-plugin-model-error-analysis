@@ -336,7 +336,7 @@ def test_target_encoding(create_parser, mocker, preproc_array):
     a = parser.preprocessed_feature_mapping["enc_name:test:A"]
     assert a.node_type == Node.TYPES.NUM
     assert a.chart_name == "test"
-    assert a.feature == "test [enc_name on A]"
+    assert a.feature == "test [enc_name on target]"
     assert a.value is None
     assert not a.invert_left_and_right(0) and not a.invert_left_and_right(-.5)\
         and not a.invert_left_and_right(.5)
@@ -595,6 +595,8 @@ def test_flag_missing(create_parser, mocker):
 def test_datetime_encoding(create_parser, mocker, preproc_array):
     parser = create_parser()
     step = mocker.Mock(column_name="test", selected_periods=["p1", "p2"])
+
+    parser._add_datetime_cyclical_encoding_mapping(step)
     assert len(parser.preprocessed_feature_mapping) == 4
     assert {"test"} == parser.num_features
 
@@ -603,7 +605,7 @@ def test_datetime_encoding(create_parser, mocker, preproc_array):
     assert p1_cos.chart_name == "test"
     assert p1_cos.feature == "test [p1 cycle (cos)]"
     assert p1_cos.value is None
-    assert p1_cos.value_func(0) == 1.6 and p1_cos.value_func(1) == 7.8
+    assert p1_cos.value_func(0) == 0 and p1_cos.value_func(1) == 1
     assert not p1_cos.invert_left_and_right(0) and not p1_cos.invert_left_and_right(-.5)\
         and not p1_cos.invert_left_and_right(.5)
     assert (p1_cos.add_preprocessed_feature(preproc_array, 0) == [-1,0,0,0,1,0,4]).all()
@@ -613,7 +615,7 @@ def test_datetime_encoding(create_parser, mocker, preproc_array):
     assert p1_sin.chart_name == "test"
     assert p1_sin.feature == "test [p1 cycle (sin)]"
     assert p1_sin.value is None
-    assert p1_sin.value_func(0) == 1.6 and p1_sin.value_func(1) == 7.8
+    assert p1_sin.value_func(0) == 0 and p1_sin.value_func(1) == 1
     assert not p1_sin.invert_left_and_right(0) and not p1_sin.invert_left_and_right(-.5)\
         and not p1_sin.invert_left_and_right(.5)
     assert (p1_sin.add_preprocessed_feature(preproc_array, 0) == [-1,0,0,0,1,0,4]).all()
@@ -623,7 +625,7 @@ def test_datetime_encoding(create_parser, mocker, preproc_array):
     assert p2_cos.chart_name == "test"
     assert p2_cos.feature == "test [p2 cycle (cos)]"
     assert p2_cos.value is None
-    assert p2_cos.value_func(0) == 1.6 and p2_cos.value_func(1) == 7.8
+    assert p2_cos.value_func(0) == 0 and p2_cos.value_func(1) == 1
     assert not p2_cos.invert_left_and_right(0) and not p2_cos.invert_left_and_right(-.5)\
         and not p2_cos.invert_left_and_right(.5)
     assert (p2_cos.add_preprocessed_feature(preproc_array, 0) == [-1,0,0,0,1,0,4]).all()
@@ -633,7 +635,7 @@ def test_datetime_encoding(create_parser, mocker, preproc_array):
     assert p2_sin.chart_name == "test"
     assert p2_sin.feature == "test [p2 cycle (sin)]"
     assert p2_sin.value is None
-    assert p2_sin.value_func(0) == 1.6 and p2_sin.value_func(1) == 7.8
+    assert p2_sin.value_func(0) == 0 and p2_sin.value_func(1) == 1
     assert not p2_sin.invert_left_and_right(0) and not p2_sin.invert_left_and_right(-.5)\
         and not p2_sin.invert_left_and_right(.5)
     assert (p2_sin.add_preprocessed_feature(preproc_array, 0) == [-1,0,0,0,1,0,4]).all()
