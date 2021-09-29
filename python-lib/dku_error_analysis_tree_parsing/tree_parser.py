@@ -132,12 +132,12 @@ class TreeParser(object):
     def _add_datetime_cyclical_encoding_mapping(self, step):
         self.num_features.add(step.column_name)
         for period in step.selected_periods:
-            preprocessed_name = "datetime_cyclical:{}:{}:cos".format(step.column_name, period)
-            friendly_name = "{} [{} cycle (cos)]".format(step.column_name, period)
+            preprocessed_name = "datetime_cyclical:{}:{}:cos".format(step.column_name, period.lower())
+            friendly_name = "{} [{} cycle (cos)]".format(step.column_name, period.lower())
             self.preprocessed_feature_mapping[preprocessed_name] = self.SplitParameters(Node.TYPES.NUM, step.column_name, friendly_name=friendly_name)
 
-            preprocessed_name = "datetime_cyclical:{}:{}:sin".format(step.column_name, period)
-            friendly_name = "{} [{} cycle (sin)]".format(step.column_name, period)
+            preprocessed_name = "datetime_cyclical:{}:{}:sin".format(step.column_name, period.lower())
+            friendly_name = "{} [{} cycle (sin)]".format(step.column_name, period.lower())
             self.preprocessed_feature_mapping[preprocessed_name] = self.SplitParameters(Node.TYPES.NUM, step.column_name, friendly_name=friendly_name)
 
     # VECTOR HANDLING
