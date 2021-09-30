@@ -43,6 +43,18 @@ def df():
         [11,     6,   "x", np.nan, "B", "does_not_matter", '["i"]',     "['e',1]"]
     ], columns=("num_1", "num_2", "cat_1", "cat_2", DkuMEAConstants.ERROR_COLUMN, "text", "vector", "bad_vector"))
 
+@pytest.fixture
+def preproc_array():
+    return np.array([
+        [-1, 0],
+        [0,  2],
+        [0,  3],
+        [0,  0],
+        [1,  1],
+        [0,  0],
+        [4,  0]
+    ])
+
 # PARSING METHODS
 @pytest.mark.parsing
 def test_create_tree(mocker, df, create_parser, caplog):
@@ -290,65 +302,45 @@ def test_dummy(create_parser, mocker):
     check_dummy(others, "test", ["A", "B"], True)
 
 @pytest.mark.categorical
-def test_impact(create_parser, mocker):
-    # < DSS 10
+def test_target_encoding(create_parser, mocker, preproc_array):
+    # Test classification
     parser = create_parser()
-    step = mocker.Mock(column_name="test")
-    step.impact_coder._impact_map.columns.values = ["A", "B"]
-    parser._add_impact_mapping(step)
+    step = mocker.Mock(column_name="test", encoding_name="enc_name")
+    step.impact_coder.encoding_map.columns.values = ["A", "B"]
+    parser._add_target_encoding_mapping(step)
     assert len(parser.preprocessed_feature_mapping) == 2
-
-    preproc_array = np.array([
-        [-1, 0],
-        [0,  2],
-        [0,  3],
-        [0,  0],
-        [1,  1],
-        [0,  0],
-        [4,  0]
-    ])
-
-    a = parser.preprocessed_feature_mapping["impact:test:A"]
+    a = parser.preprocessed_feature_mapping["enc_name:test:A"]
     assert a.node_type == Node.TYPES.NUM
     assert a.chart_name == "test"
-    assert a.feature == "test [A]"
+    assert a.feature == "test [enc_name #A]"
     assert a.value is None
     assert not a.invert_left_and_right(0) and not a.invert_left_and_right(-.5)\
         and not a.invert_left_and_right(.5)
     assert (a.add_preprocessed_feature(preproc_array, 0) == [-1,0,0,0,1,0,4]).all()
 
-    b = parser.preprocessed_feature_mapping["impact:test:B"]
+    b = parser.preprocessed_feature_mapping["enc_name:test:B"]
     assert b.node_type == Node.TYPES.NUM
     assert b.chart_name == "test"
-    assert b.feature == "test [B]"
+    assert b.feature == "test [enc_name #B]"
+    assert b.value is None
     assert not b.invert_left_and_right(0) and not b.invert_left_and_right(-.5)\
         and not b.invert_left_and_right(.5)
     assert (b.add_preprocessed_feature(preproc_array, 0) == [-1,0,0,0,1,0,4]).all()
 
-    # >= DSS 10
+    # Test regression
     parser = create_parser()
-    step = mocker.Mock(column_name="test")
+    step = mocker.Mock(column_name="test", encoding_name="enc_name")
     step.impact_coder.encoding_map.columns.values = ["A"]
-    del step.impact_coder._impact_map
-    parser._add_impact_mapping(step)
+    parser._add_target_encoding_mapping(step)
     assert len(parser.preprocessed_feature_mapping) == 1
-
-    a = parser.preprocessed_feature_mapping["impact:test:A"]
+    a = parser.preprocessed_feature_mapping["enc_name:test:A"]
     assert a.node_type == Node.TYPES.NUM
     assert a.chart_name == "test"
-    assert a.feature == "test [A]"
+    assert a.feature == "test [enc_name on target]"
     assert a.value is None
     assert not a.invert_left_and_right(0) and not a.invert_left_and_right(-.5)\
         and not a.invert_left_and_right(.5)
     assert (a.add_preprocessed_feature(preproc_array, 0) == [-1,0,0,0,1,0,4]).all()
-
-    # Step is missing proper attribute
-    parser = create_parser()
-    step = mocker.Mock(column_name="test")
-    del step.impact_coder.encoding_map
-    del step.impact_coder._impact_map
-    with pytest.raises(AttributeError):
-        parser._add_impact_mapping(step)
 
 @pytest.mark.categorical
 def test_whole_cat_hashing(create_parser, mocker):
@@ -397,21 +389,11 @@ def test_whole_cat_hashing(create_parser, mocker):
     assert (third.add_preprocessed_feature(preproc_array, 2) == added_column).all()
 
 @pytest.mark.categorical
-def test_not_whole_cat_hashing(create_parser, mocker):
+def test_not_whole_cat_hashing(create_parser, mocker, preproc_array):
     parser = create_parser()
     step = mocker.Mock(column_name="test", n_features=2)
     parser._add_cat_hashing_not_whole_mapping(step)
     assert len(parser.preprocessed_feature_mapping) == 2
-
-    preproc_array = np.array([
-        [-1, 0],
-        [0,  2],
-        [0,  3],
-        [0,  0],
-        [1,  1],
-        [0,  0],
-        [4,  0]
-    ])
 
     first = parser.preprocessed_feature_mapping["hashing:test:0"]
     assert first.node_type == Node.TYPES.NUM
@@ -433,24 +415,46 @@ def test_not_whole_cat_hashing(create_parser, mocker):
         and not second.invert_left_and_right(.5)
     assert (second.add_preprocessed_feature(preproc_array, 1) == [0,2,3,0,1,0,0]).all()
 
+def test_frequency_encoding(create_parser, mocker, preproc_array):
+    parser = create_parser()
+    step = mocker.Mock(column_name="test", suffix="suffix")
+    parser._add_frequency_encoding_mapping(step)
+    assert len(parser.preprocessed_feature_mapping) == 1
+
+    a = parser.preprocessed_feature_mapping["frequency:test:suffix"]
+    assert a.node_type == Node.TYPES.NUM
+    assert a.chart_name == "test"
+    assert a.feature == "test [suffix encoded]"
+    assert a.value is None
+    assert not a.invert_left_and_right(0) and not a.invert_left_and_right(-.5)\
+        and not a.invert_left_and_right(.5)
+    assert (a.add_preprocessed_feature(preproc_array, 0) == [-1,0,0,0,1,0,4]).all()
+
+@pytest.mark.categorical
+def test_ordinal_encoding(create_parser, mocker, preproc_array):
+    parser = create_parser()
+    step = mocker.Mock(column_name="test", suffix="suffix")
+    parser._add_ordinal_encoding_mapping(step)
+    assert len(parser.preprocessed_feature_mapping) == 1
+
+    a = parser.preprocessed_feature_mapping["ordinal:test:suffix"]
+    assert a.node_type == Node.TYPES.NUM
+    assert a.chart_name == "test"
+    assert a.feature == "test [ordinal encoded (suffix)]"
+    assert a.value is None
+    assert not a.invert_left_and_right(0) and not a.invert_left_and_right(-.5)\
+        and not a.invert_left_and_right(.5)
+    assert (a.add_preprocessed_feature(preproc_array, 0) == [-1,0,0,0,1,0,4]).all()
+
 # VECTOR HANDLING
 @pytest.mark.vector
-def test_unfold(create_parser, mocker):
+def test_unfold(create_parser, mocker, preproc_array):
     parser = create_parser()
     step = mocker.Mock(input_column_name="test", vector_length=2)
     parser._add_unfold_mapping(step)
     assert len(parser.preprocessed_feature_mapping) == 2
     assert {"test [element #0]", "test [element #1]"} == parser.num_features
 
-    preproc_array = np.array([
-        [-1, 0],
-        [0,  2],
-        [0,  3],
-        [0,  0],
-        [1,  1],
-        [0,  0],
-        [4,  0]
-    ])
     elem_0 = parser.preprocessed_feature_mapping["unfold:test:0"]
     assert elem_0.node_type == Node.TYPES.NUM
     assert elem_0.chart_name == "test [element #0]"
@@ -473,21 +477,13 @@ def test_unfold(create_parser, mocker):
 
 # NUM HANDLINGS
 @pytest.mark.numerical
-def test_add_preprocessed_rescaled_num(create_parser, mocker):
+def test_add_preprocessed_rescaled_num(create_parser, mocker, preproc_array):
     parser = create_parser()
     parser.rescalers = {"test": "does_not_matter"}
     mocker.patch("dku_error_analysis_tree_parsing.tree_parser.denormalize_feature_value",
         side_effect=lambda x, y: x + " " + str(y))
     func, name = parser._add_preprocessed_rescaled_num_feature("test")
-    preproc_array = np.array([
-        [-1, 0],
-        [0,  2],
-        [0,  3],
-        [0,  0],
-        [1,  1],
-        [0,  0],
-        [4,  0]
-    ])
+
     assert (func(preproc_array, 32) == \
         ["does_not_matter -1",
         "does_not_matter 0",
@@ -595,6 +591,55 @@ def test_flag_missing(create_parser, mocker):
     assert not split.invert_left_and_right(0) and not split.invert_left_and_right(-.5)\
         and not split.invert_left_and_right(.5)
 
+@pytest.mark.numerical
+def test_datetime_encoding(create_parser, mocker, preproc_array):
+    parser = create_parser()
+    step = mocker.Mock(column_name="test", selected_periods=["p1", "p2"])
+
+    parser._add_datetime_cyclical_encoding_mapping(step)
+    assert len(parser.preprocessed_feature_mapping) == 4
+    assert {"test"} == parser.num_features
+
+    p1_cos = parser.preprocessed_feature_mapping["datetime_cyclical:test:p1:cos"]
+    assert p1_cos.node_type == Node.TYPES.NUM
+    assert p1_cos.chart_name == "test"
+    assert p1_cos.feature == "test [p1 cycle (cos)]"
+    assert p1_cos.value is None
+    assert p1_cos.value_func(0) == 0 and p1_cos.value_func(1) == 1
+    assert not p1_cos.invert_left_and_right(0) and not p1_cos.invert_left_and_right(-.5)\
+        and not p1_cos.invert_left_and_right(.5)
+    assert (p1_cos.add_preprocessed_feature(preproc_array, 0) == [-1,0,0,0,1,0,4]).all()
+
+    p1_sin = parser.preprocessed_feature_mapping["datetime_cyclical:test:p1:sin"]
+    assert p1_sin.node_type == Node.TYPES.NUM
+    assert p1_sin.chart_name == "test"
+    assert p1_sin.feature == "test [p1 cycle (sin)]"
+    assert p1_sin.value is None
+    assert p1_sin.value_func(0) == 0 and p1_sin.value_func(1) == 1
+    assert not p1_sin.invert_left_and_right(0) and not p1_sin.invert_left_and_right(-.5)\
+        and not p1_sin.invert_left_and_right(.5)
+    assert (p1_sin.add_preprocessed_feature(preproc_array, 0) == [-1,0,0,0,1,0,4]).all()
+
+    p2_cos = parser.preprocessed_feature_mapping["datetime_cyclical:test:p2:cos"]
+    assert p2_cos.node_type == Node.TYPES.NUM
+    assert p2_cos.chart_name == "test"
+    assert p2_cos.feature == "test [p2 cycle (cos)]"
+    assert p2_cos.value is None
+    assert p2_cos.value_func(0) == 0 and p2_cos.value_func(1) == 1
+    assert not p2_cos.invert_left_and_right(0) and not p2_cos.invert_left_and_right(-.5)\
+        and not p2_cos.invert_left_and_right(.5)
+    assert (p2_cos.add_preprocessed_feature(preproc_array, 0) == [-1,0,0,0,1,0,4]).all()
+
+    p2_sin = parser.preprocessed_feature_mapping["datetime_cyclical:test:p2:sin"]
+    assert p2_sin.node_type == Node.TYPES.NUM
+    assert p2_sin.chart_name == "test"
+    assert p2_sin.feature == "test [p2 cycle (sin)]"
+    assert p2_sin.value is None
+    assert p2_sin.value_func(0) == 0 and p2_sin.value_func(1) == 1
+    assert not p2_sin.invert_left_and_right(0) and not p2_sin.invert_left_and_right(-.5)\
+        and not p2_sin.invert_left_and_right(.5)
+    assert (p2_sin.add_preprocessed_feature(preproc_array, 0) == [-1,0,0,0,1,0,4]).all()
+
 # TEXT HANDLINGS
 def check_text_features(preproc_array, split, name):
     assert split.node_type == Node.TYPES.NUM
@@ -608,23 +653,13 @@ def check_text_features(preproc_array, split, name):
     assert (split.add_preprocessed_feature(preproc_array, 1) == [0,2,3,0,1,0,0]).all()
 
 @pytest.mark.text
-def test_vect_hashing(create_parser, mocker, caplog):
+def test_vect_hashing(create_parser, mocker, caplog, preproc_array):
     caplog.set_level(logging.INFO)
     # Hash without SVD
     parser = create_parser()
     step = mocker.Mock(column_name="test", n_features=2)
     parser._add_hashing_vect_mapping(step)
     assert len(parser.preprocessed_feature_mapping) == 2
-
-    preproc_array = np.array([
-        [-1, 0],
-        [0,  2],
-        [0,  3],
-        [0,  0],
-        [1,  1],
-        [0,  0],
-        [4,  0]
-    ])
 
     first = parser.preprocessed_feature_mapping["hashvect:test:0"]
     check_text_features(preproc_array, first, "test [text #0]")
@@ -648,7 +683,7 @@ def test_vect_hashing(create_parser, mocker, caplog):
     assert log.msg == "Feature test_bis is a text feature. Its distribution plot will not be available"
 
 @pytest.mark.text
-def test_count_vect(create_parser, mocker, caplog):
+def test_count_vect(create_parser, mocker, caplog, preproc_array):
     caplog.set_level(logging.INFO)
     parser = create_parser()
     step = mocker.Mock(column_name="test", prefix="prefix")
@@ -657,16 +692,6 @@ def test_count_vect(create_parser, mocker, caplog):
     step.resource = {"vectorizer": vectorizer}
     parser._add_text_count_vect_mapping(step)
     assert len(parser.preprocessed_feature_mapping) == 2
-
-    preproc_array = np.array([
-        [-1, 0],
-        [0,  2],
-        [0,  3],
-        [0,  0],
-        [1,  1],
-        [0,  0],
-        [4,  0]
-    ])
 
     first = parser.preprocessed_feature_mapping["prefix:test:word"]
     check_text_features(preproc_array, first, "test: occurrences of word")
@@ -678,7 +703,7 @@ def test_count_vect(create_parser, mocker, caplog):
     assert log.msg == "Feature test is a text feature. Its distribution plot will not be available"
 
 @pytest.mark.text
-def test_tfidf_vect(create_parser, mocker, caplog):
+def test_tfidf_vect(create_parser, mocker, caplog, preproc_array):
     caplog.set_level(logging.INFO)
     parser = create_parser()
     step = mocker.Mock(column_name="test")
@@ -687,16 +712,6 @@ def test_tfidf_vect(create_parser, mocker, caplog):
     step.resource = {"vectorizer": vectorizer}
     parser._add_tfidf_vect_mapping(step)
     assert len(parser.preprocessed_feature_mapping) == 1
-
-    preproc_array = np.array([
-        [-1, 0],
-        [0,  2],
-        [0,  3],
-        [0,  0],
-        [1,  1],
-        [0,  0],
-        [4,  0]
-    ])
 
     first = parser.preprocessed_feature_mapping["tfidfvec:test:42.424:word"]
     check_text_features(preproc_array, first, "test: tf-idf of word (idf=42.424)")
