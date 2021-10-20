@@ -9,10 +9,6 @@ import numpy as np
 import pytest
 import logging
 
-#from dataiku.doctor.preprocessing.dataframe_preprocessing import RescalingProcessor2, QuantileBinSeries, UnfoldVectorProcessor, BinarizeSeries, \
-#    FastSparseDummifyProcessor, ImpactCodingStep, FlagMissingValue2, TextCountVectorizerProcessor, TextHashingVectorizerWithSVDProcessor, \
-#    TextHashingVectorizerProcessor, TextTFIDFVectorizerProcessor, CategoricalFeatureHashingProcessor
-
 @pytest.fixture
 def create_parser(mocker):
     def _create(steps=None, per_feature=None, error_model=None, num_features=None, feature_names=None):
@@ -477,30 +473,8 @@ def test_unfold(create_parser, mocker, preproc_array):
 
 # NUM HANDLINGS
 @pytest.mark.numerical
-def test_add_preprocessed_rescaled_num(create_parser, mocker, preproc_array):
+def test_identity(create_parser, mocker, preproc_array):
     parser = create_parser()
-    parser.rescalers = {"test": "does_not_matter"}
-    mocker.patch("dku_error_analysis_tree_parsing.tree_parser.denormalize_feature_value",
-        side_effect=lambda x, y: x + " " + str(y))
-    func, name = parser._add_preprocessed_rescaled_num_feature("test")
-
-    assert (func(preproc_array, 32) == \
-        ["does_not_matter -1",
-        "does_not_matter 0",
-        "does_not_matter 0",
-        "does_not_matter 0",
-        "does_not_matter 1",
-        "does_not_matter 0",
-        "does_not_matter 4"]).all()
-    assert name == "preprocessed:rescaled:test"
-
-def mocked_add_preprocessed_rescaled_num_feature(original_name):
-    return "fake_function", "friendly_name"
-
-@pytest.mark.numerical
-def test_identity(create_parser, mocker):
-    parser = create_parser()
-    mocker.patch.object(parser, '_add_preprocessed_rescaled_num_feature', side_effect=mocked_add_preprocessed_rescaled_num_feature)
     parser._add_identity_mapping("test")
     assert len(parser.preprocessed_feature_mapping) == 1
     assert {"test"} == parser.num_features
@@ -508,53 +482,49 @@ def test_identity(create_parser, mocker):
     split = parser.preprocessed_feature_mapping["test"]
     assert split.node_type == Node.TYPES.NUM
     assert split.chart_name == "test"
-    assert split.feature == "friendly_name"
+    assert split.feature == "test"
     assert split.value is None
     assert split.value_func(.5) == .5 and split.value_func(-.5) == -.5
     assert not split.invert_left_and_right(0) and not split.invert_left_and_right(-.5)\
         and not split.invert_left_and_right(.5)
-    assert split.add_preprocessed_feature == "fake_function"
+    assert (split.add_preprocessed_feature(preproc_array, 0) == [-1,0,0,0,1,0,4]).all()
 
 @pytest.mark.numerical
-def test_binarize(create_parser, mocker):
+def test_binarize(create_parser, mocker, preproc_array):
     parser = create_parser()
-    patched = mocker.patch.object(parser, '_add_preprocessed_rescaled_num_feature', side_effect=mocked_add_preprocessed_rescaled_num_feature)
     step = mocker.Mock(in_col="test", threshold=42)
     step._output_name.return_value = "output"
     parser._add_binarize_mapping(step)
     assert len(parser.preprocessed_feature_mapping) == 1
-    assert patched.call_count == 1
     assert {"test"} == parser.num_features
 
     split = parser.preprocessed_feature_mapping["num_binarized:output"]
     assert split.node_type == Node.TYPES.NUM
     assert split.chart_name == "test"
-    assert split.feature == "friendly_name"
+    assert split.feature == "test"
     assert split.value == 42
     assert split.value_func(.5) == .5 and split.value_func(-.5) == -.5
     assert not split.invert_left_and_right(0) and not split.invert_left_and_right(-.5)\
         and not split.invert_left_and_right(.5)
-    assert split.add_preprocessed_feature == "fake_function"
+    assert (split.add_preprocessed_feature(preproc_array, 0) == [-1,0,0,0,1,0,4]).all()
 
 @pytest.mark.numerical
-def test_quantize(create_parser, mocker):
+def test_quantize(create_parser, mocker, preproc_array):
     parser = create_parser()
-    patched = mocker.patch.object(parser, '_add_preprocessed_rescaled_num_feature', side_effect=mocked_add_preprocessed_rescaled_num_feature)
     step = mocker.Mock(in_col="test", nb_bins=42, r={"bounds": ["0.5", "1.6", "7.8"]})
     parser._add_quantize_mapping(step)
     assert len(parser.preprocessed_feature_mapping) == 1
-    assert patched.call_count == 1
     assert {"test"} == parser.num_features
 
     split = parser.preprocessed_feature_mapping["num_quantized:test:quantile:42"]
     assert split.node_type == Node.TYPES.NUM
     assert split.chart_name == "test"
-    assert split.feature == "friendly_name"
+    assert split.feature == "test"
     assert split.value is None
     assert split.value_func(0) == 1.6 and split.value_func(1) == 7.8
     assert not split.invert_left_and_right(0) and not split.invert_left_and_right(-.5)\
         and not split.invert_left_and_right(.5)
-    assert split.add_preprocessed_feature == "fake_function"
+    assert (split.add_preprocessed_feature(preproc_array, 0) == [-1,0,0,0,1,0,4]).all()
 
 @pytest.mark.numerical
 def test_flag_missing(create_parser, mocker):
