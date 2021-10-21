@@ -161,7 +161,7 @@ class TreeParser(object):
             "Its distribution plot will not be available")
         vec = step.resource["vectorizer"]
         for word, idf in zip(vec.get_feature_names(), vec.idf_):
-            preprocessed_name = "tfidfvec:{}:{}:{}".format(step.column_name, format_float(idf, 3), word)
+            preprocessed_name = "tfidfvec:{}:{:.3f}:{}".format(step.column_name, idf, word)
             friendly_name = "{}: tf-idf of {} (idf={})".format(step.column_name, word, format_float(idf, 3))
             self.preprocessed_feature_mapping[preprocessed_name] = self.SplitParameters(Node.TYPES.NUM, None, friendly_name=friendly_name)
 

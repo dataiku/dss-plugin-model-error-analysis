@@ -1,5 +1,8 @@
 # Changelog
 
+## Version 1.1.1 (2021-10)
+* Fix name of tf idf preprocessed features not always recognized
+
 ## Version 1.1.0 (2021-10)
 * Fix broken model view for models using quantization/binarization without Keep regular option
 
