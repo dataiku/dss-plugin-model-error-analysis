@@ -700,7 +700,7 @@ def test_tfidf_vect(create_parser, mocker, caplog, preproc_array):
     first = parser.preprocessed_feature_mapping["tfidfvec:test_bis:42.424:word"]
     check_text_features(preproc_array, first, "test_bis: tf-idf of word (idf=42.424)")
 
-    second = parser.preprocessed_feature_mapping["tfidfvec:test_bis:1:random"]
+    second = parser.preprocessed_feature_mapping["tfidfvec:test_bis:1.000:random"]
     check_text_features(preproc_array, second, "test_bis: tf-idf of random (idf=1)")
     log = caplog.records[-1]
     assert log.levelname == "INFO"
