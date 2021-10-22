@@ -94,30 +94,20 @@ class TreeParser(object):
             self.preprocessed_feature_mapping[preprocessed_name] = self.SplitParameters(Node.TYPES.NUM, step.column_name, friendly_name=friendly_name)
 
     # NUMERICAL HANDLING
-    def _add_preprocessed_rescaled_num_feature(self, original_name):
-        original_idx = self.feature_list.index(original_name)
-        add_feature = lambda array, col: pd.Series(array[:, original_idx]).apply(lambda x: denormalize_feature_value(self.rescalers.get(original_name), x))
-        name = "preprocessed:rescaled:{}".format(original_name)
-        return add_feature, name
-
     def _add_identity_mapping(self, original_name):
         self.num_features.add(original_name)
-        add_feature, name = self._add_preprocessed_rescaled_num_feature(original_name)
-        self.preprocessed_feature_mapping[original_name] = self.SplitParameters(Node.TYPES.NUM,
-            original_name, add_preprocessed_feature=add_feature, friendly_name=name)
+        self.preprocessed_feature_mapping[original_name] = self.SplitParameters(Node.TYPES.NUM, original_name)
 
     def _add_binarize_mapping(self, step):
         self.num_features.add(step.in_col)
-        add_feature, name = self._add_preprocessed_rescaled_num_feature(step.in_col)
-        self.preprocessed_feature_mapping["num_binarized:" + step._output_name()] = self.SplitParameters(Node.TYPES.NUM, step.in_col, step.threshold, add_preprocessed_feature=add_feature, friendly_name=name)
+        self.preprocessed_feature_mapping["num_binarized:" + step._output_name()] = self.SplitParameters(Node.TYPES.NUM, step.in_col, step.threshold)
 
     def _add_quantize_mapping(self, step):
         bounds = step.r["bounds"]
         value_func = lambda threshold: float(bounds[int(threshold) + 1])
         preprocessed_name = "num_quantized:{0}:quantile:{1}".format(step.in_col, step.nb_bins)
-        add_feature, name = self._add_preprocessed_rescaled_num_feature(step.in_col)
         self.num_features.add(step.in_col)
-        self.preprocessed_feature_mapping[preprocessed_name] = self.SplitParameters(Node.TYPES.NUM, step.in_col, value_func=value_func, add_preprocessed_feature=add_feature, friendly_name=name)
+        self.preprocessed_feature_mapping[preprocessed_name] = self.SplitParameters(Node.TYPES.NUM, step.in_col, value_func=value_func)
 
     # VECTOR HANDLING
     def _add_unfold_mapping(self, step):
