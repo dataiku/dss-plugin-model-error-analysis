@@ -86,10 +86,11 @@ class TreeParser(object):
             self.preprocessed_feature_mapping["dummy:{}:__Others__".format(step.input_column_name)] = self.SplitParameters(Node.TYPES.CAT, step.input_column_name, step.values)
 
     def _add_impact_mapping(self, step):
-        impact_map = getattr(step.impact_coder, "_impact_map", getattr(step.impact_coder, "encoding_map", None)) # To handle DSS10 new implem
+        impact_map = step.impact_coder._impact_map
+        is_reg = len(impact_map.columns.values) == 1
         for value in impact_map.columns.values:
             preprocessed_name = "impact:{}:{}".format(step.column_name, value)
-            friendly_name = "{} [{}]".format(step.column_name, value)
+            friendly_name = "{} [impact on target]".format(step.column_name) if is_reg else "{} [{}]".format(step.column_name, value)
             self.preprocessed_feature_mapping[preprocessed_name] = self.SplitParameters(Node.TYPES.NUM, step.column_name, friendly_name=friendly_name)
 
     # NUMERICAL HANDLING
