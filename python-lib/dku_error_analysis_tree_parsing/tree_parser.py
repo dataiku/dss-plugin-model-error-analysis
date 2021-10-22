@@ -86,37 +86,28 @@ class TreeParser(object):
             self.preprocessed_feature_mapping["dummy:{}:__Others__".format(step.input_column_name)] = self.SplitParameters(Node.TYPES.CAT, step.input_column_name, step.values)
 
     def _add_impact_mapping(self, step):
-        impact_map = getattr(step.impact_coder, "_impact_map", getattr(step.impact_coder, "encoding_map", None)) # To handle DSS10 new implem
+        impact_map = step.impact_coder._impact_map
+        is_reg = len(impact_map.columns.values) == 1
         for value in impact_map.columns.values:
             preprocessed_name = "impact:{}:{}".format(step.column_name, value)
-            friendly_name = "{} [{}]".format(step.column_name, value)
+            friendly_name = "{} [impact on target]".format(step.column_name) if is_reg else "{} [{}]".format(step.column_name, value)
             self.preprocessed_feature_mapping[preprocessed_name] = self.SplitParameters(Node.TYPES.NUM, step.column_name, friendly_name=friendly_name)
 
     # NUMERICAL HANDLING
-    def _add_preprocessed_rescaled_num_feature(self, original_name):
-        original_idx = self.feature_list.index(original_name)
-        add_feature = lambda array, col: pd.Series(array[:, original_idx]).apply(lambda x: denormalize_feature_value(self.rescalers.get(original_name), x))
-        name = "preprocessed:rescaled:{}".format(original_name)
-        return add_feature, name
-
     def _add_identity_mapping(self, original_name):
         self.num_features.add(original_name)
-        add_feature, name = self._add_preprocessed_rescaled_num_feature(original_name)
-        self.preprocessed_feature_mapping[original_name] = self.SplitParameters(Node.TYPES.NUM,
-            original_name, add_preprocessed_feature=add_feature, friendly_name=name)
+        self.preprocessed_feature_mapping[original_name] = self.SplitParameters(Node.TYPES.NUM, original_name)
 
     def _add_binarize_mapping(self, step):
         self.num_features.add(step.in_col)
-        add_feature, name = self._add_preprocessed_rescaled_num_feature(step.in_col)
-        self.preprocessed_feature_mapping["num_binarized:" + step._output_name()] = self.SplitParameters(Node.TYPES.NUM, step.in_col, step.threshold, add_preprocessed_feature=add_feature, friendly_name=name)
+        self.preprocessed_feature_mapping["num_binarized:" + step._output_name()] = self.SplitParameters(Node.TYPES.NUM, step.in_col, step.threshold)
 
     def _add_quantize_mapping(self, step):
         bounds = step.r["bounds"]
         value_func = lambda threshold: float(bounds[int(threshold) + 1])
         preprocessed_name = "num_quantized:{0}:quantile:{1}".format(step.in_col, step.nb_bins)
-        add_feature, name = self._add_preprocessed_rescaled_num_feature(step.in_col)
         self.num_features.add(step.in_col)
-        self.preprocessed_feature_mapping[preprocessed_name] = self.SplitParameters(Node.TYPES.NUM, step.in_col, value_func=value_func, add_preprocessed_feature=add_feature, friendly_name=name)
+        self.preprocessed_feature_mapping[preprocessed_name] = self.SplitParameters(Node.TYPES.NUM, step.in_col, value_func=value_func)
 
     # VECTOR HANDLING
     def _add_unfold_mapping(self, step):
@@ -149,7 +140,7 @@ class TreeParser(object):
             "Its distribution plot will not be available")
         vec = step.resource["vectorizer"]
         for word, idf in zip(vec.get_feature_names(), vec.idf_):
-            preprocessed_name = "tfidfvec:{}:{}:{}".format(step.column_name, format_float(idf, 3), word)
+            preprocessed_name = "tfidfvec:{}:{:.3f}:{}".format(step.column_name, idf, word)
             friendly_name = "{}: tf-idf of {} (idf={})".format(step.column_name, word, format_float(idf, 3))
             self.preprocessed_feature_mapping[preprocessed_name] = self.SplitParameters(Node.TYPES.NUM, None, friendly_name=friendly_name)
 
