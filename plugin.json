@@ -1,6 +1,6 @@
 {
   "id" : "model-error-analysis",
-  "version" : "1.0.3",
+  "version" : "1.0.4",
   "meta" : {
     "label" : "Model Error Analysis",
     "description" : "Debug model performance with error analysis",
