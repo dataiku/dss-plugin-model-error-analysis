@@ -3,3 +3,4 @@ python-lib/*/__pycache__
 python-lib/__pycache__
 tests/python/*/__pycache__/
 resource/py/__pycache__
+*.zip
