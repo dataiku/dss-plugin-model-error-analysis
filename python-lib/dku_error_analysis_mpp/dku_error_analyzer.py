@@ -18,11 +18,8 @@ class DkuErrorAnalyzer(ErrorAnalyzer):
     The nodes of the decision tree are different segments of errors to be studied individually.
     """
 
-    def __init__(self,
-                 model_handler,
-                 max_num_rows=DkuMEAConstants.MAX_NUM_ROWS,
-                 param_grid=None,
-                 random_state=65537):
+    def __init__(self, model_handler, max_num_rows=DkuMEAConstants.MAX_NUM_ROWS, param_grid=None,
+        random_state=65537):
 
         self._model_handler = model_handler
         self._target = model_handler.get_target_variable()
@@ -31,7 +28,16 @@ class DkuErrorAnalyzer(ErrorAnalyzer):
 
         probability_threshold = self._model_predictor.params.model_perf.get('usedThreshold', None)
         feature_names = self._model_predictor.get_features()
-        super(DkuErrorAnalyzer, self).__init__(model_handler.get_clf(), feature_names, param_grid, probability_threshold, random_state)
+
+        estimator = model_handler.get_clf()
+        if not hasattr(estimator, "_estimator_type"):
+            # This param is needed for the analyzer to properly treat the estimator as a
+            # regressor/classifier. It can be absent if the model does not match the sklearn
+            # convention for estimators (see sc-78591).
+            estimator._estimator_type = "regressor" if model_handler.get_prediction_type() == "REGRESSION" else "classifier"
+        super(DkuErrorAnalyzer, self).__init__(
+            estimator, feature_names, param_grid, probability_threshold, random_state
+        )
 
         self._train_x = None
         self._train_y = None
