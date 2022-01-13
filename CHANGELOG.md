@@ -1,5 +1,10 @@
 # Changelog
 
+## Version 1.1.2 (2022-01-13)
+
+* Update code env requirements
+* Fix issue with Lasso LARS on regression models
+
 ## Version 1.1.1 (2021-10)
 * Fix name of tf idf preprocessed features not always recognized
 
