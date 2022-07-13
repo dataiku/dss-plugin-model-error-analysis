@@ -4,7 +4,6 @@
     "description" : "Debug model performance with error analysis",
     "icon": "icon-sitemap"
   },
-
   "baseType": "STANDARD",
   "standardWebAppLibraries": ["d3", "dataiku", "font_awesome"],
   "hasBackend": "true",
@@ -13,12 +12,14 @@
     {
       "type": "SAVED_MODEL",
       "contentType": "prediction",
+      "backendTypes": ["PY_MEMORY"],
       "targetParamsKey": "modelId",
       "pathParamsKey": "versionId"
     },
     {
       "type": "ANALYSIS",
       "contentType": "prediction",
+      "backendTypes": ["PY_MEMORY"],
       "targetParamsKey": "trainedModelFullModelId"
     }
   ],
