@@ -738,8 +738,18 @@ select {
     font-size: 14px;
 }
 
-.modal-body-error {
+.modal-body--error {
     color: var(--error-red);
+}
+
+.modal-form {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    padding-bottom: 2px;
+    padding-right: 2px;
+    min-width: 60%;
+    max-width: 80%;
 }
 
 [name=promptForm] {
