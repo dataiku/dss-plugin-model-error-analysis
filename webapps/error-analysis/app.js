@@ -2,13 +2,9 @@
     'use strict';
 
     app.controller("MeaController", function($scope, $http, ModalService, TreeInteractions, TreeUtils, Format) {
-        $scope.modal = {};
-        $scope.removeModal = function(event) {
-            if (ModalService.remove($scope.modal)(event)) {
-                angular.element(".template").focus();
-            }
-        };
-        $scope.createModal = ModalService.create($scope.modal);
+        $scope.$on("closeModal", function() {
+            angular.element(".template").focus();
+        });
 
         $scope.leftPanel = {};
         const node = d3.select(".tree-legend_pie svg").append("g");
@@ -38,7 +34,7 @@
                 $scope.histData = {};
             }, function(e) {
                 $scope.loadingTree = false;
-                $scope.createModal.error(e.data);
+                ModalService.createBackendErrorModal($scope, e.data);
             });
         }
 
@@ -52,7 +48,7 @@
                 loadHistograms(selectedFeatures);
                 fetchGlobalChartData(selectedFeatures);
             }, function(e) {
-                $scope.createModal.error(e.data);
+                ModalService.createBackendErrorModal($scope, e.data);
             });
         }
 
@@ -75,7 +71,7 @@
             .then(function(response) {
                 Object.assign($scope.histDataWholeSet, response.data);
             }, function(e) {
-                $scope.createModal.error(e.data);
+                ModalService.createBackendErrorModal($scope, e.data);
             });
         }
 
@@ -86,7 +82,7 @@
                 .then(function(response) {
                     Object.assign($scope.histData, response.data);
                 }, function(e) {
-                    $scope.createModal.error(e.data);
+                    ModalService.createBackendErrorModal($scope, e.data);
                 });
         }
 
@@ -111,7 +107,7 @@
             $scope.originalModelName = response.data.modelName;
             load();
         }, function(e) {
-            $scope.createModal.error(e.data);
+            ModalService.createBackendErrorModal($scope, e.data);
         });
 
         $scope.selectNode = function(nodeId) {
