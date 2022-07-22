@@ -1,10 +1,4 @@
 <div class="template" ng-controller="MeaController" ng-click="featureSelectorShown && interactWithFeatureSelector()" ng-keydown="featureSelectorShown && event.keyCode === 27 && interactWithFeatureSelector()" tabindex="0">
-    <div ng-if="modal.type"
-         class="modal-background"
-         tabindex=0
-         ng-keyup="$event.keyCode == 27 && removeModal()"
-         ng-click="removeModal($event)">
-    </div>
     <div class="node-panel no-shrink-no-grow" ng-include="'/plugins/model-error-analysis/resource/templates/node-panel.html'"></div>
     <div class="tree-visualization">
         <div class="toolbar-header">
