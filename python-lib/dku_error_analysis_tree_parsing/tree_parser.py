@@ -11,6 +11,7 @@ from collections import deque
 from mealy import ErrorAnalyzerConstants
 import logging
 from json import loads
+from math import ceil
 import pandas as pd
 
 logger = logging.getLogger(__name__)
@@ -104,7 +105,7 @@ class TreeParser(object):
 
     def _add_quantize_mapping(self, step):
         bounds = step.r["bounds"]
-        value_func = lambda threshold: float(bounds[int(threshold) + 1])
+        value_func = lambda threshold: float(bounds[ceil(threshold)])
         preprocessed_name = "num_quantized:{0}:quantile:{1}".format(step.in_col, step.nb_bins)
         self.num_features.add(step.in_col)
         self.preprocessed_feature_mapping[preprocessed_name] = self.SplitParameters(Node.TYPES.NUM, step.in_col, value_func=value_func)
