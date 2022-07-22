@@ -1,5 +1,9 @@
 # Changelog
 
+## Version 1.0.5 (2022-07-22)
+* Webapp: Use a better ModalService
+* Webapp: Use a simpler way to load the models from DSS
+
 ## Version 1.0.4 (2022-01-13)
 
 * Update code env requirements
