@@ -7,7 +7,6 @@ from dataiku.core.dkujson import DKUJSONEncoder
 from dataiku.doctor.posttraining.model_information_handler import PredictionModelInformationHandler
 
 from dataikuapi.dss.ml import DSSMLTask
-from dku_error_analysis_model_parser.model_handler_utils import get_model_handler
 
 from dku_error_analysis_decision_tree.tree_handler import TreeHandler
 
@@ -24,13 +23,13 @@ def get_original_model_info():
     try:
         fmi = get_webapp_config().get("trainedModelFullModelId")
         if fmi is None:
-            model = Model(get_webapp_config()["modelId"])
-            version_id = get_webapp_config().get("versionId")
-            original_model_handler = get_model_handler(model, version_id)
+            model_id, version_id = get_webapp_config()["modelId"], get_webapp_config().get("versionId")
+            model = Model(model_id)
             name = model.get_name()
+            fmi = "S-{project_key}-{model_id}-{version_id}".format(project_key=model.projet_key, model_id=model_id, version_id=version_id)
         else:
-            original_model_handler = PredictionModelInformationHandler.from_full_model_id(fmi)
             name = DSSMLTask.from_full_model_id(api_client(), fmi).get_trained_model_snippet(fmi).get("userMeta", {}).get("name", fmi)
+        original_model_handler = PredictionModelInformationHandler.from_full_model_id(fmi)
         handler.set_error_analyzer(original_model_handler)
         return jsonify(modelName=name,
             isRegression='REGRESSION' in original_model_handler.get_prediction_type())
