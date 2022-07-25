@@ -5,7 +5,6 @@ from dku_error_analysis_utils import safe_str
 from dataiku.doctor.posttraining.model_information_handler import PredictionModelInformationHandler
 
 
-# Only used in the notebook template
 def get_model_handler(model, version_id=None):
     try:
         params = model.get_predictor(version_id).params

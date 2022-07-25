@@ -1,5 +1,8 @@
 # Changelog
 
+## Version 1.0.6 (2022-07-25)
+* Webapp: Undo simpler way to load the models from DSS (not compatible for 9.0.0 & 9.0.1)
+
 ## Version 1.0.5 (2022-07-22)
 * Webapp: Use a better ModalService
 * Webapp: Use a simpler way to load the models from DSS
