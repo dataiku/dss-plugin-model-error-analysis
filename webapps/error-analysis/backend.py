@@ -26,7 +26,7 @@ def get_original_model_info():
             model_id, version_id = get_webapp_config()["modelId"], get_webapp_config().get("versionId")
             model = Model(model_id)
             name = model.get_name()
-            fmi = "S-{project_key}-{model_id}-{version_id}".format(project_key=model.projet_key, model_id=model_id, version_id=version_id)
+            fmi = "S-{project_key}-{model_id}-{version_id}".format(project_key=model.project_key, model_id=model_id, version_id=version_id)
         else:
             name = DSSMLTask.from_full_model_id(api_client(), fmi).get_trained_model_snippet(fmi).get("userMeta", {}).get("name", fmi)
         original_model_handler = PredictionModelInformationHandler.from_full_model_id(fmi)
