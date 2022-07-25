@@ -1,5 +1,8 @@
 # Changelog
 
+## Hotfix 1.1.4 (2022-07-25)
+* Webapp: Fix typo
+
 ## Version 1.1.3 (2022-07-22)
 * Webapp: Only display model view for tasks using a Python backend + of the proper prediction type
 * Webapp: Use a better ModalService
