@@ -1,6 +1,6 @@
 import logging
 from dku_error_analysis_mpp.dku_error_analyzer import DkuErrorAnalyzer
-from mealy import ErrorAnalyzerConstants
+from dku_error_analyzer_custom.error_analyzer_constants import ErrorAnalyzerConstants
 
 LOGGER = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format="Error Analysis Plugin %(levelname)s - %(message)s")

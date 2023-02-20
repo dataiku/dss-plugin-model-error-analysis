@@ -1,6 +1,6 @@
 from math import isnan
 from dku_error_analysis_utils import safe_str, format_float
-from mealy import ErrorAnalyzerConstants
+from dku_error_analyzer_custom.error_analyzer_constants import ErrorAnalyzerConstants
 
 class Node(object):
     """
