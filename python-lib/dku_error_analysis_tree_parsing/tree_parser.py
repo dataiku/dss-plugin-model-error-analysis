@@ -8,7 +8,7 @@ from dku_error_analysis_utils import format_float
 from dku_error_analysis_decision_tree.tree import InteractiveTree
 from dku_error_analysis_utils import DkuMEAConstants
 from collections import deque
-from dku_error_analyzer_custom.error_analyzer_constants import ErrorAnalyzerConstants
+from mealy_local.error_analyzer_constants import ErrorAnalyzerConstants
 import logging
 from json import loads
 from math import ceil

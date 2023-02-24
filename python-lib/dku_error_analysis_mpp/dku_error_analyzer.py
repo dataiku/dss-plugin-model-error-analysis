@@ -3,7 +3,7 @@ import numpy as np
 import collections
 from dku_error_analysis_utils import DkuMEAConstants
 import logging
-from dku_error_analyzer_custom.error_analyzer import ErrorAnalyzer
+from mealy_local.error_analyzer import ErrorAnalyzer
 from dku_error_analysis_tree_parsing.tree_parser import TreeParser
 
 logger = logging.getLogger(__name__)

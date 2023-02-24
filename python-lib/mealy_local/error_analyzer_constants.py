@@ -7,7 +7,7 @@ class ErrorAnalyzerConstants(object):
     WRONG_PREDICTION = "Wrong prediction"
     CORRECT_PREDICTION = "Correct prediction"
     MAX_DEPTH = [5, 10]
-    MIN_SAMPLES_LEAF_LOWEST_UPPER_BOUND = 0.01 # for min_samples_leaf, the min upper bound value should be 0.01
+    MIN_SAMPLES_LEAF_LOWEST_UPPER_BOUND = .01 # for min_samples_leaf, the min upper bound value should be 0.01
     TEST_SIZE = 0.2
 
     MIN_NUM_ROWS = 100  # heuristic choice
