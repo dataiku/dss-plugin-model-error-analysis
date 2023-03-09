@@ -6,14 +6,6 @@ import warnings
 VALID_CURVE = ["convex", "concave"]
 VALID_DIRECTION = ["increasing", "decreasing"]
 
-# try:
-#     import matplotlib.pyplot as plt
-# except ImportError:
-#     _has_matplotlib = False
-#     _matplotlib_not_found_err = ModuleNotFoundError("This function needs Matplotlib to be executed. Please run command `pip install kneed[plot]` ")
-# else:
-#     _has_matplotlib = True
-
 class KneeLocator(object):
     """
     Once instantiated, this class attempts to find the point of maximum
@@ -319,78 +311,6 @@ class KneeLocator(object):
 
         return knee, norm_knee
 
-    # def plot_knee_normalized(self, figsize = None, title = "Normalized Knee Point", xlabel = None, ylabel = None):
-    #     """Plot the normalized curve, the difference curve (x_difference, y_normalized) and the knee, if it exists.
-    #     :param figsize: Optional[Tuple[int, int]
-    #         The figure size of the plot. Example (12, 8)
-    #     :param title: str
-    #         Title of the visualization, defaults to "Normalized Knee Point"
-    #     :param xlabel: Optional[str]
-    #         X-axis label
-    #     :param ylabel: Optional[str]
-    #         y-axis label
-    #     :return: NoReturn
-    #     """
-    #     if not _has_matplotlib:
-    #         raise _matplotlib_not_found_err
-
-    #     if figsize is None:
-    #         figsize = (6, 6)
-
-    #     plt.figure(figsize=figsize)
-    #     plt.title(title)
-    #     if xlabel:
-    #         plt.xlabel(xlabel)
-    #     if ylabel:
-    #         plt.ylabel(ylabel)
-    #     plt.plot(self.x_normalized, self.y_normalized, "b", label="normalized curve")
-    #     plt.plot(self.x_difference, self.y_difference, "r", label="difference curve")
-    #     plt.xticks(
-    #         np.arange(self.x_normalized.min(), self.x_normalized.max() + 0.1, 0.1)
-    #     )
-    #     plt.yticks(
-    #         np.arange(self.y_difference.min(), self.y_normalized.max() + 0.1, 0.1)
-    #     )
-
-    #     plt.vlines(
-    #         self.norm_knee,
-    #         plt.ylim()[0],
-    #         plt.ylim()[1],
-    #         linestyles="--",
-    #         label="knee/elbow",
-    #     )
-    #     plt.legend(loc="best")
-
-    # def plot_knee(self, figsize = None, title = "Knee Point", xlabel = None, ylabel = None):
-    #     """
-    #     Plot the curve and the knee, if it exists
-    #     :param figsize: Optional[Tuple[int, int]
-    #         The figure size of the plot. Example (12, 8)
-    #     :param title: str
-    #         Title of the visualization, defaults to "Knee Point"
-    #     :param xlabel: Optional[str]
-    #         X-axis label
-    #     :param ylabel: Optional[str]
-    #         y-axis label
-    #     :return: NoReturn
-    #     """
-    #     if not _has_matplotlib:
-    #         raise _matplotlib_not_found_err
-
-    #     if figsize is None:
-    #         figsize = (6, 6)
-
-    #     plt.figure(figsize=figsize)
-    #     plt.title(title)
-    #     if xlabel:
-    #         plt.xlabel(xlabel)
-    #     if ylabel:
-    #         plt.ylabel(ylabel)
-    #     plt.plot(self.x, self.y, "b", label="data")
-    #     plt.vlines(
-    #         self.knee, plt.ylim()[0], plt.ylim()[1], linestyles="--", label="knee/elbow"
-    #     )
-    #     plt.legend(loc="best")
 
     # Niceties for users working with elbows rather than knees
     @property
