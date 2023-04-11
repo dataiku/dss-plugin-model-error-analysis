@@ -310,37 +310,3 @@ class KneeLocator(object):
             return None, None
 
         return knee, norm_knee
-
-
-    # Niceties for users working with elbows rather than knees
-    @property
-    def elbow(self):
-        return self.knee
-
-    @property
-    def norm_elbow(self):
-        return self.norm_knee
-
-    @property
-    def elbow_y(self):
-        return self.knee_y
-
-    @property
-    def norm_elbow_y(self):
-        return self.norm_knee_y
-
-    @property
-    def all_elbows(self):
-        return self.all_knees
-
-    @property
-    def all_norm_elbows(self):
-        return self.all_norm_knees
-
-    @property
-    def all_elbows_y(self):
-        return self.all_knees_y
-
-    @property
-    def all_norm_elbows_y(self):
-        return self.all_norm_knees_y

@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import numpy as np
-import collections
 from dku_error_analysis_utils import DkuMEAConstants
 import logging
 from mealy_local.error_analyzer import ErrorAnalyzer
@@ -100,16 +99,6 @@ class DkuErrorAnalyzer(ErrorAnalyzer):
         self._train_x, self._train_y, input_mf_index = self._preprocess_dataframe(original_df)
         original_train_df = original_df.loc[input_mf_index]
         self._error_df = original_train_df.drop(self._target, axis=1)
-
-    def _get_path_to_node(self, node_id):
-        """ return path to node as a list of split steps from the nodes of the de-processed
-        dku_error_analysis_decision_tree.tree.InteractiveTree object """
-        cur_node = self.tree.get_node(node_id)
-        path_to_node = collections.deque()
-        while cur_node.id != 0:
-            path_to_node.appendleft(cur_node.print_decision_rule())
-            cur_node = self.tree.get_node(cur_node.parent_id)
-        return path_to_node
 
     def evaluate(self, dku_test_dataset=None, output_format='dict'):
         """ Return ErrorAnalyzer summary metrics """

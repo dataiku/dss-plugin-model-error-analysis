@@ -7,6 +7,7 @@ logging.basicConfig(level=logging.INFO, format="Error Analysis Plugin %(levelnam
 
 class TreeHandler(object):
     DEFAULT_MAX_NR_FEATURES = 5
+
     def __init__(self):
         self.initialize()
         self.analyzer = None

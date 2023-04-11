@@ -7,6 +7,7 @@ import numpy as np
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format='error_analyzer | %(levelname)s - %(message)s')
 
+
 class ErrorTree(object):
 
     def __init__(self, error_decision_tree):

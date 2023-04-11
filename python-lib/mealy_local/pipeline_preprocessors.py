@@ -55,8 +55,10 @@ class FeatureNameTransformer(object):
     def inverse_thresholds(self, tree):
         raise NotImplementedError
 
+
 def check_lists_having_same_elements(list_A, list_B):
     return set(list_A) == set(list_B)
+
 
 def generate_preprocessing_steps(transformer, invert_order=False):
     if isinstance(transformer, Pipeline):

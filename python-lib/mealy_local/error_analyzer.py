@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 from kneed_local.knee_locator import KneeLocator
 import numpy as np
-import collections
 from sklearn import tree
 from sklearn.model_selection import GridSearchCV
 from sklearn.base import is_regressor
@@ -270,65 +269,6 @@ class ErrorAnalyzer(BaseEstimator):
         self.error_tree = ErrorTree(error_decision_tree=gs_clf.best_estimator_)
         logger.info('Chosen parameters: {}'.format(gs_clf.best_params_))
 
-    def get_error_leaf_summary(self, leaf_selector=None, add_path_to_leaves=False,
-                               output_format='dict', rank_by='total_error_fraction'):
-        """ Return summary information regarding leaves.
-
-        Args:
-            leaf_selector (None, int or array-like): The leaves whose information will be returned
-                * int: Only return information of the leaf with the corresponding id
-                * array-like: Only return information of the leaves corresponding to these ids
-                * None (default): Return information of all the leaves
-            add_path_to_leaves (bool): Whether to add information of the path across the tree till the selected node. Defaults to False.
-            output_format (string): Return format used for the report. Valid values are 'dict' or 'str'. Defaults to 'dict'.
-            rank_by (str): Ranking criterion for the leaves. Valid values are:
-                * 'total_error_fraction' (default): rank by the fraction of total error in the node
-                * 'purity': rank by the purity (ratio of wrongly predicted samples over the total number of node samples)
-                * 'class_difference': rank by the difference of number of wrongly and correctly predicted samples
-                in a node.
-
-        Return:
-            dict or str: list of reports (as dictionary or string) with different information on each selected leaf.
-        """
-
-        leaf_nodes = self._get_ranked_leaf_ids(leaf_selector=leaf_selector, rank_by=rank_by)
-
-        leaves_summary = []
-        for leaf_id in leaf_nodes:
-            n_errors = int(self.error_tree.estimator_.tree_.value[leaf_id, 0, self.error_tree.error_class_idx])
-            n_samples = self.error_tree.estimator_.tree_.n_node_samples[leaf_id]
-            local_error = n_errors / n_samples
-            total_error_fraction = n_errors / self.error_tree.n_total_errors
-            n_corrects = n_samples - n_errors
-
-            if output_format == 'dict':
-                leaf_dict = {
-                    "id": leaf_id,
-                    "n_corrects": n_corrects,
-                    "n_errors": n_errors,
-                    "local_error": local_error,
-                    "total_error_fraction": total_error_fraction
-                }
-                if add_path_to_leaves:
-                    leaf_dict["path_to_leaf"] = self._get_path_to_node(leaf_id)
-                leaves_summary.append(leaf_dict)
-
-            elif output_format == 'str':
-                leaf_summary = 'LEAF %d:\n' % leaf_id
-                leaf_summary += '     Correct predictions: %d | Wrong predictions: %d | Local error (purity): %.2f | Fraction of total error: %.2f\n' % (n_corrects, n_errors, local_error, total_error_fraction)
-
-                if add_path_to_leaves:
-                    leaf_summary += '     Path to leaf:\n'
-                    for (step_idx, step) in enumerate(self._get_path_to_node(leaf_id)):
-                        leaf_summary += '     ' + '   ' * step_idx + step  + '\n'
-
-                leaves_summary.append(leaf_summary)
-
-            else:
-                raise ValueError("Output format should either be 'dict' or 'str'")
-
-        return leaves_summary
-
     def evaluate(self, X, y, output_format='str'):
         """
         Evaluate performance of ErrorAnalyzer on the given test data and labels.
@@ -478,70 +418,3 @@ class ErrorAnalyzer(BaseEstimator):
         elif nr_kept_leaves < leaf_selector_as_array.size:
             logger.info("Some of the ids provided do not belong to leaves. Only leaf ids are kept.")
         return lambda array: array[leaf_selector]
-
-    def _get_path_to_node(self, node_id):
-        """ Return path to node as a list of split steps from the nodes of the sklearn Tree object """
-        feature_names = self.pipeline_preprocessor.get_original_feature_names()
-        children_left = list(self.error_tree.estimator_.tree_.children_left)
-        children_right = list(self.error_tree.estimator_.tree_.children_right)
-        threshold = self._inverse_transform_thresholds()
-        feature = self._inverse_transform_features()
-
-        cur_node_id = node_id
-        path_to_node = collections.deque()
-        while cur_node_id > 0:
-
-            node_is_left_child = cur_node_id in children_left
-            if node_is_left_child:
-                parent_id = children_left.index(cur_node_id)
-            else:
-                parent_id = children_right.index(cur_node_id)
-
-            feat = feature[parent_id]
-            thresh = threshold[parent_id]
-
-            is_categorical = self.pipeline_preprocessor.is_categorical(feat)
-            thresh = str(thresh) if is_categorical else format_float(thresh, 2)
-
-            decision_rule = ''
-            if node_is_left_child:
-                decision_rule += ' <= ' if not is_categorical else ' is not '
-            else:
-                decision_rule += " > " if not is_categorical else ' is '
-
-            decision_rule = str(feature_names[feat]) + decision_rule + thresh
-            path_to_node.appendleft(decision_rule)
-            cur_node_id = parent_id
-
-        return path_to_node
-
-    def _inverse_transform_features(self):
-        """ Undo preprocessing of feature values.
-
-        If the predictor comes with a Pipeline preprocessor, map the features indices of the Error Analysis
-        Tree back to their indices in the original unpreprocessed space of features.
-        Otherwise simply return the feature indices of the decision tree. The feature indices of a decision tree
-        indicate what features are used to split the training set at each node.
-        See https://scikit-learn.org/stable/auto_examples/tree/plot_unveil_tree_structure.html.
-
-        Return:
-            list or numpy.ndarray:
-                indices of features of the Error Analyzer Tree, possibly mapped back to the
-                original unprocessed feature space.
-        """
-        return [self.pipeline_preprocessor.inverse_transform_feature_id(feat_idx) if feat_idx > 0 else feat_idx
-            for feat_idx in self.error_tree.estimator_.tree_.feature]
-
-    def _inverse_transform_thresholds(self):
-        """  Undo preprocessing of feature threshold values.
-
-        If the predictor comes with a Pipeline preprocessor, undo the preprocessing on the thresholds of the Error Analyzer
-        Tree for an easier plot interpretation. Otherwise simply return the thresholds of
-        the decision tree. The thresholds of a decision tree are the feature values used to split the training set at
-        each node. See https://scikit-learn.org/stable/auto_examples/tree/plot_unveil_tree_structure.html.
-
-        Return:
-            numpy.ndarray:
-                thresholds of the Error Tree, possibly with preprocessing undone.
-        """
-        return self.pipeline_preprocessor.inverse_thresholds(self.error_tree.estimator_.tree_)

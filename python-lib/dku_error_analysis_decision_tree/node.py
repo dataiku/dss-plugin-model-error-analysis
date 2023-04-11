@@ -2,6 +2,7 @@ from math import isnan
 from dku_error_analysis_utils import safe_str, format_float
 from mealy_local.error_analyzer_constants import ErrorAnalyzerConstants
 
+
 class Node(object):
     """
     A node of a decision tree
