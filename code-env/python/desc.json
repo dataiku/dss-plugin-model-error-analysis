@@ -5,5 +5,5 @@
   "corePackagesSet": "PANDAS10",
   "forceConda": false,
   "installCorePackages": true,
-  "installJupyterSupport": false
+  "installJupyterSupport": true
 }

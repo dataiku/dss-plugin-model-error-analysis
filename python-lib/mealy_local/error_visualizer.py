@@ -6,7 +6,7 @@ import numpy as np
 from graphviz import Source
 
 from mealy_local.error_analyzer_constants import ErrorAnalyzerConstants
-from .error_analyzer import ErrorAnalyzer
+from mealy_local.error_analyzer import ErrorAnalyzer
 
 plt.rc('font', family="sans-serif")
 SMALL_SIZE, MEDIUM_SIZE, BIGGER_SIZE = 8, 10, 12
