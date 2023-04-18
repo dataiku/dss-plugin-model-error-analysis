@@ -1,5 +1,9 @@
 # Changelog
 
+## Version 1.2.0 - 2022-07
+- Webapp: Use contextual code env (i.e. the one used to train the model)
+- Webapp: Fix wrong handling of features generated from numerical quantile preprocessing (issue introduced in 1.1.3)
+
 ## Hotfix 1.1.4 (2022-07-25)
 * Webapp: Fix typo
 
