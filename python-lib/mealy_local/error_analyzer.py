@@ -1,140 +1,27 @@
 # -*- coding: utf-8 -*-
-from kneed_local.knee_locator import KneeLocator
+import collections
+import logging
+
 import numpy as np
-from sklearn import tree
-from sklearn.model_selection import GridSearchCV
-from sklearn.base import is_regressor
-from sklearn.pipeline import Pipeline
-from sklearn.compose import ColumnTransformer
-from sklearn.base import BaseEstimator
-from sklearn.metrics import make_scorer, balanced_accuracy_score, accuracy_score
+from kneed_local.knee_locator import KneeLocator
+from mealy_local.error_analysis_utils import check_enough_data, get_epsilon, format_float
 from mealy_local.error_analyzer_constants import ErrorAnalyzerConstants
 from mealy_local.error_tree import ErrorTree
-from mealy_local.pipeline_preprocessors import DummyPipelinePreprocessor, PipelinePreprocessor
-from dku_error_analysis_utils import format_float
+from mealy_local.metrics import (error_decision_tree_report,
+                                 fidelity_balanced_accuracy_score)
+from mealy_local.pipeline_preprocessors import (DummyPipelinePreprocessor,
+                                                PipelinePreprocessor)
+from sklearn import tree
+from sklearn.base import BaseEstimator, is_regressor
+from sklearn.compose import ColumnTransformer
 from sklearn.exceptions import NotFittedError
-
-import logging
+from sklearn.metrics import (accuracy_score, balanced_accuracy_score,
+                             make_scorer)
+from sklearn.model_selection import GridSearchCV
+from sklearn.pipeline import Pipeline
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format='error_analyzer | %(levelname)s - %(message)s')
-
-def error_decision_tree_report(y_true, y_pred, output_format='str'):
-    """Return a report showing the main Error Decision Tree metrics.
-
-    Args:
-        y_true (numpy.ndarray): Ground truth values of wrong/correct predictions of the error tree primary model.
-            Expected values in [ErrorAnalyzerConstants.WRONG_PREDICTION, ErrorAnalyzerConstants.CORRECT_PREDICTION].
-        y_pred (numpy.ndarray): Estimated targets as returned by the error tree. Expected values in
-            [ErrorAnalyzerConstants.WRONG_PREDICTION, ErrorAnalyzerConstants.CORRECT_PREDICTION].
-        output_format (string): Return format used for the report. Valid values are 'dict' or 'str'.
-
-    Return:
-        dict or str: dictionary or string report storing different metrics regarding the Error Decision Tree.
-    """
-
-    tree_accuracy_score = compute_accuracy_score(y_true, y_pred)
-    tree_balanced_accuracy = balanced_accuracy_score(y_true, y_pred)
-    primary_model_predicted_accuracy = compute_primary_model_accuracy(y_pred)
-    primary_model_true_accuracy = compute_primary_model_accuracy(y_true)
-    fidelity, confidence_decision = compute_confidence_decision(primary_model_true_accuracy,
-                                                                primary_model_predicted_accuracy)
-    if output_format == 'dict':
-        report_dict = dict()
-        report_dict[ErrorAnalyzerConstants.TREE_ACCURACY] = tree_accuracy_score
-        report_dict[ErrorAnalyzerConstants.TREE_BALANCED_ACCURACY] = tree_balanced_accuracy
-        report_dict[ErrorAnalyzerConstants.TREE_FIDELITY] = fidelity
-        report_dict[ErrorAnalyzerConstants.PRIMARY_MODEL_TRUE_ACCURACY] = primary_model_true_accuracy
-        report_dict[ErrorAnalyzerConstants.PRIMARY_MODEL_PREDICTED_ACCURACY] = primary_model_predicted_accuracy
-        report_dict[ErrorAnalyzerConstants.CONFIDENCE_DECISION] = confidence_decision
-        return report_dict
-
-    if output_format == 'str':
-
-        report = 'The Error Decision Tree was trained with accuracy %.2f%% and balanced accuracy %.2f%%.' % (tree_accuracy_score * 100, tree_balanced_accuracy * 100)
-        report += '\n'
-        report += 'The Decision Tree estimated the primary model''s accuracy to %.2f%%.' % \
-                  (primary_model_predicted_accuracy * 100)
-        report += '\n'
-        report += 'The true accuracy of the primary model is %.2f.%%' % (primary_model_true_accuracy * 100)
-        report += '\n'
-        report += 'The Fidelity of the error tree is %.2f%%.' % \
-                  (fidelity * 100)
-        report += '\n'
-        if not confidence_decision:
-            report += 'Warning: the built tree might not be representative of the primary model performances.'
-            report += '\n'
-            report += 'The error tree predicted model accuracy is considered too different from the true model accuracy.'
-            report += '\n'
-        else:
-            report += 'The error tree is considered representative of the primary model performances.'
-            report += '\n'
-
-        return report
-
-    else:
-        raise ValueError("Output format should either be 'dict' or 'str'")
-
-def check_enough_data(df, min_len):
-    """
-    Compare length of dataframe to minimum lenght of the test data.
-    Used in the relevance of the measure.
-
-    :param df: Input dataframe
-    :param min_len:
-    :return:
-    """
-    if df.shape[0] < min_len:
-        raise ValueError(
-            'The original dataset is too small ({} rows) to have stable result, it needs to have at least {} rows'.format(
-                df.shape[0], min_len))
-    
-def get_epsilon(difference):
-    """
-    Compute the threshold used to decide whether a prediction is wrong or correct (for regression tasks).
-
-    Args:
-           difference (1D-array): The absolute differences between the true target values and the predicted ones (by the primary model).
-
-    Return:
-           epsilon (float): The value of the threshold used to decide whether the prediction for a regression task is wrong or correct
-    """
-    epsilon_range = np.linspace(min(difference), max(difference), num=ErrorAnalyzerConstants.NUMBER_EPSILON_VALUES)
-    cdf_error = []
-    n_samples = difference.shape[0]
-    for epsilon in epsilon_range:
-        correct_predictions = difference <= epsilon
-        cdf_error.append(np.count_nonzero(correct_predictions) / float(n_samples))
-    return KneeLocator(epsilon_range, cdf_error).knee
-
-def compute_primary_model_accuracy(y):
-    n_test_samples = y.shape[0]
-    return float(np.count_nonzero(y == ErrorAnalyzerConstants.CORRECT_PREDICTION)) / n_test_samples
-
-def compute_confidence_decision(primary_model_true_accuracy, primary_model_predicted_accuracy):
-    difference_true_pred_accuracy = np.abs(primary_model_true_accuracy - primary_model_predicted_accuracy)
-    decision = difference_true_pred_accuracy <= ErrorAnalyzerConstants.TREE_ACCURACY_TOLERANCE
-
-    fidelity = 1. - difference_true_pred_accuracy
-
-    # TODO Binomial test
-    return fidelity, decision
-
-
-def compute_fidelity_score(y_true, y_pred):
-    difference_true_pred_accuracy = np.abs(compute_primary_model_accuracy(y_true) -
-                                           compute_primary_model_accuracy(y_pred))
-    fidelity = 1. - difference_true_pred_accuracy
-
-    return fidelity
-
-
-def fidelity_balanced_accuracy_score(y_true, y_pred):
-    return compute_fidelity_score(y_true, y_pred) + balanced_accuracy_score(y_true, y_pred)
-
-def compute_accuracy_score(y_true, y_pred):
-    return accuracy_score(y_true, y_pred)
-
 
 class ErrorAnalyzer(BaseEstimator):
     """ ErrorAnalyzer analyzes the errors of a prediction model on a test set.
@@ -288,6 +175,65 @@ class ErrorAnalyzer(BaseEstimator):
         y_pred = self.error_tree.estimator_.predict(prep_x)
         y_true, _ = self._compute_primary_model_error(prep_x, prep_y)
         return error_decision_tree_report(y_true, y_pred, output_format)
+    
+    def get_error_leaf_summary(self, leaf_selector=None, add_path_to_leaves=False,
+                               output_format='dict', rank_by='total_error_fraction'):
+        """ Return summary information regarding leaves.
+
+        Args:
+            leaf_selector (None, int or array-like): The leaves whose information will be returned
+                * int: Only return information of the leaf with the corresponding id
+                * array-like: Only return information of the leaves corresponding to these ids
+                * None (default): Return information of all the leaves
+            add_path_to_leaves (bool): Whether to add information of the path across the tree till the selected node. Defaults to False.
+            output_format (string): Return format used for the report. Valid values are 'dict' or 'str'. Defaults to 'dict'.
+            rank_by (str): Ranking criterion for the leaves. Valid values are:
+                * 'total_error_fraction' (default): rank by the fraction of total error in the node
+                * 'purity': rank by the purity (ratio of wrongly predicted samples over the total number of node samples)
+                * 'class_difference': rank by the difference of number of wrongly and correctly predicted samples
+                in a node.
+
+        Return:
+            dict or str: list of reports (as dictionary or string) with different information on each selected leaf.
+        """
+
+        leaf_nodes = self._get_ranked_leaf_ids(leaf_selector=leaf_selector, rank_by=rank_by)
+
+        leaves_summary = []
+        for leaf_id in leaf_nodes:
+            n_errors = int(self.error_tree.estimator_.tree_.value[leaf_id, 0, self.error_tree.error_class_idx])
+            n_samples = self.error_tree.estimator_.tree_.n_node_samples[leaf_id]
+            local_error = n_errors / n_samples
+            total_error_fraction = n_errors / self.error_tree.n_total_errors
+            n_corrects = n_samples - n_errors
+
+            if output_format == 'dict':
+                leaf_dict = {
+                    "id": leaf_id,
+                    "n_corrects": n_corrects,
+                    "n_errors": n_errors,
+                    "local_error": local_error,
+                    "total_error_fraction": total_error_fraction
+                }
+                if add_path_to_leaves:
+                    leaf_dict["path_to_leaf"] = self._get_path_to_node(leaf_id)
+                leaves_summary.append(leaf_dict)
+
+            elif output_format == 'str':
+                leaf_summary = 'LEAF %d:\n' % leaf_id
+                leaf_summary += '     Correct predictions: %d | Wrong predictions: %d | Local error (purity): %.2f | Fraction of total error: %.2f\n' % (n_corrects, n_errors, local_error, total_error_fraction)
+
+                if add_path_to_leaves:
+                    leaf_summary += '     Path to leaf:\n'
+                    for (step_idx, step) in enumerate(self._get_path_to_node(leaf_id)):
+                        leaf_summary += '     ' + '   ' * step_idx + step  + '\n'
+
+                leaves_summary.append(leaf_summary)
+
+            else:
+                raise ValueError("Output format should either be 'dict' or 'str'")
+
+        return leaves_summary
 
     def _compute_primary_model_error(self, X, y):
         """
@@ -418,3 +364,70 @@ class ErrorAnalyzer(BaseEstimator):
         elif nr_kept_leaves < leaf_selector_as_array.size:
             logger.info("Some of the ids provided do not belong to leaves. Only leaf ids are kept.")
         return lambda array: array[leaf_selector]
+
+    def _get_path_to_node(self, node_id):
+        """ Return path to node as a list of split steps from the nodes of the sklearn Tree object """
+        feature_names = self.pipeline_preprocessor.get_original_feature_names()
+        children_left = list(self.error_tree.estimator_.tree_.children_left)
+        children_right = list(self.error_tree.estimator_.tree_.children_right)
+        threshold = self._inverse_transform_thresholds()
+        feature = self._inverse_transform_features()
+
+        cur_node_id = node_id
+        path_to_node = collections.deque()
+        while cur_node_id > 0:
+
+            node_is_left_child = cur_node_id in children_left
+            if node_is_left_child:
+                parent_id = children_left.index(cur_node_id)
+            else:
+                parent_id = children_right.index(cur_node_id)
+
+            feat = feature[parent_id]
+            thresh = threshold[parent_id]
+
+            is_categorical = self.pipeline_preprocessor.is_categorical(feat)
+            thresh = str(thresh) if is_categorical else format_float(thresh, 2)
+
+            decision_rule = ''
+            if node_is_left_child:
+                decision_rule += ' <= ' if not is_categorical else ' is not '
+            else:
+                decision_rule += " > " if not is_categorical else ' is '
+
+            decision_rule = str(feature_names[feat]) + decision_rule + thresh
+            path_to_node.appendleft(decision_rule)
+            cur_node_id = parent_id
+
+        return path_to_node
+    
+    def _inverse_transform_features(self):
+        """ Undo preprocessing of feature values.
+
+        If the predictor comes with a Pipeline preprocessor, map the features indices of the Error Analysis
+        Tree back to their indices in the original unpreprocessed space of features.
+        Otherwise simply return the feature indices of the decision tree. The feature indices of a decision tree
+        indicate what features are used to split the training set at each node.
+        See https://scikit-learn.org/stable/auto_examples/tree/plot_unveil_tree_structure.html.
+
+        Return:
+            list or numpy.ndarray:
+                indices of features of the Error Analyzer Tree, possibly mapped back to the
+                original unprocessed feature space.
+        """
+        return [self.pipeline_preprocessor.inverse_transform_feature_id(feat_idx) if feat_idx > 0 else feat_idx
+            for feat_idx in self.error_tree.estimator_.tree_.feature]
+    
+    def _inverse_transform_thresholds(self):
+        """  Undo preprocessing of feature threshold values.
+
+        If the predictor comes with a Pipeline preprocessor, undo the preprocessing on the thresholds of the Error Analyzer
+        Tree for an easier plot interpretation. Otherwise simply return the thresholds of
+        the decision tree. The thresholds of a decision tree are the feature values used to split the training set at
+        each node. See https://scikit-learn.org/stable/auto_examples/tree/plot_unveil_tree_structure.html.
+
+        Return:
+            numpy.ndarray:
+                thresholds of the Error Tree, possibly with preprocessing undone.
+        """
+        return self.pipeline_preprocessor.inverse_thresholds(self.error_tree.estimator_.tree_)

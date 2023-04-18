@@ -1,12 +1,12 @@
-from collections import defaultdict
 import logging
+from collections import defaultdict
 
 import numpy as np
-from scipy.sparse import issparse
-from sklearn.pipeline import Pipeline
 import pandas as pd
 from mealy_local.error_analyzer_constants import ErrorAnalyzerConstants
-
+from mealy_local.error_analysis_utils import check_lists_having_same_elements, generate_preprocessing_steps, invert_transform_via_identity
+from scipy.sparse import issparse
+from sklearn.pipeline import Pipeline
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format='error_analyzer | %(levelname)s - %(message)s')
@@ -54,39 +54,6 @@ class FeatureNameTransformer(object):
 
     def inverse_thresholds(self, tree):
         raise NotImplementedError
-
-
-def check_lists_having_same_elements(list_A, list_B):
-    return set(list_A) == set(list_B)
-
-
-def generate_preprocessing_steps(transformer, invert_order=False):
-    if isinstance(transformer, Pipeline):
-        steps = [step for name, step in transformer.steps]
-        if invert_order:
-            steps = reversed(steps)
-    else:
-        steps = [transformer]
-    for step in steps:
-        if step == 'drop':
-            # Skip the drop step of ColumnTransformer
-            continue
-        if step != 'passthrough' and not isinstance(step, ErrorAnalyzerConstants.SUPPORTED_STEPS):
-            # Check all the preprocessing steps are supported by mealy
-            unsupported_class = step.__class__
-            raise TypeError('Mealy package does not support {}. '.format(unsupported_class) +
-                        'It might be because it changes output dimension without ' +
-                        'providing a get_feature_names function to keep track of the ' +
-                        'generated features, or that it does not provide an ' +
-                        'inverse_tranform method.')
-        yield step
-
-def invert_transform_via_identity(step):
-    if isinstance(step, ErrorAnalyzerConstants.STEPS_THAT_CAN_BE_INVERSED_WITH_IDENTICAL_FUNCTION):
-        return True
-    if step == 'passthrough' or step is None:
-        return True
-    return False
 
 class PipelinePreprocessor(FeatureNameTransformer):
     """Transformer of feature values from the original values to preprocessed ones.

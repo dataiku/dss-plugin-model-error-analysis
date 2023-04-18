@@ -1,8 +1,8 @@
 import logging
-from sklearn.exceptions import NotFittedError
-from mealy_local.error_analyzer_constants import ErrorAnalyzerConstants
-import numpy as np
 
+import numpy as np
+from mealy_local.error_analyzer_constants import ErrorAnalyzerConstants
+from sklearn.exceptions import NotFittedError
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format='error_analyzer | %(levelname)s - %(message)s')

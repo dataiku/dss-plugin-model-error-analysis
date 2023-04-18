@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
+from collections import deque
+
+import matplotlib.pyplot as plt
 import numpy as np
 from graphviz import Source
-from collections import deque
-import matplotlib.pyplot as plt
-from .constants import ErrorAnalyzerConstants
+
+from mealy_local.error_analyzer_constants import ErrorAnalyzerConstants
 from .error_analyzer import ErrorAnalyzer
-from .error_analysis_utils import format_float
 
 plt.rc('font', family="sans-serif")
 SMALL_SIZE, MEDIUM_SIZE, BIGGER_SIZE = 8, 10, 12

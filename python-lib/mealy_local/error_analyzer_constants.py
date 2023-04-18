@@ -1,6 +1,9 @@
 from sklearn.impute import SimpleImputer
-from sklearn.preprocessing import OneHotEncoder, OrdinalEncoder, StandardScaler, PowerTransformer, QuantileTransformer, \
-    MaxAbsScaler, Binarizer, Normalizer, MinMaxScaler, RobustScaler
+from sklearn.preprocessing import (Binarizer, MaxAbsScaler, MinMaxScaler,
+                                   Normalizer, OneHotEncoder, OrdinalEncoder,
+                                   PowerTransformer, QuantileTransformer,
+                                   RobustScaler, StandardScaler)
+
 
 # Copy from mealy ErrorAnalyzerConstant
 class ErrorAnalyzerConstants(object):

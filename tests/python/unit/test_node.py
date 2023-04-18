@@ -1,8 +1,10 @@
-from dku_error_analysis_decision_tree.node import Node, CategoricalNode, NumericalNode
-from mealy import ErrorAnalyzerConstants
-import pandas as pd
 import numpy as np
+import pandas as pd
 import pytest
+from dku_error_analysis_decision_tree.node import (CategoricalNode, Node,
+                                                   NumericalNode)
+from mealy_local.error_analyzer_constants import ErrorAnalyzerConstants
+
 
 def test_print_decision_rule():
     with pytest.raises(NotImplementedError):
