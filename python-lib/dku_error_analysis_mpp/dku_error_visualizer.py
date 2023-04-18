@@ -3,12 +3,14 @@ import numpy as np
 from graphviz import Source
 import matplotlib
 matplotlib.use('agg')
+import logging
+
 import matplotlib.pyplot as plt
 from dku_error_analysis_mpp.dku_error_analyzer import DkuErrorAnalyzer
-from mealy import _BaseErrorVisualizer, ErrorAnalyzerConstants
-from dku_error_analysis_utils import safe_str, format_float
+from mealy_local.error_analysis_utils import format_float
+from mealy_local.error_analyzer_constants import ErrorAnalyzerConstants
+from mealy_local.error_visualizer import _BaseErrorVisualizer
 
-import logging
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format='Error Analysis Plugin | %(levelname)s - %(message)s')
 

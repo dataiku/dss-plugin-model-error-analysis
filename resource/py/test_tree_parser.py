@@ -1,7 +1,7 @@
 from dku_error_analysis_tree_parsing.tree_parser import TreeParser
 from dku_error_analysis_decision_tree.node import Node
 from dku_error_analysis_decision_tree.tree import InteractiveTree
-from mealy import ErrorAnalyzerConstants
+from mealy_local.error_analyzer_constants import ErrorAnalyzerConstants
 from dku_error_analysis_utils import DkuMEAConstants
 
 import pandas as pd
