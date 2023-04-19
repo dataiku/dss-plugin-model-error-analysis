@@ -1,18 +1,25 @@
-import numpy as np
-from dku_error_analysis_decision_tree.node import Node
-from dataiku.doctor.preprocessing.dataframe_preprocessing import RescalingProcessor2, QuantileBinSeries, UnfoldVectorProcessor, BinarizeSeries, \
-    FastSparseDummifyProcessor, TargetEncodingStep, FrequencyEncodingStep, OrdinalEncodingStep, FlagMissingValue2, TextCountVectorizerProcessor, \
-    TextHashingVectorizerWithSVDProcessor, TextHashingVectorizerProcessor, TextTFIDFVectorizerProcessor, CategoricalFeatureHashingProcessor, DatetimeCyclicalEncodingStep
-from dku_error_analysis_tree_parsing.depreprocessor import descale_numerical_thresholds, denormalize_feature_value
-from dku_error_analysis_utils import format_float
-from dku_error_analysis_decision_tree.tree import InteractiveTree
-from dku_error_analysis_utils import DkuMEAConstants
-from collections import deque
-from mealy import ErrorAnalyzerConstants
 import logging
+from collections import deque
 from json import loads
 from math import ceil
+
+import numpy as np
 import pandas as pd
+from dataiku.doctor.preprocessing.dataframe_preprocessing import (
+    BinarizeSeries, CategoricalFeatureHashingProcessor,
+    DatetimeCyclicalEncodingStep, FastSparseDummifyProcessor,
+    FlagMissingValue2, FrequencyEncodingStep, OrdinalEncodingStep,
+    QuantileBinSeries, RescalingProcessor2, TargetEncodingStep,
+    TextCountVectorizerProcessor, TextHashingVectorizerProcessor,
+    TextHashingVectorizerWithSVDProcessor, TextTFIDFVectorizerProcessor,
+    UnfoldVectorProcessor)
+from dku_error_analysis_decision_tree.node import Node
+from dku_error_analysis_decision_tree.tree import InteractiveTree
+from dku_error_analysis_tree_parsing.depreprocessor import (
+    denormalize_feature_value, descale_numerical_thresholds)
+from dku_error_analysis_utils import DkuMEAConstants
+from mealy_local.error_analysis_utils import format_float
+from mealy_local.error_analyzer_constants import ErrorAnalyzerConstants
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format='Error Analysis Plugin | %(levelname)s - %(message)s')
@@ -115,7 +122,7 @@ class TreeParser(object):
 
     def _add_quantize_mapping(self, step):
         bounds = step.r["bounds"]
-        value_func = lambda threshold: float(bounds[ceil(threshold)])
+        value_func = lambda threshold: float(bounds[int(threshold) + 1])
         preprocessed_name = "num_quantized:{0}:quantile:{1}".format(step.in_col, step.nb_bins)
         self.num_features.add(step.in_col)
         self.preprocessed_feature_mapping[preprocessed_name] = self.SplitParameters(Node.TYPES.NUM, step.in_col, value_func=value_func)

@@ -1,4 +1,4 @@
-from mealy import ErrorAnalyzer
+from mealy_local.error_analyzer import ErrorAnalyzer
 from dku_error_analysis_mpp.dku_error_visualizer import DkuErrorVisualizer
 from dku_error_analysis_mpp.dku_error_analyzer import DkuErrorAnalyzer
 import pytest

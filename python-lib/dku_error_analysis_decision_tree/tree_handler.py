@@ -1,12 +1,13 @@
 import logging
 from dku_error_analysis_mpp.dku_error_analyzer import DkuErrorAnalyzer
-from mealy import ErrorAnalyzerConstants
+from mealy_local.error_analyzer_constants import ErrorAnalyzerConstants
 
 LOGGER = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format="Error Analysis Plugin %(levelname)s - %(message)s")
 
 class TreeHandler(object):
     DEFAULT_MAX_NR_FEATURES = 5
+
     def __init__(self):
         self.initialize()
         self.analyzer = None

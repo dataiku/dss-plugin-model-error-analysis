@@ -1,9 +1,10 @@
-from mealy import ErrorAnalyzerConstants
-import pandas as pd
 import numpy as np
-from dku_error_analysis_decision_tree.tree import InteractiveTree
-from dku_error_analysis_decision_tree.node import Node
+import pandas as pd
 import pytest
+from dku_error_analysis_decision_tree.node import Node
+from dku_error_analysis_decision_tree.tree import InteractiveTree
+from mealy_local.error_analyzer_constants import ErrorAnalyzerConstants
+
 
 @pytest.fixture
 def create_tree():

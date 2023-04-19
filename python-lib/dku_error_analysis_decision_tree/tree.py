@@ -1,6 +1,6 @@
 from dku_error_analysis_decision_tree.node import Node, NumericalNode, CategoricalNode
 from dku_error_analysis_utils import safe_str
-from mealy import ErrorAnalyzerConstants
+from mealy_local.error_analyzer_constants import ErrorAnalyzerConstants
 
 import pandas as pd
 from collections import deque
