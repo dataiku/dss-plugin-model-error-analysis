@@ -1,5 +1,8 @@
 # Changelog
 
+## Version 1.2.1 (2023-04-19)
+- Update code env description to support python versions 3.7, 3.8, 3.9, 3.10 and 3.11
+
 ## Version 1.2.0 (2023-04-19)
 - Webapp: Use contextual code env (i.e. the one used to train the model)
 - Webapp: Fix wrong handling of features generated from numerical quantile preprocessing (issue introduced in 1.1.3)
