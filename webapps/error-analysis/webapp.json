@@ -1,7 +1,7 @@
 {
   "meta": {
     "label": "Model error analysis",
-    "description" : "Debug model performance with error analysis",
+    "description" : "Debug model performance with error analysis. This uses the code env that the analyzed model was originally trained with.",
     "icon": "icon-sitemap"
   },
   "baseType": "STANDARD",
