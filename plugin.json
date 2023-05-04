@@ -1,9 +1,9 @@
 {
   "id" : "model-error-analysis",
-  "version" : "1.2.0",
+  "version" : "1.2.1",
   "meta" : {
     "label" : "Model Error Analysis",
-    "description" : "Debug model performance with error analysis",
+    "description" : "Debug model performance with error analysis. A code env is only required to use the Jupyter Notebook.",
     "author" : "Dataiku (Agathe Guillemot, Du Phan, Simona Maggio)",
     "icon" : "icon-sitemap",
     "licenseInfo" : "Apache Software License",
