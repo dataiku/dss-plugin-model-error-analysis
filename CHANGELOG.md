@@ -1,6 +1,6 @@
 # Changelog
 
-## Version 1.2.1 (2023-04-19)
+## Version 1.3.0 (2023-05-04)
 - Update code env description to support python versions 3.7, 3.8, 3.9, 3.10 and 3.11
 
 ## Version 1.2.0 (2023-04-19)
