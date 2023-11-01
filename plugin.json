@@ -1,6 +1,6 @@
 {
   "id" : "model-error-analysis",
-  "version" : "1.3.0",
+  "version" : "1.3.1",
   "meta" : {
     "label" : "Model Error Analysis",
     "description" : "Debug model performance with error analysis. A code env is only required to use the Jupyter Notebook.",
