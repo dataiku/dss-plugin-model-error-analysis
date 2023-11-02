@@ -1,19 +1,9 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-from dku_error_analysis_utils import safe_str
 from dataiku.doctor.posttraining.model_information_handler import PredictionModelInformationHandler
-
 
 # Only used in the notebook template
 def get_model_handler(model, version_id=None):
-    try:
-        params = model.get_predictor(version_id).params
-        return PredictionModelInformationHandler(
-            params.split_desc, params.core_params, params.model_folder, params.model_folder
-        )
-    except Exception as e:
-        if "ordinal not in range(128)" in safe_str(e):
-            raise Exception("Model error analysis plugin only supports models built with Python 3. This one was built with Python 2.") from None
-        else:
-            raise e
+    fmi = "S-{project_key}-{model_id}-{version_id}".format(project_key=model.project_key, model_id=model.get_id(), version_id=version_id)
+    return PredictionModelInformationHandler.from_full_model_id(fmi)
