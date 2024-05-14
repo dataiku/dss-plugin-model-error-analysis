@@ -1,5 +1,8 @@
 # Changelog
 
+## Version 1.3.2 (2024-05-14)
+- Fix bug with TF-IDF column processing when used with sklearn > 1.0.0
+
 ## Version 1.3.1 (2023-11-01)
 - Fix method used in the notebook template
 
