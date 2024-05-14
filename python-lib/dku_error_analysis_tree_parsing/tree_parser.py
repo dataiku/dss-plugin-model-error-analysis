@@ -17,7 +17,7 @@ from dku_error_analysis_decision_tree.node import Node
 from dku_error_analysis_decision_tree.tree import InteractiveTree
 from dku_error_analysis_tree_parsing.depreprocessor import (
     denormalize_feature_value, descale_numerical_thresholds)
-from dku_error_analysis_utils import DkuMEAConstants
+from dku_error_analysis_utils import DkuMEAConstants, package_is_at_least
 from mealy_local.error_analysis_utils import format_float
 from mealy_local.error_analyzer_constants import ErrorAnalyzerConstants
 
@@ -159,7 +159,7 @@ class TreeParser(object):
     def _add_text_count_vect_mapping(self, step):
         logger.info("Feature {} is a text feature. ".format(step.column_name) +
             "Its distribution plot will not be available")
-        for word in step.resource["vectorizer"].get_feature_names():
+        for word in self._get_feature_names(step.resource["vectorizer"]):
             preprocessed_name = "{}:{}:{}".format(step.prefix, step.column_name, word)
             friendly_name = "{}: occurrences of {}".format(step.column_name, word)
             self.preprocessed_feature_mapping[preprocessed_name] = self.SplitParameters(Node.TYPES.NUM, None, friendly_name=friendly_name)
@@ -168,10 +168,19 @@ class TreeParser(object):
         logger.info("Feature {} is a text feature. ".format(step.column_name) +
             "Its distribution plot will not be available")
         vec = step.resource["vectorizer"]
-        for word, idf in zip(vec.get_feature_names(), vec.idf_):
+        for word, idf in zip(self._get_feature_names(vec), vec.idf_):
             preprocessed_name = "tfidfvec:{}:{:.3f}:{}".format(step.column_name, idf, word)
             friendly_name = "{}: tf-idf of {} (idf={})".format(step.column_name, word, format_float(idf, 3))
             self.preprocessed_feature_mapping[preprocessed_name] = self.SplitParameters(Node.TYPES.NUM, None, friendly_name=friendly_name)
+
+    def _get_feature_names(self, vectorizer):
+        feature_names = []
+        import sklearn
+        if package_is_at_least(sklearn, '1.0'):
+            feature_names = vectorizer.get_feature_names_out()
+        else:
+            feature_names = vectorizer.get_feature_names()
+        return feature_names
 
     def _create_preprocessed_feature_mapping(self):
         for step in self.model_handler.get_pipeline().steps:
