@@ -58,8 +58,9 @@ class DkuErrorAnalyzer(ErrorAnalyzer):
         return self._error_df
 
     def _parse_tree(self):
+        # Beware that self.generated_features_mapping is computed during the init, meaning the methods call sequencing is important !
         tree_parser = TreeParser(self._model_handler, self.error_tree.estimator_,
-                                 self.preprocessed_feature_names)
+                                 self.preprocessed_feature_names, self.generated_features_mapping)
         tree = tree_parser.create_tree(self.error_df)
         tree_parser.parse_nodes(tree, self._error_train_x)
         self._tree = tree
@@ -74,17 +75,14 @@ class DkuErrorAnalyzer(ErrorAnalyzer):
 
         super(DkuErrorAnalyzer, self).fit(self._train_x, self._train_y)
 
-    def _preprocess_dataframe(self, df, with_target=True):
+    def _preprocess_dataframe(self, df):
         """ Preprocess input DataFrame with primary model preprocessor """
-        if with_target and self._target not in df:
+        if self._target not in df:
             raise ValueError('The dataset does not contain target "{}".'.format(self._target))
-        if with_target:
-            x, input_mf_index, _, y = self._model_predictor.preprocessing.preprocess(
-                df,
-                with_target=True)
-            return x, y, input_mf_index
-
-        return self._model_predictor.preprocessing.preprocess(df)[0]
+        x, input_mf_index, _, y = self._model_predictor.preprocessing.preprocess(
+            df,
+            with_target=True)
+        return x, y, input_mf_index
 
     def _prepare_data_from_dku_saved_model(self):
         """ Preprocess and split original test set from Dku saved model
@@ -97,6 +95,7 @@ class DkuErrorAnalyzer(ErrorAnalyzer):
                 'The plugin will take the whole original dataset.', e)
             original_df = self._model_handler.get_full_df()[0][:self._max_num_rows]
         self._train_x, self._train_y, input_mf_index = self._preprocess_dataframe(original_df)
+        self.generated_features_mapping = self._model_predictor.preprocessing.pipeline_with_target.generated_features_mapping
         original_train_df = original_df.loc[input_mf_index]
         self._error_df = original_train_df.drop(self._target, axis=1)
 
