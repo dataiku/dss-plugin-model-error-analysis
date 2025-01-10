@@ -60,7 +60,7 @@ class DkuErrorAnalyzer(ErrorAnalyzer):
     def _parse_tree(self):
         # Beware that self.generated_features_mapping is computed during the init, meaning the methods call sequencing is important !
         tree_parser = TreeParser(self._model_handler, self.error_tree.estimator_,
-                                 self.preprocessed_feature_names, self.generated_features_mapping)
+                                 self.preprocessed_feature_names, self.generated_features_mapping.feature_to_block)
         tree = tree_parser.create_tree(self.error_df)
         tree_parser.parse_nodes(tree, self._error_train_x)
         self._tree = tree

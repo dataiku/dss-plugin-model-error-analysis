@@ -49,7 +49,7 @@ class TreeParser(object):
         self.preprocessed_feature_mapping = {}
         self.rescalers = {}
         self.num_features = set()
-        self.feature_to_block = generated_feature_mapping.feature_to_block
+        self.feature_to_block = feature_to_block
         self._create_preprocessed_feature_mapping()
 
     def _add_flag_missing_value_mapping(self, step):
