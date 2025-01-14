@@ -42,7 +42,7 @@ class TreeParser(object):
         def feature(self):
             return self.friendly_name or self.chart_name
 
-    def __init__(self, model_handler, error_model, feature_list, generated_feature_mapping):
+    def __init__(self, model_handler, error_model, feature_list, feature_to_block):
         self.model_handler = model_handler
         self.error_model = error_model
         self.feature_list = feature_list
