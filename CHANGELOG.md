@@ -1,5 +1,8 @@
 # Changelog
 
+## Version 1.3.3 (2025-01-16)
+- Text and images embedding feature handling are now supported
+
 ## Version 1.3.2 (2024-05-14)
 - Fix bug with TF-IDF column processing when used with sklearn > 1.0.0
 
