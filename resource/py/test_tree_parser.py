@@ -16,7 +16,7 @@ def create_parser(mocker):
         model_handler.get_pipeline.return_value.steps = [] if steps is None else steps
         model_handler.get_per_feature.return_value = {} if per_feature is None else per_feature
         parser = TreeParser(model_handler, error_model,
-                          ["test"] if feature_names is None else feature_names)
+                          ["test"] if feature_names is None else feature_names, {})
         if num_features is not None:
             parser.num_features = num_features
         return parser

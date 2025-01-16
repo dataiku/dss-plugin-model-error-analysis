@@ -42,13 +42,14 @@ class TreeParser(object):
         def feature(self):
             return self.friendly_name or self.chart_name
 
-    def __init__(self, model_handler, error_model, feature_list):
+    def __init__(self, model_handler, error_model, feature_list, feature_to_block):
         self.model_handler = model_handler
         self.error_model = error_model
         self.feature_list = feature_list
         self.preprocessed_feature_mapping = {}
         self.rescalers = {}
         self.num_features = set()
+        self.feature_to_block = feature_to_block
         self._create_preprocessed_feature_mapping()
 
     def _add_flag_missing_value_mapping(self, step):
@@ -173,6 +174,17 @@ class TreeParser(object):
             friendly_name = "{}: tf-idf of {} (idf={})".format(step.column_name, word, format_float(idf, 3))
             self.preprocessed_feature_mapping[preprocessed_name] = self.SplitParameters(Node.TYPES.NUM, None, friendly_name=friendly_name)
 
+    def add_mappings_from_generated_mappings(self):
+        for key in self.feature_to_block:
+            if key.startswith("sentence_vec"):
+                preprocessed_name = key
+                friendly_name = "{}:text embedding#{}".format(self.feature_to_block[key][len("sentence_vec:"):], key.split(":")[-1])
+                self.preprocessed_feature_mapping[preprocessed_name] = self.SplitParameters(Node.TYPES.NUM, None, friendly_name=friendly_name)
+            if key.startswith("img_emb"):
+                preprocessed_name = key
+                friendly_name = "{}:image embedding#{}".format(self.feature_to_block[key][len("img_emb:"):], key.split(":")[-1])
+                self.preprocessed_feature_mapping[preprocessed_name] = self.SplitParameters(Node.TYPES.NUM, None, friendly_name=friendly_name)
+
     def _get_feature_names(self, vectorizer):
         feature_names = []
         import sklearn
@@ -183,6 +195,8 @@ class TreeParser(object):
         return feature_names
 
     def _create_preprocessed_feature_mapping(self):
+        # For a lot of steps classes, we can infer from the step state what are the generated mappings,
+        # and sometimes get extra info to populate the view.
         for step in self.model_handler.get_pipeline().steps:
             if isinstance(step, RescalingProcessor2):
                 self.rescalers[step.in_col] = step
@@ -204,6 +218,10 @@ class TreeParser(object):
                 TextHashingVectorizerProcessor: self._add_hashing_vect_mapping,
                 TextTFIDFVectorizerProcessor: self._add_tfidf_vect_mapping
             }.get(step.__class__, lambda step: None)(step)
+        # Some steps can't be handled that way, because they're not deterministic in the number of columns they generate
+        # so we use the pipeline mappings to recover their mapping. For a lot of steps, both methods are equally valid,
+        # historically only the first one was implemented, hence why it seems prefered.
+        self.add_mappings_from_generated_mappings()
 
     def _get_split_parameters(self, preprocessed_name):
         # Numerical features can have no preprocessing performed on them ("kept as regular")
