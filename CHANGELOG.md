@@ -1,5 +1,8 @@
 # Changelog
 
+## Version 1.3.4 (2025-02-05)
+- Improve python 3.9 support (used to need local compilation of statsmodels, now uses a wheeled version)
+
 ## Version 1.3.3 (2025-01-16)
 - Text and images embedding feature handling are now supported
 
