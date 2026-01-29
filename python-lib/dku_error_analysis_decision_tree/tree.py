@@ -132,7 +132,7 @@ class InteractiveTree(object):
             "count": []
         }
         if not binned_column.empty:
-            target_grouped = target_column.groupby(binned_column)
+            target_grouped = target_column.groupby(binned_column, observed=False)
             target_distrib = target_grouped.apply(lambda x: x.value_counts())
             col_distrib = target_grouped.count()
             for interval, count in col_distrib.items():
@@ -158,8 +158,10 @@ class InteractiveTree(object):
                 nr_bins = len(bins)
             target_grouped = target_column.groupby(column.fillna("No values").apply(safe_str))
             target_distrib = target_grouped.value_counts(dropna=False)
-            col_distrib = target_grouped.count().sort_values(ascending=False)
-            values = col_distrib.index if not bins else bins
+            col_distrib = target_grouped.count()
+            df = col_distrib.reset_index()
+            df.sort_values(by=[df.columns[1], df.columns[0]], ascending=[False, True], inplace=True)
+            values = df[df.columns[0]] if not bins else bins
 
             for value in values:
                 target_distrib_dict = target_distrib[value].to_dict()

@@ -137,7 +137,7 @@ def test_get_stats_categorical_node(target, cat_column):
     # Check nominal case
     binned_column = cat_column()
     stats = InteractiveTree.get_stats_categorical_node(binned_column, target, 10, None)
-    assert stats["bin_value"] == ["B", "Q", "C"]
+    assert stats["bin_value"] == ["B", "C", "Q"]
     assert stats["count"] == [3, 1, 1]
     assert stats["target_distrib"][ErrorAnalyzerConstants.WRONG_PREDICTION] == [0, 1, 1]
     assert stats["target_distrib"][ErrorAnalyzerConstants.CORRECT_PREDICTION] == [3, 0, 0]
@@ -145,7 +145,7 @@ def test_get_stats_categorical_node(target, cat_column):
     # Check nominal case - less bins
     binned_column = cat_column()
     stats = InteractiveTree.get_stats_categorical_node(binned_column, target, 2, None)
-    assert stats["bin_value"] == ["B", "Q"]
+    assert stats["bin_value"] == ["B", "C"]
     assert stats["count"] == [3, 1]
     assert stats["target_distrib"][ErrorAnalyzerConstants.WRONG_PREDICTION] == [0, 1]
     assert stats["target_distrib"][ErrorAnalyzerConstants.CORRECT_PREDICTION] == [3, 0]
@@ -161,7 +161,7 @@ def test_get_stats_categorical_node(target, cat_column):
     # Check with nan
     binned_column = cat_column(False)
     stats = InteractiveTree.get_stats_categorical_node(binned_column, target, 10, None)
-    assert stats["bin_value"] == ["B", "Q", "No values", "C"]
+    assert stats["bin_value"] == ["B", "C", "No values", "Q"]
     assert stats["count"] == [2, 1, 1, 1]
     assert stats["target_distrib"][ErrorAnalyzerConstants.WRONG_PREDICTION] == [0, 1, 0, 1]
     assert stats["target_distrib"][ErrorAnalyzerConstants.CORRECT_PREDICTION] == [2, 0, 1, 0]
@@ -169,7 +169,7 @@ def test_get_stats_categorical_node(target, cat_column):
     # Check with nan - less bins
     binned_column = cat_column(False)
     stats = InteractiveTree.get_stats_categorical_node(binned_column, target, 3, None)
-    assert stats["bin_value"] == ["B", "Q", "No values"]
+    assert stats["bin_value"] == ["B", "C", "No values"]
     assert stats["count"] == [2, 1, 1]
     assert stats["target_distrib"][ErrorAnalyzerConstants.WRONG_PREDICTION] == [0, 1, 0]
     assert stats["target_distrib"][ErrorAnalyzerConstants.CORRECT_PREDICTION] == [2, 0, 1]
@@ -232,7 +232,6 @@ def test_get_stats(create_tree, mocker):
 
     # Retrieving stats for numerical features - empty col
     tree = create_tree()
-    spy = mocker.spy(InteractiveTree, 'get_stats_numerical_node')
     mocker.patch.object(tree, "get_filtered_df", return_value=pd.DataFrame([], columns=tree.df.columns))
     tree.get_stats(-1, "num_1", 10)
     cargs = spy.call_args[0]
@@ -246,7 +245,6 @@ def test_get_stats(create_tree, mocker):
     tree = create_tree()
     bin_edges = np.array([1.0, 5.0, 11.01])
     tree.bin_edges["num_1"] = bin_edges
-    spy = mocker.spy(InteractiveTree, 'get_stats_numerical_node')
     mocker.patch.object(tree, "get_filtered_df", return_value=tree.df)
     tree.get_stats(-1, "num_1", 2, pd.Series(pd.Categorical([
         pd.Interval(1.0, 3.0, "left"),
@@ -276,7 +274,6 @@ def test_get_stats(create_tree, mocker):
     tree = create_tree()
     bin_edges = np.array([1.0, 5.0, 11.01])
     tree.bin_edges["num_1"] = bin_edges
-    spy = mocker.spy(InteractiveTree, 'get_stats_numerical_node')
     mocker.patch.object(tree, "get_filtered_df", return_value=tree.df)
     tree.get_stats(-1, "num_1", 10, pd.Series(pd.Categorical([
         pd.Interval(1.0, 3.0, "left"),

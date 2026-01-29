@@ -1,5 +1,9 @@
-pandas~=1.0
-pytest~=6.2
-allure-pytest==2.8.29
-numpy==1.16.6
-pytest-mock~=3.6
+pandas~=1.0; python_version < '3.12'
+pandas>=2.0,<4.0; python_version >= '3.12'
+pytest~=6.2; python_version < '3.7'
+pytest>=7.4,<10.0; python_version >= '3.7'
+allure-pytest==2.8.29; python_version < '3.7'
+allure-pytest>=2.13.5,<3.0; python_version >= '3.7'
+numpy>=1.16.6
+pytest-mock~=3.6; python_version < '3.7'
+pytest-mock>=3.10,<4.0; python_version >= '3.7'
