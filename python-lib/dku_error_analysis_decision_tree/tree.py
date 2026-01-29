@@ -132,7 +132,7 @@ class InteractiveTree(object):
             "count": []
         }
         if not binned_column.empty:
-            target_grouped = target_column.groupby(binned_column, observed=False)
+            target_grouped = target_column.groupby(binned_column)
             target_distrib = target_grouped.apply(lambda x: x.value_counts())
             col_distrib = target_grouped.count()
             for interval, count in col_distrib.items():
