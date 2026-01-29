@@ -43,11 +43,6 @@ jobs:
             tests/python/unit/requirements.txt
             code-env/python/spec/requirements.txt
       
-      - name: Install dependencies (System)
-        if: matrix.container != ''
-        run: |
-          apt-get update && apt-get install -y git
-
       - name: Install dependencies
         run: |
           pip install -r tests/python/unit/requirements.txt
