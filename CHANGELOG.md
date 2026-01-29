@@ -1,5 +1,8 @@
 # Changelog
 
+## Version 1.3.5 (2026-01-29)
+- Add python 3.12, 3.13 and 3.14 official support
+
 ## Version 1.3.4 (2025-02-05)
 - Improve python 3.9 support (used to need local compilation of statsmodels, now uses a wheeled version)
 
