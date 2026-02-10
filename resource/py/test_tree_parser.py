@@ -53,7 +53,7 @@ def preproc_array():
 
 # PARSING METHODS
 @pytest.mark.parsing
-def test_create_tree(mocker, df, create_parser, caplog):
+def test_create_tree(mocker, df, create_parser, caplog, dss_target):
     error_model = mocker.Mock()
     error_model.feature_importances_ = np.array([1, 3, 0, 5, 2, 4])
     feature_names = [
@@ -106,7 +106,7 @@ def test_create_tree(mocker, df, create_parser, caplog):
     pd.testing.assert_series_equal(dataframe["vector [element #0]"],
         pd.Series(['e','a',np.nan,'e','i','e','e','i','i','i','i','i'], name="vector [element #0]"))
     pd.testing.assert_series_equal(dataframe["vector [element #1]"],
-        pd.Series([1, 0, np.nan, 0, 2, np.nan, np.nan, 1, 1, 2, 100, np.nan], name="vector [element #1]"))   
+        pd.Series([1, 0, np.nan, 0, 2, np.nan, np.nan, 1, 1, 2, 100, np.nan], name="vector [element #1]"))
     assert ranked_features[:3] == ["feat_c", "feat_a", "feat_b"]
     assert set(ranked_features) == {"feat_c", "feat_a", "feat_b", "vector [element #0]", "vector [element #1]", "cat_1", "num_1"}
     assert parser.num_features == {"num_1", "vector [element #1]"}
@@ -144,7 +144,7 @@ def mocked_get_split_param(feature):
         return TreeParser.SplitParameters(Node.TYPES.NUM, "foo", None, "num_1")
 
 @pytest.mark.parsing
-def test_build_tree(mocker, df, create_parser):
+def test_build_tree(mocker, df, create_parser, dss_target):
     mocker.patch("dku_error_analysis_tree_parsing.tree_parser.descale_numerical_thresholds",
                  return_value=[8, -2, .5, 3, -.5, -2, -2, -2, 1, -2, -2])
 
@@ -265,7 +265,7 @@ def check_dummy(split, name, value=None, others=False):
         assert split.invert_left_and_right and split.invert_left_and_right(0)
 
 @pytest.mark.categorical
-def test_dummy(create_parser, mocker):
+def test_dummy(create_parser, mocker, dss_target):
     parser = create_parser()
     step = mocker.Mock(values=["A", "B"], input_column_name="test", should_drop=True)
     parser._add_dummy_mapping(step)
@@ -298,7 +298,7 @@ def test_dummy(create_parser, mocker):
     check_dummy(others, "test", ["A", "B"], True)
 
 @pytest.mark.categorical
-def test_target_encoding(create_parser, mocker, preproc_array):
+def test_target_encoding(create_parser, mocker, preproc_array, dss_target):
     # Test classification
     parser = create_parser()
     step = mocker.Mock(column_name="test", encoding_name="enc_name")
@@ -339,7 +339,7 @@ def test_target_encoding(create_parser, mocker, preproc_array):
     assert (a.add_preprocessed_feature(preproc_array, 0) == [-1,0,0,0,1,0,4]).all()
 
 @pytest.mark.categorical
-def test_whole_cat_hashing(create_parser, mocker):
+def test_whole_cat_hashing(create_parser, mocker, dss_target):
     parser = create_parser()
     step = mocker.Mock(column_name="test", n_features=3)
     parser._add_cat_hashing_whole_mapping(step)
@@ -385,7 +385,7 @@ def test_whole_cat_hashing(create_parser, mocker):
     assert (third.add_preprocessed_feature(preproc_array, 2) == added_column).all()
 
 @pytest.mark.categorical
-def test_not_whole_cat_hashing(create_parser, mocker, preproc_array):
+def test_not_whole_cat_hashing(create_parser, mocker, preproc_array, dss_target):
     parser = create_parser()
     step = mocker.Mock(column_name="test", n_features=2)
     parser._add_cat_hashing_not_whole_mapping(step)
@@ -411,7 +411,7 @@ def test_not_whole_cat_hashing(create_parser, mocker, preproc_array):
         and not second.invert_left_and_right(.5)
     assert (second.add_preprocessed_feature(preproc_array, 1) == [0,2,3,0,1,0,0]).all()
 
-def test_frequency_encoding(create_parser, mocker, preproc_array):
+def test_frequency_encoding(create_parser, mocker, preproc_array, dss_target):
     parser = create_parser()
     step = mocker.Mock(column_name="test", suffix="suffix")
     parser._add_frequency_encoding_mapping(step)
@@ -427,7 +427,7 @@ def test_frequency_encoding(create_parser, mocker, preproc_array):
     assert (a.add_preprocessed_feature(preproc_array, 0) == [-1,0,0,0,1,0,4]).all()
 
 @pytest.mark.categorical
-def test_ordinal_encoding(create_parser, mocker, preproc_array):
+def test_ordinal_encoding(create_parser, mocker, preproc_array, dss_target):
     parser = create_parser()
     step = mocker.Mock(column_name="test", suffix="suffix")
     parser._add_ordinal_encoding_mapping(step)
@@ -444,7 +444,7 @@ def test_ordinal_encoding(create_parser, mocker, preproc_array):
 
 # VECTOR HANDLING
 @pytest.mark.vector
-def test_unfold(create_parser, mocker, preproc_array):
+def test_unfold(create_parser, mocker, preproc_array, dss_target):
     parser = create_parser()
     step = mocker.Mock(input_column_name="test", vector_length=2)
     parser._add_unfold_mapping(step)
@@ -473,7 +473,7 @@ def test_unfold(create_parser, mocker, preproc_array):
 
 # NUM HANDLINGS
 @pytest.mark.numerical
-def test_identity(create_parser, mocker, preproc_array):
+def test_identity(create_parser, mocker, preproc_array, dss_target):
     parser = create_parser()
     parser._add_identity_mapping("test")
     assert len(parser.preprocessed_feature_mapping) == 1
@@ -490,7 +490,7 @@ def test_identity(create_parser, mocker, preproc_array):
     assert (split.add_preprocessed_feature(preproc_array, 0) == [-1,0,0,0,1,0,4]).all()
 
 @pytest.mark.numerical
-def test_binarize(create_parser, mocker, preproc_array):
+def test_binarize(create_parser, mocker, preproc_array, dss_target):
     parser = create_parser()
     step = mocker.Mock(in_col="test", threshold=42)
     step._output_name.return_value = "output"
@@ -509,7 +509,7 @@ def test_binarize(create_parser, mocker, preproc_array):
     assert (split.add_preprocessed_feature(preproc_array, 0) == [-1,0,0,0,1,0,4]).all()
 
 @pytest.mark.numerical
-def test_quantize(create_parser, mocker, preproc_array):
+def test_quantize(create_parser, mocker, preproc_array, dss_target):
     parser = create_parser()
     step = mocker.Mock(in_col="test", nb_bins=42, r={"bounds": ["0.5", "1.6", "7.8"]})
     parser._add_quantize_mapping(step)
@@ -527,7 +527,7 @@ def test_quantize(create_parser, mocker, preproc_array):
     assert (split.add_preprocessed_feature(preproc_array, 0) == [-1,0,0,0,1,0,4]).all()
 
 @pytest.mark.numerical
-def test_flag_missing(create_parser, mocker):
+def test_flag_missing(create_parser, mocker, dss_target):
     # Flag on numerical feature
     parser = create_parser()
     step = mocker.Mock(feature="test", output_block_name="num_flagonly")
@@ -562,7 +562,7 @@ def test_flag_missing(create_parser, mocker):
         and not split.invert_left_and_right(.5)
 
 @pytest.mark.numerical
-def test_datetime_encoding(create_parser, mocker, preproc_array):
+def test_datetime_encoding(create_parser, mocker, preproc_array, dss_target):
     parser = create_parser()
     step = mocker.Mock(column_name="test", selected_periods=["p1", "p2"])
 
@@ -623,7 +623,7 @@ def check_text_features(preproc_array, split, name):
     assert (split.add_preprocessed_feature(preproc_array, 1) == [0,2,3,0,1,0,0]).all()
 
 @pytest.mark.text
-def test_vect_hashing(create_parser, mocker, caplog, preproc_array):
+def test_vect_hashing(create_parser, mocker, caplog, preproc_array, dss_target):
     caplog.set_level(logging.INFO)
     # Hash without SVD
     parser = create_parser()
@@ -653,12 +653,13 @@ def test_vect_hashing(create_parser, mocker, caplog, preproc_array):
     assert log.msg == "Feature test_bis is a text feature. Its distribution plot will not be available"
 
 @pytest.mark.text
-def test_count_vect(create_parser, mocker, caplog, preproc_array):
+def test_count_vect(create_parser, mocker, caplog, preproc_array, dss_target):
     caplog.set_level(logging.INFO)
     parser = create_parser()
     step = mocker.Mock(column_name="test", prefix="prefix")
     vectorizer = mocker.Mock()
     vectorizer.get_feature_names.return_value = ["word", "random"]
+    vectorizer.get_feature_names_out.return_value = ["word", "random"]
     step.resource = {"vectorizer": vectorizer}
     parser._add_text_count_vect_mapping(step)
     assert len(parser.preprocessed_feature_mapping) == 2
@@ -673,12 +674,13 @@ def test_count_vect(create_parser, mocker, caplog, preproc_array):
     assert log.msg == "Feature test is a text feature. Its distribution plot will not be available"
 
 @pytest.mark.text
-def test_tfidf_vect(create_parser, mocker, caplog, preproc_array):
+def test_tfidf_vect(create_parser, mocker, caplog, preproc_array, dss_target):
     caplog.set_level(logging.INFO)
     parser = create_parser()
     step = mocker.Mock(column_name="test")
     vectorizer = mocker.Mock(idf_=[42.4242])
     vectorizer.get_feature_names.return_value = ["word", "random"]
+    vectorizer.get_feature_names_out.return_value = ["word", "random"]
     step.resource = {"vectorizer": vectorizer}
     parser._add_tfidf_vect_mapping(step)
     assert len(parser.preprocessed_feature_mapping) == 1
@@ -693,6 +695,7 @@ def test_tfidf_vect(create_parser, mocker, caplog, preproc_array):
     step = mocker.Mock(column_name="test_bis")
     vectorizer = mocker.Mock(idf_=[42.4242, 1])
     vectorizer.get_feature_names.return_value = ["word", "random"]
+    vectorizer.get_feature_names_out.return_value = ["word", "random"]
     step.resource = {"vectorizer": vectorizer}
     parser._add_tfidf_vect_mapping(step)
     assert len(parser.preprocessed_feature_mapping) == 2
