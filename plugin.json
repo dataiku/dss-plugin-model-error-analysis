@@ -9,6 +9,6 @@
     "licenseInfo" : "Apache Software License",
     "supportLevel":"TIER2_SUPPORT",
     "url" : "https://www.dataiku.com/product/plugins/model-error-analysis/",
-    "tags" : ["Machine Learning", "Visualization"]
+    "tags" : ["Explainability", "Machine Learning", "Governance"]
   }
 }
