@@ -293,7 +293,10 @@ class TreeParser(object):
             preprocessed_feature = self.feature_list[feature_idx]
             split_parameters = self._get_split_parameters(preprocessed_feature)
             if split_parameters.feature not in tree.df:
-                tree.df[split_parameters.feature] = split_parameters.add_preprocessed_feature(preprocessed_x, feature_idx)
+                feature_values = split_parameters.add_preprocessed_feature(preprocessed_x, feature_idx)
+                if hasattr(feature_values, "toarray"): # for sparse matrices
+                    feature_values = feature_values.toarray().reshape(-1)
+                tree.df[split_parameters.feature] = feature_values
             value = split_parameters.value
             if value is None:
                 value = split_parameters.value_func(threshold)

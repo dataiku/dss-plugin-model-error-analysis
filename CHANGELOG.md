@@ -1,5 +1,9 @@
 # Changelog
 
+## Version 1.3.6 (2026-09-14)
+- Add support for newer versions of Flask (enabling the model error analysis of custom plugin's algorithms)
+- Fix bug now that sparse matrices can be given as a preprocessed dataframe
+
 ## Version 1.3.5 (2026-01-29)
 - Add python 3.12, 3.13 and 3.14 official support
 

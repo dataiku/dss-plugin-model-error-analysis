@@ -10,7 +10,18 @@ from dataikuapi.dss.ml import DSSMLTask
 
 from dku_error_analysis_decision_tree.tree_handler import TreeHandler
 
-app.json_encoder = DKUJSONEncoder
+try:
+    from flask.json.provider import DefaultJSONProvider
+    class DSSJSONProvider(DefaultJSONProvider):
+        def default(self, obj):
+            return DKUJSONEncoder().default(obj)
+
+    # Since Flask 2.2, jsonify delegates to app.json; app.json_encoder was
+    # deprecated then and removed in Flask 2.3.
+    app.json = DSSJSONProvider(app)
+except ImportError:
+    # Flask < 2.2 still uses the legacy JSON encoder API.
+    app.json_encoder = DKUJSONEncoder
 
 LOGGER = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format="Error Analysis Plugin %(levelname)s - %(message)s")
