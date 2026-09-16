@@ -8,6 +8,7 @@ import pandas as pd
 import numpy as np
 import pytest
 import logging
+from scipy import sparse
 
 @pytest.fixture
 def create_parser(mocker):
@@ -249,6 +250,30 @@ def test_build_tree(mocker, df, create_parser, dss_target):
     assert spy_num_2.call_count == 0
 
     pd.testing.assert_frame_equal(tree.df, pd.concat([dataframe, pd.Series(["toast"]*12, name="super_cat_1"), pd.Series(["hellow"]*12, name="super_cat_2")], axis=1))
+
+
+@pytest.mark.parsing
+def test_build_tree_with_sparse_preprocessed_features(mocker, create_parser, dss_target):
+    mocker.patch("dku_error_analysis_tree_parsing.tree_parser.descale_numerical_thresholds",
+                 return_value=[.5, -2, -2])
+
+    error_model = mocker.Mock(classes_=np.array([
+        ErrorAnalyzerConstants.WRONG_PREDICTION,
+        ErrorAnalyzerConstants.CORRECT_PREDICTION
+    ]))
+    error_model.tree_.children_left = np.array([1, -2, -2])
+    error_model.tree_.children_right = np.array([2, -2, -2])
+    error_model.tree_.feature = np.array([0, -2, -2])
+    error_model.tree_.value = np.array([[[1, 2]], [[1, 0]], [[0, 2]]])
+
+    tree = mocker.Mock(df=pd.DataFrame(index=range(3)))
+    parser = create_parser(error_model=error_model, feature_names=["feature"])
+
+    parser.parse_nodes(tree, sparse.csr_matrix([[0], [1], [2]]))
+
+    pd.testing.assert_series_equal(
+        tree.df["feature"], pd.Series([0, 1, 2], name="feature")
+    )
 
 # CATEGORICAL HANDLINGS
 def check_dummy(split, name, value=None, others=False):
