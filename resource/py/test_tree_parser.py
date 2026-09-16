@@ -253,7 +253,7 @@ def test_build_tree(mocker, df, create_parser, dss_target):
 
 
 @pytest.mark.parsing
-def test_build_tree_with_sparse_preprocessed_features(mocker, create_parser):
+def test_build_tree_with_sparse_preprocessed_features(mocker, create_parser, dss_target):
     mocker.patch("dku_error_analysis_tree_parsing.tree_parser.descale_numerical_thresholds",
                  return_value=[.5, -2, -2])
 
