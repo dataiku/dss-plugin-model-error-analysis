@@ -43,7 +43,7 @@ def mocked_get_stats():
         return _get_stats
     return f
 
-def test_plot_feature_distributions_no_show_global(mocker, mocked_nodes, mocked_get_stats, caplog):
+def test_plot_feature_distributions_no_show_global(mocker, mocked_nodes, mocked_get_stats, caplog, dss_target):
     analyzer = mocker.Mock(spec=DkuErrorAnalyzer)
     mocker.patch.object(analyzer, "_get_ranked_leaf_ids", return_value=[1])
     analyzer.tree.ranked_features = [
@@ -120,7 +120,7 @@ def test_plot_feature_distributions_no_show_global(mocker, mocked_nodes, mocked_
     assert patched_get_node.call_args_list[2][0] == (1,) and patched_get_node.call_count == 3
     patched_get_stats.assert_called_once_with(1, "num", 10)
 
-def test_plot_feature_distributions_show_global(mocker, mocked_nodes, mocked_get_stats, caplog):
+def test_plot_feature_distributions_show_global(mocker, mocked_nodes, mocked_get_stats, caplog, dss_target):
     analyzer = mocker.Mock(spec=DkuErrorAnalyzer)
     mocker.patch.object(analyzer, "_get_ranked_leaf_ids", return_value=[1])
     analyzer.tree.ranked_features = [
@@ -226,6 +226,6 @@ def test_plot_feature_distributions_show_global(mocker, mocked_nodes, mocked_get
     assert patched_get_stats.call_args_list[0][0] == (1, "num", 10)
     assert patched_get_stats.call_args_list[1][0] == (0, "num", 10, [])
 
-def test_failed_init(mocker):
+def test_failed_init(mocker, dss_target):
     with pytest.raises(TypeError, match="You need to input a DkuErrorAnalyzer object."):
         DkuErrorVisualizer(mocker.Mock(spec=ErrorAnalyzer))
